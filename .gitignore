@@ -39,3 +39,5 @@ public/Kredensial_Login_Intern.xlsx
 
 # Scripts (dev only)
 scripts/
+
+.vercel

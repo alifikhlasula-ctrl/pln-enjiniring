@@ -93,7 +93,7 @@ export async function GET(request) {
   const filterUserId = searchParams.get('userId') // Untuk filter personal (intern portal)
 
   const data = await getDB()
-  let activeInterns = await db.getInterns(false).filter(i => i.status === 'ACTIVE')
+  let activeInterns = (await db.getInterns(false)).filter(i => i.status === 'ACTIVE')
 
   if (filterUserId) {
     activeInterns = activeInterns.filter(i => i.userId === filterUserId)
