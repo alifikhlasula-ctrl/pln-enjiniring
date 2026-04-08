@@ -126,7 +126,7 @@ export async function GET(request) {
       r.tanggal,
       r.jam_datang,
       r.jam_pulang,
-      r.kegiatan ? (r.isWeekend ? r.kegiatan : `\u2022 ${r.kegiatan}`) : '', 
+      r.kegiatan ? (r.isLibur ? r.kegiatan : `\u2022 ${r.kegiatan}`) : '', 
       '', // TTD Peserta
       ''  // TTD Pembimbing
     ])
@@ -163,7 +163,7 @@ export async function GET(request) {
       didDrawCell: (data) => {
         if (data.row.section === 'body') {
             const rowIndex = data.row.index
-            if (rows[rowIndex].isWeekend) {
+            if (rows[rowIndex]?.isLibur) {
                 doc.setFillColor(255, 217, 102) // Yellowish orange
                 if (data.column.index >= 2 && data.column.index <= 6) {
                     doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F')
