@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDB, db } from '@/lib/db'
+import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
