@@ -131,6 +131,10 @@ export async function POST(request) {
          return NextResponse.json({ error: 'Tanggal Klaim Susulan harus sebelum hari ini. Gunakan Face Recognition untuk hari ini.' }, { status: 400 })
       }
       
+      if (intern.periodStart && date < intern.periodStart) {
+         return NextResponse.json({ error: `Klaim tidak dapat dilakukan sebelum periode magang Anda dimulai (${intern.periodStart}).` }, { status: 400 })
+      }
+      
       const existingBD = await prisma.attendanceLog.findUnique({
         where: { internId_date: { internId: intern.id, date: date } }
       })

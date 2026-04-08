@@ -225,6 +225,7 @@ function FaceCaptureModal({ actionName, onClose, onCapture }) {
 export default function AttendancePage() {
   const { user } = useAuth()
   const [attendances, setAttendances] = useState([])
+  const [internProfile, setInternProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [todayLog, setTodayLog] = useState(null)
@@ -251,6 +252,10 @@ export default function AttendancePage() {
     setAttendances(list)
     const today = new Date().toISOString().split('T')[0]
     setTodayLog(list.find(a => a.date === today) || null)
+
+    const pRes = await safeFetch(`/api/intern/profile?userId=${user.id}`)
+    if (pRes.ok) setInternProfile(pRes.data?.intern || null)
+
     setLoading(false)
   }, [user])
 
@@ -533,6 +538,7 @@ export default function AttendancePage() {
                   <label className="label" style={{fontSize: '0.72rem'}}>Tanggal</label>
                   <input type="date" required className="input" style={{marginBottom: 10, fontSize: '0.8rem', padding: '6px 10px'}} 
                          value={manualForm.date} onChange={e => setManualForm({...manualForm, date: e.target.value})} 
+                         min={internProfile?.periodStart || ''}
                          max={new Date(Date.now() - 86400000).toISOString().split('T')[0]} />
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
