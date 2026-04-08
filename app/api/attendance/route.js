@@ -82,8 +82,10 @@ export async function POST(request) {
       intern = newIntern
     }
 
-    const today = new Date().toISOString().split('T')[0]
     const now = new Date()
+    // Tentukan referensi 'hari ini' dalam zona waktu WIB (UTC+7)
+    const nowWIB = new Date(now.getTime() + (7 * 3600000))
+    const today = nowWIB.toISOString().split('T')[0]
 
     // ── Gembok Akhir Pekan (Saturday/Sunday) ─────────────────────
     if (type === 'IN' || type === 'OUT') {
@@ -96,8 +98,7 @@ export async function POST(request) {
     }
 
     // Determine status LATE/PRESENT
-    const limit = new Date()
-    limit.setHours(7, 30, 0, 0)
+    const limit = new Date(`${today}T07:30:00+07:00`)
     const status = (type === 'IN' && now > limit) ? 'LATE' : 'PRESENT'
 
     const existing = await prisma.attendanceLog.findUnique({
@@ -138,12 +139,12 @@ export async function POST(request) {
          return NextResponse.json({ error: `Absensi untuk tanggal ${date} sudah tercatat sebelumnya.` }, { status: 400 })
       }
 
-      // Convert time string to Date objects
-      const dIn = new Date(`${date}T${checkInTime}:00`)
-      const dOut = new Date(`${date}T${checkOutTime}:00`)
+      // Convert time string to Date objects enforcing WIB timezone (+07:00)
+      const dIn = new Date(`${date}T${checkInTime}:00+07:00`)
+      const dOut = new Date(`${date}T${checkOutTime}:00+07:00`)
 
       // Limit logic for backdate
-      const limitBD = new Date(`${date}T07:30:00`)
+      const limitBD = new Date(`${date}T07:30:00+07:00`)
       const bStatus = (dIn > limitBD) ? 'LATE' : 'PRESENT'
 
       console.log('[POST /api/attendance] Creating MANUAL_BACKDATE log for', intern.id, date)
