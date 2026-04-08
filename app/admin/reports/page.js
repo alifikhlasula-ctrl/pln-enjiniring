@@ -106,20 +106,136 @@ export default function AdminReportsPage() {
         attMap[uid] = aLogs || []
       }
 
-      // Call server-side PDF generation for robust filename preservation
+      // IMPORT JSPDF ON CLIENT SIDE
+      const { jsPDF } = await import('jspdf')
+      const autoTable = (await import('jspdf-autotable')).default
+      const { INDONESIA_HOLIDAYS_2026 } = await import('@/lib/constants')
+
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pageWidth = doc.internal.pageSize.getWidth()
+
+      const sDate = new Date(start)
+      const eDate = new Date(end)
+      const monthName = sDate.toLocaleDateString('id-ID', { month: 'long' }).toUpperCase()
+
+      let isFirstPage = true
+
+      for (const uid of uids) {
+        if (!isFirstPage) doc.addPage()
+        isFirstPage = false
+
+        // Get Intern Info from reports
+        const userReps = targetReps.filter(r => r.userId === uid)
+        const userAtts = attMap[uid] || []
+        const internName = userReps[0]?.internName || 'Unknown'
+        
+        const repWithMeta = userReps.find(r => r.supervisor || r.field)
+        const supervisor = repWithMeta?.supervisor || '-'
+        const bidang = repWithMeta?.field || '-'
+
+        const rows = []
+        let current = new Date(sDate)
+        let index = 1
+
+        while (current <= eDate) {
+          const dateStr = current.toISOString().split('T')[0]
+          const isWeekend = current.getDay() === 0 || current.getDay() === 6
+          const isHoliday = INDONESIA_HOLIDAYS_2026.includes(dateStr)
+          const isLibur = isWeekend || isHoliday
+          
+          const att = userAtts.find(a => a.date === dateStr)
+          const rep = userReps.find(r => r.date === dateStr || r.reportDate === dateStr)
+          
+          const inTime = att?.checkIn ? new Date(att.checkIn).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
+          const outTime = att?.checkOut ? new Date(att.checkOut).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
+          
+          rows.push({
+            no: index++,
+            tanggal: current.toLocaleDateString('id-ID', { day:'2-digit', month:'2-digit', year:'numeric' }),
+            jam_datang: isLibur ? '' : inTime,
+            jam_pulang: isLibur ? '' : outTime,
+            kegiatan: isLibur ? 'L I B U R' : (rep?.activity || rep?.content || ''),
+            isLibur
+          })
+          current.setDate(current.getDate() + 1)
+        }
+
+        // --- Header Box 1 (Title) ---
+        doc.setLineWidth(0.4)
+        doc.rect(10, 10, pageWidth - 20, 8) 
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(11)
+        doc.text('DAFTAR HADIR MAGANG', pageWidth / 2, 15.5, { align: 'center' })
+        
+        // --- Header Box 2 (Space) ---
+        doc.rect(10, 18, pageWidth - 20, 8)
+
+        // --- Header Box 3 (Metadata) ---
+        doc.rect(10, 26, pageWidth - 20, 21) // Metadata box
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(10)
+        doc.text('Nama', 12, 31)
+        doc.text('Pembimbing', 12, 38)
+        doc.text('Bidang', 12, 45)
+        
+        doc.setFont('helvetica', 'normal')
+        doc.text(`: ${internName}`, 38, 31)
+        doc.text(`: ${supervisor}`, 38, 38)
+        doc.text(`: ${bidang}`, 38, 45)
+        
+        // --- Month Decoration ---
+        const monthTextWidth = doc.getTextWidth(monthName)
+        doc.setFillColor(255, 255, 0)
+        doc.rect((pageWidth/2) - (monthTextWidth/2) - 10, 52, monthTextWidth + 20, 7, 'F')
+        doc.setDrawColor(0)
+        doc.rect((pageWidth/2) - (monthTextWidth/2) - 10, 52, monthTextWidth + 20, 7, 'D')
+        doc.setFont('helvetica', 'bold')
+        doc.text(monthName, pageWidth / 2, 57, { align: 'center' })
+
+        // --- Table Data ---
+        const tableData = rows.map(r => [
+          r.no + '.',
+          r.tanggal,
+          r.jam_datang,
+          r.jam_pulang,
+          r.kegiatan ? (r.isLibur ? r.kegiatan : `\u2022 ${r.kegiatan}`) : '', 
+          '', // TTD Peserta
+          ''  // TTD Pembimbing
+        ])
+
+        autoTable(doc, {
+          startY: 65,
+          head: [['NO.', 'TANGGAL /BULAN /TAHUN', 'JAM DATANG', 'JAM PULANG', 'KEGIATAN', 'TTD PESERTA MAGANG', 'TTD PEMBIMBING MAGANG']],
+          body: tableData,
+          theme: 'grid',
+          styles: { fontSize: 8.5, cellPadding: 4, textColor: 0, lineColor: [0, 0, 0], lineWidth: 0.3, valign: 'middle' },
+          headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center', lineWidth: 0.3 },
+          columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
+          didDrawCell: (data) => {
+            if (data.row.section === 'body') {
+                const rowIndex = data.row.index
+                if (rows[rowIndex].isLibur) {
+                    doc.setFillColor(255, 217, 102) // Yellowish orange
+                    if (data.column.index >= 2 && data.column.index <= 6) {
+                        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F')
+                        doc.setFont('helvetica', 'bold')
+                        if (data.column.index === 4) {
+                            doc.text('L I B U R', data.cell.x + (data.cell.width / 2), data.cell.y + (data.cell.height / 2) + 1.5, { align: 'center' })
+                        }
+                    }
+                }
+            }
+          },
+          margin: { left: 10, right: 10, bottom: 20 },
+        })
+      }
+
       const fileName = `Rekap_Laporan_${start}_to_${end}.pdf`
-      const url = `/api/reports/export?startDate=${start}&endDate=${end}&format=pdf&t=${Date.now()}`
-      
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      setTimeout(() => document.body.removeChild(a), 100)
+      doc.save(fileName)
 
       Swal.close()
       setExportModal(false)
-      Swal.fire({ icon: 'success', title: 'PDF Berhasil!', text: 'Laporan sedang diunduh.', timer: 2000, showConfirmButton: false })
+      Swal.fire({ icon: 'success', title: 'PDF Berhasil!', text: 'Laporan sukses diunduh.', timer: 2000, showConfirmButton: false })
     } catch (err) {
       console.error('PDF export error:', err)
       Swal.fire('Error', 'Gagal ekspor PDF.', 'error')
