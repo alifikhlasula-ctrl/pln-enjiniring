@@ -117,7 +117,7 @@ function isOffDay(dateString) {
   return INDONESIA_HOLIDAYS_2026.includes(dateString)
 }
 
-function CalendarTimesheet({ reports, onDayClick }) {
+function CalendarTimesheet({ reports, periodStart, onDayClick }) {
   const [currentDate, setCurrentDate] = useState(new Date())
 
   // Calendar UI setup for current month
@@ -176,7 +176,7 @@ function CalendarTimesheet({ reports, onDayClick }) {
           const rep = reports.find(r => (r.date || r.reportDate) === dtStr)
           
           const isSystemOff = isOffDay(dtStr)
-          const isPastLocked = dtStr < '2026-03-13'
+          const isPastLocked = periodStart ? (dtStr < periodStart) : (dtStr < '2026-03-13')
           const isFutureLocked = dtStr > todayStr
           const locked = isSystemOff || isPastLocked || isFutureLocked
           
@@ -234,7 +234,7 @@ function CalendarTimesheet({ reports, onDayClick }) {
 /* ── Reports Page ─────────────────────────────────────── */
 export default function ReportsPage() {
   const { user } = useAuth()
-  const [data, setData] = useState({ reports: [], stats: {} })
+  const [data, setData] = useState({ reports: [], stats: {}, periodStart: null })
   const [loading, setLoading] = useState(true)
   const [modalFor, setModalFor] = useState(null) // null | 'new' | existing object
   const [commentingId, setCommentingId] = useState(null)
@@ -372,7 +372,7 @@ export default function ReportsPage() {
         </div>
 
       {user?.role === 'INTERN' && viewMode === 'calendar' ? (
-         <CalendarTimesheet reports={data.reports} onDayClick={setModalFor} />
+         <CalendarTimesheet reports={data.reports} periodStart={data.periodStart} onDayClick={setModalFor} />
       ) : data.reports.length === 0 ? (
         <div className="card" style={{textAlign:'center',padding:'4rem 1rem'}}>
           <FileText size={48} style={{margin:'0 auto 1rem',opacity:0.2,color:'var(--text-muted)'}}/>

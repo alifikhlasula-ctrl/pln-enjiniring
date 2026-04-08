@@ -25,13 +25,19 @@ export async function GET(request) {
     reports.sort((a, b) => new Date(b.date) - new Date(a.date))
 
     // Calculate stats for intern view (simplified)
+    let periodStart = null
     const stats = userId ? {
       total: reports.length,
       tercatat: reports.filter(r => r.status === 'TERCATAT').length,
       draft: reports.filter(r => r.status === 'DRAFT').length
     } : {}
+    
+    if (userId) {
+       const internMeta = (data.interns || []).find(i => i.userId === userId)
+       periodStart = internMeta?.periodStart || null
+    }
 
-    return NextResponse.json({ reports, stats })
+    return NextResponse.json({ reports, stats, periodStart })
   } catch (err) {
     console.error('[GET /api/reports] Error:', err)
     return NextResponse.json({ error: 'Gagal mengambil laporan' }, { status: 500 })
@@ -52,6 +58,10 @@ export async function POST(request) {
 
     const data = await getDB()
     const intern = (data.interns || []).find(i => i.userId === userId)
+    
+    if (intern?.periodStart && date < intern.periodStart) {
+       return NextResponse.json({ error: `Anda tidak dapat mengisi laporan sebelum tanggal mulai magang (${intern.periodStart})` }, { status: 400 })
+    }
     
     if (!data.reports) data.reports = []
 
