@@ -107,7 +107,7 @@ export default function AdminReportsPage() {
       }
 
       // IMPORT JSPDF ON CLIENT SIDE
-      const jsPDFModule = await import('jspdf')
+      const jsPDFModule = await window.importJsPDF || await import('jspdf')
       const jsPDF = jsPDFModule.default ? jsPDFModule.default : jsPDFModule.jsPDF
       const autoTableModule = await import('jspdf-autotable')
       const autoTable = autoTableModule.default || autoTableModule
@@ -204,31 +204,61 @@ export default function AdminReportsPage() {
           ''  // TTD Pembimbing
         ])
 
-        autoTable(doc, {
-          startY: 65,
-          head: [['NO.', 'TANGGAL /BULAN /TAHUN', 'JAM DATANG', 'JAM PULANG', 'KEGIATAN', 'TTD PESERTA MAGANG', 'TTD PEMBIMBING MAGANG']],
-          body: tableData,
-          theme: 'grid',
-          styles: { fontSize: 8.5, cellPadding: 4, textColor: 0, lineColor: [0, 0, 0], lineWidth: 0.3, valign: 'middle' },
-          headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center', lineWidth: 0.3 },
-          columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
-          didDrawCell: (data) => {
-            if (data.row.section === 'body') {
-                const rowIndex = data.row.index
-                if (rows[rowIndex].isLibur) {
-                    doc.setFillColor(255, 217, 102) // Yellowish orange
-                    if (data.column.index >= 2 && data.column.index <= 6) {
-                        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F')
-                        doc.setFont('helvetica', 'bold')
-                        if (data.column.index === 4) {
-                            doc.text('L I B U R', data.cell.x + (data.cell.width / 2), data.cell.y + (data.cell.height / 2) + 1.5, { align: 'center' })
-                        }
-                    }
-                }
-            }
-          },
-          margin: { left: 10, right: 10, bottom: 20 },
-        })
+        if (typeof doc.autoTable === 'function') {
+           doc.autoTable({
+            startY: 65,
+            head: [['NO.', 'TANGGAL /BULAN /TAHUN', 'JAM DATANG', 'JAM PULANG', 'KEGIATAN', 'TTD PESERTA MAGANG', 'TTD PEMBIMBING MAGANG']],
+            body: tableData,
+            theme: 'grid',
+            styles: { fontSize: 8.5, cellPadding: 4, textColor: 0, lineColor: [0, 0, 0], lineWidth: 0.3, valign: 'middle' },
+            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center', lineWidth: 0.3 },
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
+            didDrawCell: (data) => {
+              if (data.row.section === 'body') {
+                  const rowIndex = data.row.index
+                  if (rows[rowIndex].isLibur) {
+                      doc.setFillColor(255, 217, 102) // Yellowish orange
+                      if (data.column.index >= 2 && data.column.index <= 6) {
+                          doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F')
+                          doc.setFont('helvetica', 'bold')
+                          if (data.column.index === 4) {
+                              doc.text('L I B U R', data.cell.x + (data.cell.width / 2), data.cell.y + (data.cell.height / 2) + 1.5, { align: 'center' })
+                          }
+                      }
+                  }
+              }
+            },
+            margin: { left: 10, right: 10, bottom: 20 },
+          })
+        } else if (typeof autoTable === 'function') {
+           autoTable(doc, {
+            startY: 65,
+            head: [['NO.', 'TANGGAL /BULAN /TAHUN', 'JAM DATANG', 'JAM PULANG', 'KEGIATAN', 'TTD PESERTA MAGANG', 'TTD PEMBIMBING MAGANG']],
+            body: tableData,
+            theme: 'grid',
+            styles: { fontSize: 8.5, cellPadding: 4, textColor: 0, lineColor: [0, 0, 0], lineWidth: 0.3, valign: 'middle' },
+            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center', lineWidth: 0.3 },
+            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
+            didDrawCell: (data) => {
+              if (data.row.section === 'body') {
+                  const rowIndex = data.row.index
+                  if (rows[rowIndex].isLibur) {
+                      doc.setFillColor(255, 217, 102) // Yellowish orange
+                      if (data.column.index >= 2 && data.column.index <= 6) {
+                          doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F')
+                          doc.setFont('helvetica', 'bold')
+                          if (data.column.index === 4) {
+                              doc.text('L I B U R', data.cell.x + (data.cell.width / 2), data.cell.y + (data.cell.height / 2) + 1.5, { align: 'center' })
+                          }
+                      }
+                  }
+              }
+            },
+            margin: { left: 10, right: 10, bottom: 20 },
+          })
+        } else {
+           throw new Error('autoTable is neither on doc nor a returned function')
+        }
       }
 
       const fileName = `Rekap_Laporan_${start}_to_${end}.pdf`
@@ -239,7 +269,7 @@ export default function AdminReportsPage() {
       Swal.fire({ icon: 'success', title: 'PDF Berhasil!', text: 'Laporan sukses diunduh.', timer: 2000, showConfirmButton: false })
     } catch (err) {
       console.error('PDF export error:', err)
-      Swal.fire('Error', 'Gagal ekspor PDF.', 'error')
+      Swal.fire('Error', `Gagal ekspor PDF: ${err.message}`, 'error')
     }
   }
 
