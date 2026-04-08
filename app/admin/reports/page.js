@@ -216,7 +216,7 @@ export default function AdminReportsPage() {
             didDrawCell: (data) => {
               if (data.row.section === 'body') {
                   const rowIndex = data.row.index
-                  if (rows[rowIndex].isLibur) {
+                  if (rows[rowIndex]?.isLibur) {
                       doc.setFillColor(255, 217, 102) // Yellowish orange
                       if (data.column.index >= 2 && data.column.index <= 6) {
                           doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F')
@@ -242,7 +242,7 @@ export default function AdminReportsPage() {
             didDrawCell: (data) => {
               if (data.row.section === 'body') {
                   const rowIndex = data.row.index
-                  if (rows[rowIndex].isLibur) {
+                  if (rows[rowIndex]?.isLibur) {
                       doc.setFillColor(255, 217, 102) // Yellowish orange
                       if (data.column.index >= 2 && data.column.index <= 6) {
                           doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F')
