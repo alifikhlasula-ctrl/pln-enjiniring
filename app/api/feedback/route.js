@@ -43,6 +43,8 @@ export async function POST(request) {
       sentimentScore: Number(sentimentScore),
       content,
       isRead: false,
+      status: 'OPEN',
+      replies: [],
       createdAt: new Date().toISOString()
     }
 
@@ -59,10 +61,10 @@ export async function POST(request) {
   }
 }
 
-/* ── PUT: Update or Reply Feedback (Admin) ── */
+/* ── PUT: Update or Reply Feedback (Admin & Intern) ── */
 export async function PUT(request) {
   try {
-    const { id, reply, adminName } = await request.json()
+    const { id, action, reply, senderRole, senderName } = await request.json()
     if (!id) return NextResponse.json({ error: 'ID Feedback wajib dilampirkan' }, { status: 400 })
 
     const data = await getDB()
@@ -70,18 +72,35 @@ export async function PUT(request) {
     
     if (idx === -1) return NextResponse.json({ error: 'Feedback tidak ditemukan' }, { status: 404 })
 
-    if (reply !== undefined) {
-      data.internFeedbacks[idx].adminReply = reply
-      data.internFeedbacks[idx].repliedBy = adminName || 'Admin HR'
-      data.internFeedbacks[idx].repliedAt = new Date().toISOString()
-      data.internFeedbacks[idx].isRead = true // Automatically mark read when replied
+    if (!data.internFeedbacks[idx].replies) data.internFeedbacks[idx].replies = []
+    if (!data.internFeedbacks[idx].status) data.internFeedbacks[idx].status = 'OPEN'
+
+    if (action === 'RESOLVE') {
+      data.internFeedbacks[idx].status = 'RESOLVED'
+    } else if (reply !== undefined) {
+      data.internFeedbacks[idx].replies.push({
+        id: 'rep' + Date.now(),
+        text: reply,
+        senderRole: senderRole || 'ADMIN_HR',
+        senderName: senderName || (senderRole === 'INTERN' ? 'Intern' : 'Admin HR'),
+        createdAt: new Date().toISOString()
+      })
+      
+      data.internFeedbacks[idx].isRead = false // Reset read status for the other party
+      
+      // Preserve legacy root reply fields just in case
+      if (senderRole === 'ADMIN_HR' && !data.internFeedbacks[idx].adminReply) {
+        data.internFeedbacks[idx].adminReply = reply
+        data.internFeedbacks[idx].repliedBy = senderName || 'Admin HR'
+        data.internFeedbacks[idx].repliedAt = new Date().toISOString()
+      }
     } else {
       data.internFeedbacks[idx].isRead = true
     }
     
     await saveDB(data)
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, feedback: data.internFeedbacks[idx] })
   } catch (err) {
     console.error('Update Feedback Error:', err)
     return NextResponse.json({ error: 'Gagal memperbarui status feedback' }, { status: 500 })

@@ -245,10 +245,10 @@ export default function SurveysPage() {
     if(!reply?.trim()) return Swal.fire('Oops','Balasan tidak boleh kosong!','warning')
     const res = await fetch('/api/feedback', {
       method: 'PUT', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ id, reply, adminName: user?.name })
+      body: JSON.stringify({ id, action: 'REPLY', reply, senderRole: user?.role, senderName: user?.name })
     })
     if(res.ok) {
-      Swal.fire('Terkirim', 'Tanggapan Anda telah dikirim ke intern terkait.', 'success')
+      Swal.fire('Terkirim', 'Balasan Anda telah dikirim.', 'success')
       setDraftReplies(p => { const np={...p}; delete np[id]; return np })
       fetchSurveys()
     } else {
@@ -257,13 +257,25 @@ export default function SurveysPage() {
     }
   }
 
+  const handleResolveSubmit = async (id) => {
+    const { isConfirmed } = await Swal.fire({title:'Tandai Selesai?',text:'Anda yakin kendala ini sudah terselesaikan sepenuhnya?',icon:'question',showCancelButton:true,confirmButtonColor:'var(--secondary)'})
+    if(!isConfirmed) return
+    await fetch('/api/feedback', { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, action: 'RESOLVE'}) })
+    fetchSurveys()
+  }
+
   const markRead = async id => {
-    await fetch('/api/feedback', { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) })
+    await fetch('/api/feedback', { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id, action: 'READ'}) })
     setFeedbacks(p => p.map(f => f.id === id ? {...f, isRead: true} : f))
   }
 
   const activeSurveys = surveys.filter(s=>s.active)
-  const unreadCount = feedbacks.filter(f=>!f.isRead).length
+  
+  const unreadCount = feedbacks.filter(f => {
+    if (f.isRead) return false
+    const lastSender = f.replies?.length ? f.replies[f.replies.length - 1].senderRole : 'INTERN'
+    return lastSender !== user?.role
+  }).length
 
   return (
     <div className="container" style={{paddingBottom:'3rem'}}>
@@ -445,20 +457,47 @@ export default function SurveysPage() {
                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.75rem'}}>
                        <span style={{fontSize:'1.25rem'}}>{['😡','🙁','😐','🙂','😍'][fb.sentimentScore-1]}</span>
                        <div>
-                         <p style={{fontWeight:800,fontSize:'0.9rem'}}>{fb.category}</p>
+                         <p style={{fontWeight:800,fontSize:'0.9rem'}}>{fb.category} {fb.status==='RESOLVED'&&<span style={{fontSize:'0.65rem',padding:'2px 8px',borderRadius:999,background:'var(--secondary-light)',color:'var(--secondary)',marginLeft:8}}>🔒 Selesai</span>}</p>
                          <p style={{fontSize:'0.7rem',color:'var(--text-muted)'}}>{fmtDate(fb.createdAt)}</p>
                        </div>
                      </div>
-                     <p style={{fontSize:'0.85rem',color:'var(--text-secondary)',marginBottom:fb.adminReply?'1rem':'0'}}>{fb.content}</p>
+                     <p style={{fontSize:'0.85rem',color:'var(--text-secondary)'}}>{fb.content}</p>
                      
-                     {fb.adminReply ? (
-                       <div style={{padding:'0.875rem',background:'var(--primary-light)',borderRadius:'var(--radius-md)',borderLeft:'3px solid var(--primary)'}}>
-                         <p style={{fontWeight:800,fontSize:'0.75rem',color:'var(--primary)',marginBottom:4}}>Tanggapan dari {fb.repliedBy||'Admin HR'} ({fmtDate(fb.repliedAt)}):</p>
-                         <p style={{fontSize:'0.8rem',color:'var(--text-primary)'}}>{fb.adminReply}</p>
-                       </div>
-                     ) : (
-                       <p style={{fontSize:'0.75rem',color:'var(--text-muted)',fontStyle:'italic',marginTop:'0.75rem'}}>Belum ada tanggapan dari HR.</p>
-                     )}
+                     <div style={{display:'flex',flexDirection:'column',gap:12,marginTop:'1.25rem'}}>
+                       {(fb.adminReply && (!fb.replies || fb.replies.length === 0)) && (
+                         <div style={{padding:'0.875rem',background:'var(--primary-light)',borderRadius:'var(--radius-md)',borderLeft:'3px solid var(--primary)'}}>
+                           <p style={{fontWeight:800,fontSize:'0.75rem',color:'var(--primary)',marginBottom:4}}>Tanggapan dari {fb.repliedBy||'Admin HR'} ({fmtDate(fb.repliedAt)}):</p>
+                           <p style={{fontSize:'0.8rem',color:'var(--text-primary)'}}>{fb.adminReply}</p>
+                         </div>
+                       )}
+                       {(fb.replies||[]).map(r => (
+                         <div key={r.id} style={{padding:'0.75rem 1rem', borderRadius:'var(--radius-md)', background:r.senderRole==='INTERN'?'var(--border)':'var(--primary-light)', alignSelf:r.senderRole==='INTERN'?'flex-end':'flex-start', maxWidth:'90%', borderLeft:r.senderRole==='ADMIN_HR'?'3px solid var(--primary)':'none', borderRight:r.senderRole==='INTERN'?'3px solid var(--text-muted)':'none'}}>
+                           <p style={{fontWeight:800,fontSize:'0.75rem',color:r.senderRole==='INTERN'?'var(--text-secondary)':'var(--primary)',marginBottom:4}}>{r.senderName} ({fmtDate(r.createdAt)}):</p>
+                           <p style={{fontSize:'0.8rem',color:'var(--text-primary)'}}>{r.text}</p>
+                         </div>
+                       ))}
+                     </div>
+                     
+                     <div style={{marginTop:'1.25rem', borderTop:'1px solid var(--border)', paddingTop:'1rem'}}>
+                       {!fb.isRead && ((fb.replies?.length ? fb.replies[fb.replies.length-1].senderRole : 'ADMIN_HR') !== user?.role) && (
+                         <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'0.75rem'}}>
+                           <button className="btn btn-secondary btn-sm" onClick={()=>markRead(fb.id)} style={{fontWeight:700,fontSize:'0.75rem'}}><CheckCircle2 size={14}/> Tandai Sudah Dibaca</button>
+                         </div>
+                       )}
+                       {fb.status === 'RESOLVED' ? (
+                         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'0.5rem',background:'var(--bg-card)',color:'var(--text-muted)',borderRadius:'var(--radius-full)',fontSize:'0.8rem',fontWeight:700}}>
+                           <CheckCircle2 size={16}/> Masalah ini telah ditandai Selesai
+                         </div>
+                       ) : (
+                         <div style={{display:'flex',gap:'0.5rem',flexDirection:'column'}}>
+                           <div style={{display:'flex',gap:'0.5rem'}}>
+                             <input className="input" placeholder="Tulis balasan..." style={{flex:1,fontSize:'0.8rem'}} value={draftReplies[fb.id]||''} onChange={e=>setDraftReplies(p=>({...p,[fb.id]:e.target.value}))}/>
+                             <button className="btn btn-primary" style={{padding:'0 1rem',fontWeight:700,fontSize:'0.8rem'}} onClick={()=>handleReplySubmit(fb.id)}>Kirim Balasan</button>
+                           </div>
+                           <button className="btn btn-secondary btn-sm" style={{alignSelf:'flex-end',color:'var(--secondary)',fontWeight:700}} onClick={()=>handleResolveSubmit(fb.id)}>✅ Tandai Selesai</button>
+                         </div>
+                       )}
+                     </div>
                    </div>
                  ))}
                </div>
@@ -477,31 +516,51 @@ export default function SurveysPage() {
                   <div style={{display:'flex',alignItems:'center',gap:12}}>
                     <div style={{fontSize:'1.8rem',background:'var(--bg-card)',borderRadius:'50%',width:48,height:48,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'var(--shadow-sm)'}}>{['😡','🙁','😐','🙂','😍'][fb.sentimentScore-1]}</div>
                     <div>
-                      <p style={{fontWeight:800,fontSize:'1rem',color:'var(--text-primary)'}}>{fb.category}</p>
+                      <p style={{fontWeight:800,fontSize:'1rem',color:'var(--text-primary)'}}>{fb.category} {fb.status==='RESOLVED'&&<span style={{fontSize:'0.65rem',padding:'2px 8px',borderRadius:999,background:'var(--secondary-light)',color:'var(--secondary)',marginLeft:8}}>🔒 Selesai</span>}</p>
                       <p style={{fontSize:'0.78rem',color:'var(--text-muted)',marginTop:2}}>Dari: <span style={{fontWeight:fb.isAnonymous?700:500}}>{fb.isAnonymous ? '🕵️‍♂️ Anonim' : fb.internName}</span> · {fmtDate(fb.createdAt)}</p>
                     </div>
                   </div>
-                  {!fb.isRead && <span style={{fontSize:'0.7rem',padding:'4px 10px',borderRadius:999,background:'var(--primary-light)',color:'var(--primary)',fontWeight:800,animation:'pulse_ 2s infinite'}}>Baru</span>}
+                  {(!fb.isRead && ((fb.replies?.length ? fb.replies[fb.replies.length-1].senderRole : 'INTERN') !== user?.role)) && <span style={{fontSize:'0.7rem',padding:'4px 10px',borderRadius:999,background:'var(--primary-light)',color:'var(--primary)',fontWeight:800,animation:'pulse_ 2s infinite'}}>Pesan Baru</span>}
                 </div>
-                <div style={{padding:'1rem',background:'var(--bg-card)',borderRadius:'var(--radius-md)',fontSize:'0.875rem',color:'var(--text-secondary)',lineHeight:1.6,whiteSpace:'pre-wrap',marginBottom:'0.75rem',border:'1px solid var(--border)'}}>
+                <div style={{padding:'1rem',background:'var(--bg-card)',borderRadius:'var(--radius-md)',fontSize:'0.875rem',color:'var(--text-secondary)',lineHeight:1.6,whiteSpace:'pre-wrap',border:'1px solid var(--border)'}}>
                   {fb.content}
                 </div>
-                {!fb.isRead && !fb.adminReply && (
-                  <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'0.75rem'}}>
-                    <button className="btn btn-secondary btn-sm" onClick={()=>markRead(fb.id)} style={{fontWeight:700,fontSize:'0.75rem'}}><CheckCircle2 size={14}/> Tandai Sudah Dibaca</button>
-                  </div>
-                )}
-                {fb.adminReply ? (
-                  <div style={{marginTop:'0.5rem',padding:'0.875rem',background:'var(--primary-light)',borderRadius:'var(--radius-md)',borderLeft:'3px solid var(--primary)'}}>
-                    <p style={{fontWeight:800,fontSize:'0.8rem',color:'var(--primary)',marginBottom:4}}>Balasan Anda ({fb.repliedBy}):</p>
-                    <p style={{fontSize:'0.85rem',color:'var(--text-primary)'}}>{fb.adminReply}</p>
-                  </div>
-                ) : (
-                  <div style={{marginTop:'0.5rem',display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
-                    <input className="input" placeholder="Tulis balasan untuk intern..." style={{flex:1,minWidth:200,fontSize:'0.8rem'}} value={draftReplies[fb.id]||''} onChange={e=>setDraftReplies(p=>({...p,[fb.id]:e.target.value}))}/>
-                    <button className="btn btn-primary" style={{padding:'0 1rem',fontWeight:700,fontSize:'0.8rem'}} onClick={()=>handleReplySubmit(fb.id)}>Kirim Balasan</button>
-                  </div>
-                )}
+                
+                <div style={{marginTop:'1.25rem',display:'flex',flexDirection:'column',gap:12}}>
+                  {(fb.adminReply && (!fb.replies || fb.replies.length === 0)) && (
+                    <div style={{padding:'0.875rem',background:'var(--primary-light)',borderRadius:'var(--radius-md)',borderLeft:'3px solid var(--primary)'}}>
+                      <p style={{fontWeight:800,fontSize:'0.75rem',color:'var(--primary)',marginBottom:4}}>Tanggapan dari {fb.repliedBy||'Admin HR'} ({fmtDate(fb.repliedAt)}):</p>
+                      <p style={{fontSize:'0.8rem',color:'var(--text-primary)'}}>{fb.adminReply}</p>
+                    </div>
+                  )}
+                  {(fb.replies||[]).map(r => (
+                    <div key={r.id} style={{padding:'0.75rem 1rem', borderRadius:'var(--radius-md)', background:r.senderRole==='ADMIN_HR'?'var(--primary-light)':'var(--border)', alignSelf:r.senderRole==='ADMIN_HR'?'flex-end':'flex-start', maxWidth:'90%', borderLeft:r.senderRole==='INTERN'?'3px solid var(--text-muted)':'none', borderRight:r.senderRole==='ADMIN_HR'?'3px solid var(--primary)':'none'}}>
+                      <p style={{fontWeight:800,fontSize:'0.75rem',color:r.senderRole==='ADMIN_HR'?'var(--primary)':'var(--text-secondary)',marginBottom:4}}>{r.senderName} ({fmtDate(r.createdAt)}):</p>
+                      <p style={{fontSize:'0.8rem',color:'var(--text-primary)'}}>{r.text}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                <div style={{marginTop:'1.25rem', borderTop:'1px solid var(--border)', paddingTop:'1rem'}}>
+                  {!fb.isRead && ((fb.replies?.length ? fb.replies[fb.replies.length-1].senderRole : 'INTERN') !== user?.role) && (
+                    <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'0.75rem'}}>
+                      <button className="btn btn-secondary btn-sm" onClick={()=>markRead(fb.id)} style={{fontWeight:700,fontSize:'0.75rem'}}><CheckCircle2 size={14}/> Tandai Sudah Dibaca</button>
+                    </div>
+                  )}
+                  {fb.status === 'RESOLVED' ? (
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'0.5rem',background:'var(--bg-card)',color:'var(--text-muted)',borderRadius:'var(--radius-full)',fontSize:'0.8rem',fontWeight:700}}>
+                      <CheckCircle2 size={16}/> Masalah ini telah ditandai Selesai
+                    </div>
+                  ) : (
+                    <div style={{display:'flex',gap:'0.5rem',flexDirection:'column'}}>
+                      <div style={{display:'flex',gap:'0.5rem'}}>
+                        <input className="input" placeholder="Tulis balasan untuk intern..." style={{flex:1,fontSize:'0.8rem'}} value={draftReplies[fb.id]||''} onChange={e=>setDraftReplies(p=>({...p,[fb.id]:e.target.value}))}/>
+                        <button className="btn btn-primary" style={{padding:'0 1rem',fontWeight:700,fontSize:'0.8rem'}} onClick={()=>handleReplySubmit(fb.id)}>Kirim Balasan</button>
+                      </div>
+                      <button className="btn btn-secondary btn-sm" style={{alignSelf:'flex-end',color:'var(--secondary)',fontWeight:700}} onClick={()=>handleResolveSubmit(fb.id)}>✅ Tandai Selesai</button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))
            }
