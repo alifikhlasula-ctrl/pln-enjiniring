@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import Swal from 'sweetalert2'
-
+import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
 const fmtDate = dt => dt ? new Date(dt).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-'
 
 export default function AdminReportsPage() {
@@ -107,9 +107,10 @@ export default function AdminReportsPage() {
       }
 
       // IMPORT JSPDF ON CLIENT SIDE
-      const { jsPDF } = await import('jspdf')
-      const autoTable = (await import('jspdf-autotable')).default
-      const { INDONESIA_HOLIDAYS_2026 } = await import('@/lib/constants')
+      const jsPDFModule = await import('jspdf')
+      const jsPDF = jsPDFModule.default ? jsPDFModule.default : jsPDFModule.jsPDF
+      const autoTableModule = await import('jspdf-autotable')
+      const autoTable = autoTableModule.default || autoTableModule
 
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       const pageWidth = doc.internal.pageSize.getWidth()
