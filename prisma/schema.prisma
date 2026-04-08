@@ -73,7 +73,7 @@ model Intern {
   fromOnboarding     String?
   deletedAt          DateTime?
 
-  attendances        AttendanceLog[]
+
 
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
