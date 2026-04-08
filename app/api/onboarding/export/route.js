@@ -7,18 +7,21 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const data = await getDB()
-    const requests = data.onboardingRequests || []
+    const requests = data.onboarding || []
 
     const wsData = requests.map(r => ({
-      'Tanggal Pengajuan':   r.createdAt ? new Date(r.createdAt).toLocaleDateString('id-ID') : '-',
-      'Nama Pemohon':        r.requestedBy || '-',
-      'Unit/Divisi':         r.targetUnit || '-',
-      'Jumlah Peserta':      r.count || 0,
-      'Posisi/Bidang':      r.position || '-',
-      'Mulai':               r.startDate || '-',
-      'Selesai':             r.endDate || '-',
+      'Tanggal Pengajuan':   r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('id-ID') : '-',
+      'Nama Pemohon':        r.applicant?.name || '-',
+      'Email':               r.applicant?.email || '-',
+      'NIM / NIS':           r.applicant?.nim_nis || '-',
+      'Universitas/Sekolah': r.applicant?.university || '-',
+      'Fakultas/Jurusan':    r.applicant?.major || '-',
+      'Jenjang':             r.applicant?.jenjang || '-',
+      'Bidang':              r.applicant?.bidang || '-',
+      'Mulai':               r.applicant?.periodStart || '-',
+      'Selesai':             r.applicant?.periodEnd || '-',
       'Status':              r.status || 'PENDING',
-      'Catatan':             r.notes || '-'
+      'Catatan':             r.catatan || '-'
     }))
 
     const ws = XLSX.utils.json_to_sheet(wsData)
