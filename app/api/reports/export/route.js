@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { getDB, db } from '@/lib/db'
 import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
 
@@ -19,7 +20,6 @@ export async function GET(request) {
     // 1. Fetch Data
     const data = await getDB()
     const allReports = data.reports || []
-    const allAttendances = data.attendances || []
     
     let targetUserId = userId
     if (internId && !targetUserId) {
@@ -31,8 +31,9 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User ID tidak ditemukan' }, { status: 400 })
     }
 
-    const intern = (data.interns || []).find(i => i.userId === targetUserId)
-    const internName = intern?.name || 'Unknown'
+    const internMeta = (data.interns || []).find(i => i.userId === targetUserId)
+    const internName = internMeta?.name || 'Unknown'
+    const allAttendances = internMeta ? await prisma.attendanceLog.findMany({ where: { internId: internMeta.id } }) : []
     
     // 2. Filter Reports & Attendances for this user/range
     const targetReps = allReports.filter(r => 
@@ -44,8 +45,8 @@ export async function GET(request) {
     // Point 1: Get Supervisor and Field from the reports themselves
     // If multiple reports, take from the first one that has data, otherwise fallback to intern profile
     const reportWithMetadata = targetReps.find(r => r.supervisor || r.field)
-    const supervisor = reportWithMetadata?.supervisor || intern?.supervisorName || '-'
-    const bidang     = reportWithMetadata?.field || intern?.bidang || '-'
+    const supervisor = reportWithMetadata?.supervisor || internMeta?.supervisorName || '-'
+    const bidang     = reportWithMetadata?.field || internMeta?.bidang || '-'
 
     // 3. Prepare Date Range Data
     const rows = []
@@ -64,12 +65,12 @@ export async function GET(request) {
       const isHoliday = INDONESIA_HOLIDAYS_2026.includes(dateStr)
       const isLibur   = isWeekend || isHoliday
       
-      const att = allAttendances.find(a => a.userId === targetUserId && a.date === dateStr)
+      const att = allAttendances.find(a => a.date === dateStr)
       const rep = targetReps.find(r => r.date === dateStr || r.reportDate === dateStr)
       
       // Point 2: Jam Datang and Jam Pulang strictly follow attendance data
-      const inTime  = att?.checkIn ? new Date(att.checkIn).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
-      const outTime = att?.checkOut ? new Date(att.checkOut).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
+      const inTime  = att?.checkIn ? new Date(att.checkIn).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
+      const outTime = att?.checkOut ? new Date(att.checkOut).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
       
       rows.push({
         no: index++,
@@ -111,7 +112,9 @@ export async function GET(request) {
     doc.text(`: ${bidang}`, 38, 45)
     
     // --- Month Decoration ---
-    const monthName = start.toLocaleDateString('id-ID', { month: 'long' }).toUpperCase()
+    const sFmt = start.toLocaleDateString('id-ID', {day: '2-digit', month: 'long', year: 'numeric'}).toUpperCase()
+    const eFmt = end.toLocaleDateString('id-ID', {day: '2-digit', month: 'long', year: 'numeric'}).toUpperCase()
+    const monthName = `${sFmt} - ${eFmt}`
     const monthTextWidth = doc.getTextWidth(monthName)
     doc.setFillColor(255, 255, 0) // Bright Yellow
     doc.rect((pageWidth/2) - (monthTextWidth/2) - 10, 52, monthTextWidth + 20, 7, 'F')
@@ -152,7 +155,7 @@ export async function GET(request) {
         lineWidth: 0.3,
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 10 },
+        0: { halign: 'center', cellWidth: 12 },
         1: { halign: 'center', cellWidth: 28 },
         2: { halign: 'center', cellWidth: 22 },
         3: { halign: 'center', cellWidth: 22 },

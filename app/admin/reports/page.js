@@ -117,7 +117,9 @@ export default function AdminReportsPage() {
 
       const sDate = new Date(start)
       const eDate = new Date(end)
-      const monthName = sDate.toLocaleDateString('id-ID', { month: 'long' }).toUpperCase()
+      const sFmt = sDate.toLocaleDateString('id-ID', {day: '2-digit', month: 'long', year: 'numeric'}).toUpperCase()
+      const eFmt = eDate.toLocaleDateString('id-ID', {day: '2-digit', month: 'long', year: 'numeric'}).toUpperCase()
+      const monthName = `${sFmt} - ${eFmt}`
 
       let isFirstPage = true
 
@@ -147,8 +149,8 @@ export default function AdminReportsPage() {
           const att = userAtts.find(a => a.date === dateStr)
           const rep = userReps.find(r => r.date === dateStr || r.reportDate === dateStr)
           
-          const inTime = att?.checkIn ? new Date(att.checkIn).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
-          const outTime = att?.checkOut ? new Date(att.checkOut).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
+          const inTime = att?.checkIn ? new Date(att.checkIn).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
+          const outTime = att?.checkOut ? new Date(att.checkOut).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour:'2-digit', minute:'2-digit' }).replace(':', '.') : '-'
           
           rows.push({
             no: index++,
@@ -212,7 +214,7 @@ export default function AdminReportsPage() {
             theme: 'grid',
             styles: { fontSize: 8.5, cellPadding: 4, textColor: 0, lineColor: [0, 0, 0], lineWidth: 0.3, valign: 'middle' },
             headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center', lineWidth: 0.3 },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
+            columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
             didDrawCell: (data) => {
               if (data.row.section === 'body') {
                   const rowIndex = data.row.index
@@ -238,7 +240,7 @@ export default function AdminReportsPage() {
             theme: 'grid',
             styles: { fontSize: 8.5, cellPadding: 4, textColor: 0, lineColor: [0, 0, 0], lineWidth: 0.3, valign: 'middle' },
             headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', halign: 'center', lineWidth: 0.3 },
-            columnStyles: { 0: { halign: 'center', cellWidth: 10 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
+            columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { halign: 'center', cellWidth: 28 }, 2: { halign: 'center', cellWidth: 22 }, 3: { halign: 'center', cellWidth: 22 }, 4: { halign: 'left' }, 5: { halign: 'center', cellWidth: 25 }, 6: { halign: 'center', cellWidth: 25 } },
             didDrawCell: (data) => {
               if (data.row.section === 'body') {
                   const rowIndex = data.row.index
