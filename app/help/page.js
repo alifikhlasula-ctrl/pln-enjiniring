@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { BookOpen, MapPin, Camera, FileText, Send, Lock, HelpCircle, Printer, Download, Clock } from 'lucide-react'
+import { BookOpen, MapPin, Camera, FileText, Send, Lock, HelpCircle, Printer, Download, Clock, User } from 'lucide-react'
 
 export default function HelpCenterPage() {
   const [activeAccordion, setActiveAccordion] = useState(null)
@@ -14,7 +14,10 @@ export default function HelpCenterPage() {
   }
 
   return (
-    <div className="container" style={{ paddingBottom: '4rem' }}>
+    <div className="container" style={{ paddingBottom: '4rem', paddingTop: '1.5rem' }}>
+      <a href="/" className="print-hide" style={{ display: 'inline-block', marginBottom: '1.5rem', color: 'var(--primary)', fontWeight: 800, textDecoration: 'none' }}>
+        ⟵ Kembali ke Beranda / Login
+      </a>
       {/* ── HEADER ── */}
       <div className="print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <div>
@@ -53,13 +56,37 @@ export default function HelpCenterPage() {
           </div>
         </div>
 
+        {/* SECTION 1.5 - Profil */}
+        <div className="card guide-card" style={{ padding: '2rem', pageBreakInside: 'avoid', borderLeft: '4px solid var(--primary)' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: '1.2rem', marginBottom: '1rem' }}>
+            <User size={20} color="var(--primary)" /> 2. Melengkapi Profil (Pertama Kali Login)
+          </h2>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <p>Setelah Anda berhasil mengubah password bawaan pada halaman Login, Anda <strong>diwajibkan</strong> melengkapi data diri agar proses absensi dan pembayaran uang saku (allowance) dapat disetujui HR.</p>
+            <div className="print-hide" style={{ textAlign: 'center', margin: '0.5rem 0' }}>
+              <img src="/help_profil.png" alt="Tampilan Profil" style={{ maxWidth: '100%', height: 'auto', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', border: '1px solid var(--border)' }} />
+            </div>
+            <ul style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <li>Navigasi ke menu <strong>Profil Saya</strong>.</li>
+              <li>Unggah foto profil yang jelas dengan menekan ikon lingkaran foto di bagian atas. Foto yang jelas akan membantu mempermudah pengenalan wajah saat Anda Check In nanti.</li>
+              <li>Isi informasi perbankan Anda (Nama Bank dan Nomor Rekening) dengan valid agar pembayaran uang saku (Allowance) tidak terkendala.</li>
+              <li>Klik <strong>Simpan Perubahan</strong>.</li>
+            </ul>
+          </div>
+        </div>
+
         {/* SECTION 2 */}
         <div className="card guide-card" style={{ padding: '2rem', pageBreakInside: 'avoid', borderLeft: '4px solid var(--primary)' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: '1.2rem', marginBottom: '1rem' }}>
-            <Camera size={20} color="var(--primary)" /> 2. Melakukan Absensi Harian (Wajah & GPS)
+            <Camera size={20} color="var(--primary)" /> 3. Melakukan Absensi Harian (Wajah & GPS)
           </h2>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             <p style={{ marginBottom: '0.5rem' }}>Kehadiran dicatat menggunakan teknologi pengenal wajah berbasis AI yang memerlukan <strong>Izin Kamera</strong> dan <strong>Izin Lokasi (GPS)</strong>.</p>
+            
+            <div className="print-hide" style={{ textAlign: 'center', margin: '1rem 0' }}>
+              <img src="/help_absensi.png" alt="Tampilan Absensi" style={{ maxWidth: '600px', width: '100%', height: 'auto', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', border: '1px solid var(--border)' }} />
+            </div>
+
             <ol style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
               <li>Navigasi ke menu <strong>Absensi</strong>.</li>
               <li>Klik tombol <strong>Check In</strong> (Masuk) atau <strong>Check Out</strong> (Pulang).</li>
@@ -67,9 +94,16 @@ export default function HelpCenterPage() {
               <li>Posisikan wajah Anda pada lingkaran panduan. Jika latar belakang terlalu gelap, AI mungkin tidak mendeteksi wajah Anda.</li>
               <li>Tunggu hingga kotak hijau bertuliskan "Wajah Terdeteksi" muncul, lalu klik "Ambil Foto".</li>
             </ol>
-            <div style={{ background: 'var(--warning-light)', padding: '1rem', borderRadius: 'var(--radius-md)', color: 'var(--warning)' }}>
-              <strong style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}><Clock size={16}/> Klaim Susulan</strong>
-              Jika Anda terlupa melakukan absen, Anda dapat menekan tombol <strong>Klaim Absensi Terlewat</strong> di halaman Absensi, yang tersedia <strong>Maksimal H-1</strong>. Susulan tidak bisa dikerjakan di akhir pekan atau sebelum tanggal masa mulai magang Anda.
+            <div style={{ background: 'var(--warning-light)', padding: '1rem', borderRadius: 'var(--radius-md)', color: 'var(--warning)', marginTop: '1.5rem' }}>
+              <strong style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}><Clock size={16}/> Tata Cara Pengisian Absensi Susulan / Terlewat</strong>
+              <p style={{ marginTop: 6, marginBottom: 8, color: '#854d0e', fontSize: '0.85rem' }}>Jika Anda terlupa melakukan absen pada hari sebelumnya (Misal karena dinas luar atau ponsel mati), segera ikuti langkah ini <strong>(Maksimal H-1)</strong>:</p>
+              <ol style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', color: '#854d0e', fontSize: '0.85rem' }}>
+                <li>Gulir ke bagian bawah pada halaman Absensi.</li>
+                <li>Klik kalender atau tombol <strong>Klaim Absensi Terlewat</strong>.</li>
+                <li>Pilih tanggal absen yang terlewat. Anda tidak bisa mengklaim absensi untuk tanggal sebelum masa resmi magang Anda dimulai (Tanggal di kalender hantu akan memudar).</li>
+                <li>Masukkan **Waktu Masuk & Keluar** serta **Alasan** kuat mengapa Anda lupa absen.</li>
+                <li>Klik tombol Kirim. Klaim akan berstatus Menunggu dan perlu disetujui secara manual oleh HR.</li>
+              </ol>
             </div>
           </div>
         </div>
@@ -77,7 +111,7 @@ export default function HelpCenterPage() {
         {/* SECTION 3 */}
         <div className="card guide-card" style={{ padding: '2rem', pageBreakInside: 'avoid', borderLeft: '4px solid var(--primary)' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: '1.2rem', marginBottom: '1rem' }}>
-            <FileText size={20} color="var(--primary)" /> 3. Mengisi Laporan Harian
+            <FileText size={20} color="var(--primary)" /> 4. Mengisi Laporan Harian
           </h2>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             <p style={{ marginBottom: '0.5rem' }}>Anda diwajibkan menuliskan Ringkasan Kegiatan Harian (Logbook) pada setiap hari aktif kerja.</p>
@@ -93,7 +127,7 @@ export default function HelpCenterPage() {
         {/* SECTION 4 */}
         <div className="card guide-card" style={{ padding: '2rem', pageBreakInside: 'avoid', borderLeft: '4px solid var(--primary)' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: '1.2rem', marginBottom: '1rem' }}>
-            <Send size={20} color="var(--primary)" /> 4. Mengirimkan Feedback (Kendala Operasional)
+            <Send size={20} color="var(--primary)" /> 5. Mengirimkan Feedback (Kendala Operasional)
           </h2>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             <p style={{ marginBottom: '0.5rem' }}>Jika Anda menemukan kendala saat magang (seperti fasilitas, perizinan khusus, usulan), Anda dapat langsung menceritakannya ke Tim Admin HR.</p>

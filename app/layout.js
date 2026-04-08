@@ -112,7 +112,8 @@ function LayoutContent({ children }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const isLandingPage = pathname === '/' || pathname.startsWith('/onboarding')
+  const isLandingPage = pathname === '/' || pathname.startsWith('/onboarding') || (!loading && !user && pathname === '/help')
+
 
   // Detect mobile breakpoint
   useEffect(() => {
@@ -129,7 +130,7 @@ function LayoutContent({ children }) {
 
   // ── FIX: Redirection must be inside useEffect to avoid render-phase updates ──
   useEffect(() => {
-    if (!loading && !user && !isLandingPage) {
+    if (!loading && !user && !isLandingPage && pathname !== '/help') {
       router.push('/')
       return
     }
@@ -188,7 +189,7 @@ function LayoutContent({ children }) {
   )
 
   // Redirecting handled in useEffect, but we must not render Protected UI if no user
-  if (!user && !isLandingPage && !pathname.startsWith('/onboarding')) {
+  if (!user && !isLandingPage && !pathname.startsWith('/onboarding') && pathname !== '/help') {
     return null
   }
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/app/layout'
-import { Shield, Lock, Mail, Loader2, Sparkles, ArrowRight, Moon, Sun, Eye, EyeOff } from 'lucide-react'
+import { Shield, Lock, Mail, Loader2, Sparkles, ArrowRight, Moon, Sun, Eye, EyeOff, BookOpen } from 'lucide-react'
 import Swal from 'sweetalert2'
 
 export default function LoginPage() {
@@ -327,9 +327,12 @@ export default function LoginPage() {
               </div>
 
               <div className="auth-onboarding-block">
-                <p>Belum terdaftar sebagai Intern?</p>
+                <p>Maba / Belum terdaftar?</p>
                 <a href="/onboarding" className="auth-onboarding-btn">
-                  <Sparkles size={16} /> Daftar / Onboarding Magang
+                  <Sparkles size={16} /> Formulir Pendaftaran (Onboarding)
+                </a>
+                <a href="/help" className="auth-onboarding-btn" style={{marginTop: '0.75rem', background: 'var(--primary-light)', border: '1px solid var(--primary)', color: 'var(--primary)', borderColor: 'var(--primary)'}}>
+                  <BookOpen size={16} /> Baca Buku Panduan Sistem
                 </a>
               </div>
             </div>
