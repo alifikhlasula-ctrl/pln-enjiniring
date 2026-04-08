@@ -83,7 +83,7 @@ model Intern {
 model AttendanceLog {
   id            String   @id @default(cuid())
   internId      String
-  intern        Intern   @relation(fields: [internId], references: [id], onDelete: Cascade)
+
 
   date          String
   checkIn       DateTime?
