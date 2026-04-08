@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, FileText, Award, LogOut,
   Clock, History, Menu, X, User as UserIcon, Sun, Moon,
   ChevronRight, Bell, BarChart3, CalendarDays, MessageSquare, FileSpreadsheet, Banknote,
-  Megaphone
+  Megaphone, BookOpen
 } from 'lucide-react'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import '@/app/globals.css'
@@ -154,6 +154,7 @@ function LayoutContent({ children }) {
         { name: 'Kalender Admin', href: '/admin/events',      icon: CalendarDays },
         { name: 'Analytics',    href: '/analytics',       icon: BarChart3 },
         { name: 'Survei',       href: '/surveys',         icon: MessageSquare },
+        { name: 'Panduan',      href: '/help',            icon: BookOpen },
         { name: 'Audit Log',    href: '/logs',            icon: History },
       ]
     },
@@ -168,6 +169,7 @@ function LayoutContent({ children }) {
         { name: 'Laporan',      href: '/reports',     icon: FileText },
         { name: 'Allowance',    href: '/payroll',     icon: Banknote },
         { name: 'Survei',       href: '/surveys',     icon: MessageSquare },
+        { name: 'Panduan',      href: '/help',        icon: BookOpen },
       ]
     }
   }
