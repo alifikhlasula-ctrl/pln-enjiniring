@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── JSON Store (replaces database.json on serverless) ───
+model JsonStore {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Core Auth & Profiles ─────────────────────────────────
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  password           String
+  name               String
+  role               String   @default("INTERN")
+  mustChangePassword Boolean  @default(false)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Intern {
+  id                 String       @id @default(cuid())
+  userId             String       @unique
+  name               String
+  nim_nis            String
+  email              String?
+  gender             String       @default("Laki-laki")
+  university         String
+  jenjang            String       @default("S1")
+  major              String
+
+  status             String       @default("ACTIVE")
+  bidang             String
+  wilayah            String?
+  tahun              String?
+  periodStart        String?
+  periodEnd          String?
+  duration           String?
+
+  phone              String?
+  nik                String?
+  birthDate          String?
+  address            String?
+
+  bankName           String?
+  bankAccount        String?
+  bankAccountName    String?
+
+  supervisorName     String?
+  supervisorTitle    String?
+
+  suratPenerimaan          String?
+  tanggalSuratPenerimaan   String?
+  spk                      String?
+  tanggalSPK               String?
+  amandemen                String?
+  tanggalAmandemen         String?
+  suratSelesai             String?
+  tanggalSuratSelesai      String?
+
+  fromImport         String?
+  fromOnboarding     String?
+  deletedAt          DateTime?
+
+  attendances        AttendanceLog[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ─── Attendance (migrated from SQLite) ────────────────────
+model AttendanceLog {
+  id            String   @id @default(cuid())
+  internId      String
+  intern        Intern   @relation(fields: [internId], references: [id], onDelete: Cascade)
+
+  date          String
+  checkIn       DateTime?
+  checkOut      DateTime?
+  status        String   @default("PRESENT")
+
+  checkInLoc    String?
+  checkOutLoc   String?
+  faceInBase64  String?  @db.Text
+  faceOutBase64 String?  @db.Text
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([internId, date])
+}
+
+// ─── Audit Logs ───────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   Json?
+  timestamp DateTime @default(now())
+}

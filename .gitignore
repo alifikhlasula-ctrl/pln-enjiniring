@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database (local only)
+database.json
+prisma/dev.db
+prisma/dev.db-journal
+prisma/attendance.db
+prisma/attendance.db-journal
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+
+# Uploads (local only)
+public/uploads/
+
+# Generated
+lib/generated/
+
+# Credentials export
+public/Kredensial_Login_Intern.xlsx
+
+# Scripts (dev only)
+scripts/
