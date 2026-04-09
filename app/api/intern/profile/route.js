@@ -42,9 +42,15 @@ export async function POST(request) {
       updatedIntern = {
         ...data.interns[internIndex],
         ...profileData,
-        status: data.interns[internIndex].status, // Protect status
-        userId: data.interns[internIndex].userId, // Protect relation
-        id: data.interns[internIndex].id,         // Protect PK
+        // Protect vital administrative fields from being wiped by the intern frontend
+        status: data.interns[internIndex].status,
+        userId: data.interns[internIndex].userId,
+        id: data.interns[internIndex].id,
+        periodStart: data.interns[internIndex].periodStart || profileData.periodStart,
+        periodEnd: data.interns[internIndex].periodEnd || profileData.periodEnd,
+        duration: data.interns[internIndex].duration || profileData.duration,
+        bidang: data.interns[internIndex].bidang || profileData.bidang,
+        wilayah: data.interns[internIndex].wilayah || profileData.wilayah,
       }
       data.interns[internIndex] = updatedIntern
     } else {
