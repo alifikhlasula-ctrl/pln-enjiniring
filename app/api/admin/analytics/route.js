@@ -5,8 +5,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const interns = await db.getInterns(false)
-    const data = await getDB()
+    const data = await getDB('FULL')
+    let interns = data.interns || []
+    interns = interns.filter(i => !i.deletedAt)
+    // Merge user email for completeness if needed, although analytics only needs demographic fields which are in intern object.
     const attendances = data.attendances || []
     const reports = data.reports || []
     const settings = data.settings || {}
