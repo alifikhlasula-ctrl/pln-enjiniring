@@ -178,14 +178,16 @@ function CalendarTimesheet({ reports, periodStart, onDayClick }) {
           const isSystemOff = isOffDay(dtStr)
           const isPastLocked = periodStart ? (dtStr < periodStart) : (dtStr < '2026-03-13')
           const isFutureLocked = dtStr > todayStr
-          const isFilled = !!rep
-          const locked = isSystemOff || isPastLocked || isFutureLocked || isFilled
+          
+          // Laporan yang "DRAFT" tidak boleh dikunci, sehingga Intern masih bisa edit
+          const isTercatat = rep && rep.status !== 'DRAFT'
+          const locked = isSystemOff || isPastLocked || isFutureLocked || isTercatat
           
           let lockedLabel = ''
           if (isSystemOff) lockedLabel = 'Off Day'
           else if (isFutureLocked) lockedLabel = 'Belum/Terkunci'
           else if (isPastLocked) lockedLabel = 'Terkunci'
-          else if (isFilled) lockedLabel = 'Selesai (Terkunci)'
+          else if (isTercatat) lockedLabel = 'Selesai (Terkunci)'
 
           return (
             <div 
@@ -213,7 +215,11 @@ function CalendarTimesheet({ reports, periodStart, onDayClick }) {
                   {dt.getDate()} {isMobile && dt.toLocaleDateString('id-ID', { weekday: 'short' })}
                 </span>
                 {rep ? (
-                   <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'var(--secondary-light)', color: 'var(--secondary)', fontWeight: 800 }}>Tercatat</span>
+                   rep.status === 'DRAFT' ? (
+                     <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: 800 }}>Draft (Edit)</span>
+                   ) : (
+                     <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'var(--secondary-light)', color: 'var(--secondary)', fontWeight: 800 }}>Tercatat</span>
+                   )
                 ) : !locked && (
                    <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 800 }}>+ Isi</span>
                 )}
@@ -249,7 +255,7 @@ export default function ReportsPage() {
   const fetchReports = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/reports?userId=${user.id}&role=${user.role}`)
+      const res = await fetch(`/api/reports?userId=${user.id}&role=${user.role}&_t=${Date.now()}`, { cache: 'no-store' })
       const json = await res.json()
       setData(json)
     } catch(e) { console.error(e) }

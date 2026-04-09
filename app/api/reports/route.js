@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getDB, saveDB, db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 /* ── GET: Ambil Laporan Harian ────────────────────────── */
 export async function GET(request) {
   try {
