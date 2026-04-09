@@ -16,10 +16,15 @@ export async function POST(request) {
       // Include intern status if INTERN role (for UI locking)
       if (userMatched.role === 'INTERN') {
         const intern = (data.interns || []).find(i => i.userId === userMatched.id && !i.deletedAt)
-        if (intern) {
-          userSafe.internStatus = intern.status
-          userSafe.internId = intern.id
+        if (!intern) {
+          console.warn(`[AUTH_LOG] Rejected login for ${email}: Intern profile deleted or disabled.`)
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Akun Anda telah dinonaktifkan atau dihapus oleh Administrator.' 
+          }, { status: 403 })
         }
+        userSafe.internStatus = intern.status
+        userSafe.internId = intern.id
       }
 
       console.log(`[AUTH_LOG] User ${email} logged in successfully via Manual Auth.`)
