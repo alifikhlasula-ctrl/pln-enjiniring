@@ -29,7 +29,7 @@ export default function InternProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch(`/api/intern/profile?userId=${user.id}`)
+      const res = await fetch(`/api/intern/profile?userId=${user.id}`, { cache: 'no-store' })
       const data = await res.json()
       if (data.success && data.intern) {
         setInternId(data.intern.id)
@@ -126,6 +126,11 @@ export default function InternProfilePage() {
       if (data.success) {
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Profil berhasil diperbarui!', timer: 2000, showConfirmButton: false })
         if (!internId && data.intern) setInternId(data.intern.id)
+        
+        // Force fully reload layout contexts so the system recognizes the profile is now complete
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 1500)
       } else {
         Swal.fire('Gagal', data.error || 'Terjadi kesalahan sistem', 'error')
       }

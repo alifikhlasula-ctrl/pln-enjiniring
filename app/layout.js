@@ -120,7 +120,7 @@ function LayoutContent({ children }) {
   useEffect(() => {
     if (user?.role === 'INTERN') {
       setIsCheckingProfile(true)
-      fetch(`/api/intern/profile?userId=${user.id}`)
+      fetch(`/api/intern/profile?userId=${user.id}`, { cache: 'no-store' })
         .then(r => r.json())
         .then(data => {
           const i = data.intern
