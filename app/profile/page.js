@@ -11,6 +11,7 @@ export default function InternProfilePage() {
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState(user?.image || '')
+  const [profileSaved, setProfileSaved] = useState(false)
   const [formData, setFormData] = useState({
     name: '', nim_nis: '', phone: '', nik: '', birthDate: '', address: '', gender: 'Laki-laki',
     university: '', jenjang: 'S1', major: '', 
@@ -23,7 +24,8 @@ export default function InternProfilePage() {
   useEffect(() => {
     if (user?.id) {
       fetchProfile()
-      if (user.image && !avatarPreview) setAvatarPreview(user.image)
+      const img = user.image
+      if (img && !avatarPreview) setAvatarPreview(img)
     }
   }, [user])
 
@@ -105,8 +107,13 @@ export default function InternProfilePage() {
   const handleSave = async (e) => {
     e.preventDefault()
 
-    // Wajibkan foto profil
-    if (!avatarPreview) {
+    // Accept both a real data URI upload OR an existing proxy URL from the server
+    const hasAvatar = avatarPreview && (
+      avatarPreview.startsWith('data:') ||
+      avatarPreview.startsWith('/api/') ||
+      avatarPreview.startsWith('http')
+    )
+    if (!hasAvatar) {
       return Swal.fire({
         icon: 'warning',
         title: 'Foto Profil Wajib',
@@ -124,13 +131,12 @@ export default function InternProfilePage() {
       })
       const data = await res.json()
       if (data.success) {
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Profil berhasil diperbarui!', timer: 2000, showConfirmButton: false })
+        setProfileSaved(true)
+        await Swal.fire({ icon: 'success', title: 'Berhasil Disimpan!', text: 'Profil berhasil diperbarui. Mengalihkan ke dashboard...', timer: 1800, showConfirmButton: false })
         if (!internId && data.intern) setInternId(data.intern.id)
         
-        // Force fully reload layout contexts so the system recognizes the profile is now complete
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 1500)
+        // Hard reload with a cache-bust to force layout to re-check completeness from fresh DB data
+        window.location.replace('/dashboard?_cb=' + Date.now())
       } else {
         Swal.fire('Gagal', data.error || 'Terjadi kesalahan sistem', 'error')
       }

@@ -172,13 +172,38 @@ export async function PUT(request) {
   const index = data.interns.findIndex(i => i.id === body.id)
   if (index === -1) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const old = { ...data.interns[index] }
-  data.interns[index] = { ...data.interns[index], ...body }
 
-  // Sync email to user account if it changed
-  if (body.email && data.interns[index].userId) {
+  // Merge body over existing, but do NOT allow empty strings to wipe existing date/period values
+  const safeMerge = (existing, incoming) => {
+    const result = { ...existing, ...incoming }
+    const protectedDateFields = ['periodStart', 'periodEnd', 'duration', 'tanggalSPK', 'tanggalSuratPenerimaan', 'tanggalSuratSelesai', 'tanggalAmandemen']
+    for (const f of protectedDateFields) {
+      if (existing[f] && (!incoming[f] || incoming[f] === '')) {
+        result[f] = existing[f] // Keep old value if new is blank
+      }
+    }
+    return result
+  }
+
+  data.interns[index] = safeMerge(data.interns[index], body)
+
+  // Recalculate duration if both dates present
+  const s = data.interns[index].periodStart, e = data.interns[index].periodEnd
+  if (s && e) {
+    const a = new Date(s), b = new Date(e)
+    if (!isNaN(a) && !isNaN(b) && b > a) {
+      const days = Math.ceil(Math.abs(b - a) / 86400000)
+      const m = Math.floor(days / 30), r = days % 30
+      data.interns[index].duration = `${m > 0 ? m + ' Bulan ' : ''}${r > 0 ? r + ' Hari' : ''}`
+    }
+  }
+
+  // Sync name to user account if it changed
+  if (body.name && data.interns[index].userId) {
     const uIdx = data.users.findIndex(u => u.id === data.interns[index].userId)
     if (uIdx !== -1) {
-      data.users[uIdx].email = body.email
+      data.users[uIdx].name = body.name
+      if (body.email) data.users[uIdx].email = body.email
     }
   }
 

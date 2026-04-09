@@ -120,12 +120,13 @@ function LayoutContent({ children }) {
   useEffect(() => {
     if (user?.role === 'INTERN') {
       setIsCheckingProfile(true)
-      fetch(`/api/intern/profile?userId=${user.id}`, { cache: 'no-store' })
+      fetch(`/api/intern/profile?userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' })
         .then(r => r.json())
         .then(data => {
           const i = data.intern
-          // Strict check for vital informative fields matching Profil Saya form
-          if (!i || !i.nim_nis || !i.phone || !i.nik || !i.birthDate || !i.address || !i.university || !i.major || !i.bankAccount) {
+          // Core bio fields required: name, nim_nis, phone, nik, university, major
+          // bankAccount is payroll data — optional for profile gate
+          if (!i || !i.nim_nis || !i.phone || !i.nik || !i.university || !i.major) {
             setProfileComplete(false)
           } else {
             setProfileComplete(true)
