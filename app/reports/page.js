@@ -178,12 +178,14 @@ function CalendarTimesheet({ reports, periodStart, onDayClick }) {
           const isSystemOff = isOffDay(dtStr)
           const isPastLocked = periodStart ? (dtStr < periodStart) : (dtStr < '2026-03-13')
           const isFutureLocked = dtStr > todayStr
-          const locked = isSystemOff || isPastLocked || isFutureLocked
+          const isFilled = !!rep
+          const locked = isSystemOff || isPastLocked || isFutureLocked || isFilled
           
           let lockedLabel = ''
           if (isSystemOff) lockedLabel = 'Off Day'
-          else if (isFutureLocked) lockedLabel = 'Terkunci'
+          else if (isFutureLocked) lockedLabel = 'Belum/Terkunci'
           else if (isPastLocked) lockedLabel = 'Terkunci'
+          else if (isFilled) lockedLabel = 'Selesai (Terkunci)'
 
           return (
             <div 
@@ -287,13 +289,7 @@ export default function ReportsPage() {
     }
   }
 
-  const deleteReport = async (id) => {
-    const res = await Swal.fire({title:'Hapus Laporan?',text:'Laporan ini akan dihapus permanen dan dapat mempengaruhi perhitungan uang saku Anda.',icon:'warning',showCancelButton:true,confirmButtonColor:'var(--danger)',cancelButtonText:'Batal',confirmButtonText:'Hapus'})
-    if(res.isConfirmed) {
-      await fetch(`/api/reports?id=${id}`, { method: 'DELETE' })
-      fetchReports()
-    }
-  }
+  // Fitur hapus laporan oleh intern telah dinonaktifkan sesuai SOP. Hanya Admin HR yang berhak menghapus/menolak laporan.
 
   const handleExportGlobalPDF = async (e) => {
     e.preventDefault()
@@ -400,9 +396,6 @@ export default function ReportsPage() {
                       <p style={{fontSize:'0.72rem',color:'var(--text-muted)',marginTop:4}}>Dibuat: {fmtDate(rep.createdAt)} {rep.submittedAt && `· Dikirim: ${fmtDate(rep.submittedAt)}`}</p>
                     </div>
                     <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}}>
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteReport(rep.id)} title="Hapus Laporan" style={{padding:'4px 10px',gap:6}}>
-                        <Trash2 size={13} strokeWidth={2}/> Hapus
-                      </button>
                       <span style={{display:'flex',alignItems:'center',gap:4,padding:'4px 10px',borderRadius:999,background:'var(--secondary-light)',color:'var(--secondary)',fontSize:'0.72rem',fontWeight:800}}>
                         <CheckCircle2 size={14} /> Tercatat
                       </span>
@@ -434,11 +427,6 @@ export default function ReportsPage() {
                     </div>
                   )}
 
-                  <div style={{borderTop:'1px solid var(--border)',paddingTop:'1rem', display: 'flex', justifyContent: 'flex-end'}}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => deleteReport(rep.id)} style={{color:'var(--danger)',gap:4}}>
-                      <Trash size={14} /> Hapus Laporan
-                    </button>
-                  </div>
                 </div>
               </div>
             )
