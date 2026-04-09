@@ -23,7 +23,8 @@ export async function POST(request) {
       }
 
       console.log(`[AUTH_LOG] User ${email} logged in successfully via Manual Auth.`)
-      await db.addLog(userMatched.id, 'LOGIN_MANUAL_SUCCESS', { email })
+      // addLog is non-critical — wrapped independently so it never blocks login
+      db.addLog(userMatched.id, 'LOGIN_MANUAL_SUCCESS', { email }).catch(() => {})
 
       return NextResponse.json({
         success: true,
