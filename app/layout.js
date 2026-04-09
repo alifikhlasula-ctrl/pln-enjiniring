@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, FileText, Award, LogOut,
   Clock, History, Menu, X, User as UserIcon, Sun, Moon,
   ChevronRight, Bell, BarChart3, CalendarDays, MessageSquare, FileSpreadsheet, Banknote,
-  Megaphone, BookOpen
+  Megaphone, BookOpen, Lock
 } from 'lucide-react'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import '@/app/globals.css'
@@ -109,10 +109,35 @@ function LayoutContent({ children }) {
   const { theme, toggleTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [profileComplete, setProfileComplete] = useState(true)
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
 
   const isLandingPage = pathname === '/' || pathname.startsWith('/onboarding') || (!loading && !user && pathname === '/help')
+
+  // Check profile completeness for INTERN
+  useEffect(() => {
+    if (user?.role === 'INTERN') {
+      setIsCheckingProfile(true)
+      fetch(`/api/intern/profile?userId=${user.id}`)
+        .then(r => r.json())
+        .then(data => {
+          const i = data.intern
+          // Strict check for vital informative fields matching Profil Saya form
+          if (!i || !i.nim_nis || !i.phone || !i.nik || !i.birthDate || !i.address || !i.university || !i.major || !i.bankAccount) {
+            setProfileComplete(false)
+          } else {
+            setProfileComplete(true)
+          }
+        })
+        .catch(console.error)
+        .finally(() => setIsCheckingProfile(false))
+    } else {
+      setProfileComplete(true)
+      setIsCheckingProfile(false)
+    }
+  }, [user])
 
 
   // Detect mobile breakpoint
@@ -138,8 +163,14 @@ function LayoutContent({ children }) {
     // Force password change if required
     if (!loading && user?.mustChangePassword && pathname !== '/reset-password') {
       router.push('/reset-password')
+      return
     }
-  }, [user, loading, isLandingPage, pathname, router])
+
+    // Force profile completion for Interns
+    if (!loading && !isCheckingProfile && user?.role === 'INTERN' && !profileComplete && pathname !== '/profile' && pathname !== '/reset-password') {
+      router.push('/profile')
+    }
+  }, [user, loading, isCheckingProfile, profileComplete, isLandingPage, pathname, router])
 
   const navConfig = {
     ADMIN_HR: {
@@ -227,17 +258,30 @@ function LayoutContent({ children }) {
           {currentConfig?.items.map((item) => {
             const isActive = pathname === item.href ||
               (item.href !== '/dashboard' && pathname.startsWith(item.href))
+            
+            // If profile is incomplete, lock out everything except profile and guide
+            const isItemLocked = !profileComplete && item.href !== '/profile' && item.href !== '/help'
+
             return (
               <a
                 key={item.href}
-                href={item.href}
-                onClick={closeSidebar}
-                className={`nav-link ${isActive ? 'active' : ''}`}
+                href={isItemLocked ? '#' : item.href}
+                onClick={(e) => {
+                  if (isItemLocked) {
+                    e.preventDefault();
+                    alert("Harap lengkapi seluruh isian Profil Saya terlebih dahulu untuk membuka kunci fitur ini.");
+                    return;
+                  }
+                  closeSidebar();
+                }}
+                className={`nav-link ${isActive ? 'active' : ''} ${isItemLocked ? 'locked-nav-item' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
+                style={{ opacity: isItemLocked ? 0.5 : 1, cursor: isItemLocked ? 'not-allowed' : 'pointer' }}
               >
                 <item.icon size={18} strokeWidth={2} className="nav-icon" />
                 <span>{item.name}</span>
-                {isActive && (
+                {isItemLocked && <Lock size={14} style={{marginLeft:'auto', color:'var(--danger)'}} />}
+                {isActive && !isItemLocked && (
                   <ChevronRight size={14} strokeWidth={2}
                     style={{ marginLeft: 'auto', opacity: 0.6 }} />
                 )}
