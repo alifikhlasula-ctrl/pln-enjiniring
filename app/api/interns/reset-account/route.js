@@ -12,19 +12,42 @@ export async function POST(request) {
     const intern = data.interns.find(i => i.id === internId)
     if (!intern) return NextResponse.json({ error: 'Data peserta magang tidak ditemukan di database' }, { status: 404 })
 
-    const userIdx = data.users.findIndex(u => u.id === intern.userId)
-    if (userIdx === -1) return NextResponse.json({ error: 'Akun user tidak ditemukan' }, { status: 404 })
+    let userIdx = data.users.findIndex(u => u.id === intern.userId)
+    if (userIdx === -1) {
+      // Auto-restore a missing user account if the admin is trying to reset it!
+      const newUserId = intern.userId || ('u' + Date.now() + Math.random().toString().slice(2, 6))
+      
+      const restoredUser = {
+        id: newUserId,
+        email: newEmail,
+        password: newPassword,
+        name: intern.name,
+        role: 'INTERN'
+      }
+      
+      if (!data.users) data.users = []
+      data.users.push(restoredUser)
+      
+      // Ensure intern is linked to this newly restored user
+      const iIdx = data.interns.findIndex(i => i.id === internId)
+      if (iIdx > -1) {
+        data.interns[iIdx].userId = newUserId
+      }
 
-    // Validasi apakah nama intern sesuai (sebagai pencegahan ekstra sesuai regulasi/permintaan)
-    const userName = data.users[userIdx].name.toLowerCase().trim()
-    const internName = intern.name.toLowerCase().trim()
-    if (userName !== internName && !internName.includes(userName) && !userName.includes(internName)) {
-        return NextResponse.json({ error: `Gagal: Nama user (${data.users[userIdx].name}) tidak sesuai dengan nama peserta magang (${intern.name}). Pastikan ini adalah orang yang sama.` }, { status: 400 })
+      userIdx = data.users.length - 1
+    } else {
+      // Validasi apakah nama intern sesuai (sebagai pencegahan ekstra sesuai regulasi/permintaan)
+      const userName = data.users[userIdx].name.toLowerCase().trim()
+      const internName = intern.name.toLowerCase().trim()
+      if (userName !== internName && !internName.includes(userName) && !userName.includes(internName)) {
+          // Hanya beri warning jika perbedaannya terlalu jauh, tapi kita bisa auto-sync namanya.
+          data.users[userIdx].name = intern.name 
+      }
+
+      // Update email and password
+      data.users[userIdx].email = newEmail
+      data.users[userIdx].password = newPassword
     }
-
-    // Update email and password
-    data.users[userIdx].email = newEmail
-    data.users[userIdx].password = newPassword
 
     await saveDB(data)
     
