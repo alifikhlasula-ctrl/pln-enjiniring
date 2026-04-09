@@ -113,14 +113,8 @@ export default function InternProfilePage() {
       avatarPreview.startsWith('/api/') ||
       avatarPreview.startsWith('http')
     )
-    if (!hasAvatar) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'Foto Profil Wajib',
-        text: 'Harap unggah foto profil Anda terlebih dahulu sebelum menyimpan biodata.',
-        confirmButtonColor: 'var(--primary)'
-      })
-    }
+    
+    // Foto profil sekarang opsional, tidak wajib untuk menyimpan biodata
 
     setSaving(true)
     try {
