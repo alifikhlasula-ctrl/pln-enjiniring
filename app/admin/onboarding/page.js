@@ -267,7 +267,7 @@ export default function AdminOnboardingPage() {
   const fetchRequests = useCallback(async (silent=false) => {
     if (!silent) setLoading(true)
     try {
-      const r = await fetch('/api/onboarding/manage')
+      const r = await fetch(`/api/onboarding/manage?_t=${Date.now()}`, { cache: 'no-store' })
       const d = await r.json()
       setRequests(d.list || [])
       setStats(d.stats || {})

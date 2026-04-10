@@ -3,6 +3,8 @@ import { getDB, saveDB, db } from '@/lib/db'
 import fs from 'fs'
 import path from 'path'
 
+export const dynamic = 'force-dynamic'
+
 /* ── GET: all submissions (Admin HR) or by email (Intern) ── */
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
