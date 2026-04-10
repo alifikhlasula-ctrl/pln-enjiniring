@@ -54,7 +54,20 @@ function ReviewDrawer({ req, onClose, onAction }) {
   const [note,   setNote]   = useState('')
   const [action, setAction] = useState(null) // 'APPROVED'|'REJECTED'|'REVISION'
   const [saving, setSaving] = useState(false)
+  const [docs,   setDocs]   = useState(req?.applicant?.docs || null)
+  const [loadingDocs, setLoadingDocs] = useState(false)
   const a = req?.applicant || {}
+
+  useEffect(() => {
+    if (req?.id && !docs && a.hasDocs) {
+      setLoadingDocs(true)
+      fetch(`/api/onboarding/manage?id=${req.id}&docs=true`)
+        .then(r => r.json())
+        .then(d => setDocs(d.docs || {}))
+        .catch(e => console.error('Failed to load docs:', e))
+        .finally(() => setLoadingDocs(false))
+    }
+  }, [req?.id, docs, a.hasDocs])
 
   const handleSubmit = async () => {
     if ((action==='REJECTED'||action==='REVISION') && !note.trim()) {
@@ -146,7 +159,12 @@ function ReviewDrawer({ req, onClose, onAction }) {
           </section>
 
           {/* Documents */}
-          {a.docs && Object.keys(a.docs).length > 0 && (
+          {loadingDocs ? (
+            <div style={{padding:'2rem',textAlign:'center',color:'var(--text-muted)'}}>
+              <Loader2 size={24} style={{animation:'spin 1s linear infinite',margin:'0 auto 0.5rem'}}/>
+              <p style={{fontSize:'0.75rem'}}>Memuat dokumen...</p>
+            </div>
+          ) : docs && Object.keys(docs).length > 0 ? (
             <section style={{marginBottom:'1.25rem',paddingTop:'1.25rem',borderTop:'1px solid var(--border)'}}>
               <p style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',color:'var(--text-muted)',marginBottom:'0.75rem',letterSpacing:'0.05em'}}>Dokumen Terlampir</p>
               <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
@@ -154,8 +172,8 @@ function ReviewDrawer({ req, onClose, onAction }) {
                   {key:'surat_permohonan', label:'Surat Permohonan Magang'},
                   {key:'ktp',              label:'Scan KTP / Identitas'},
                   {key:'mbanking',         label:'Rekening Bank'}
-                ].map(doc => a.docs[doc.key] && (
-                  <a key={doc.key} href={a.docs[doc.key]} target="_blank" rel="noopener noreferrer"
+                ].map(doc => docs[doc.key] && (
+                  <a key={doc.key} href={docs[doc.key]} target="_blank" rel="noopener noreferrer"
                     style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.625rem 0.875rem',background:'var(--bg-main)',border:'1px solid var(--border)',borderRadius:'var(--radius-md)',textDecoration:'none',color:'inherit',transition:'all 0.2s'}}
                     onMouseEnter={e=>e.currentTarget.style.borderColor='var(--primary)'}
                     onMouseLeave={e=>e.currentTarget.style.borderColor='var(--border)'}>
@@ -166,7 +184,11 @@ function ReviewDrawer({ req, onClose, onAction }) {
                 ))}
               </div>
             </section>
-          )}
+          ) : a.hasDocs ? (
+            <section style={{marginBottom:'1.25rem',paddingTop:'1.25rem',borderTop:'1px solid var(--border)'}}>
+              <p style={{fontSize:'0.75rem',textAlign:'center',color:'var(--text-muted)'}}>⚠ Gagal memuat dokumen.</p>
+            </section>
+          ) : null}
 
           {/* Timeline */}
           <section style={{marginBottom:'1.25rem',paddingTop:'1.25rem',borderTop:'1px solid var(--border)'}}>

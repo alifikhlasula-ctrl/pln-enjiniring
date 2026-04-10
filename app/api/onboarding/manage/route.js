@@ -9,8 +9,15 @@ export const dynamic = 'force-dynamic'
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const email  = searchParams.get('email')   // Intern check own status
+  const id     = searchParams.get('id') // Specific document fetch
   const status = searchParams.get('status')  // Admin filter
   const data   = await getDB()
+  
+  // ── Specific Document Fetch (Lazy Loading) ──
+  if (id && searchParams.has('docs')) {
+    const docStore = await prisma.jsonStore.findUnique({ where: { key: `docs_${id}` } })
+    return NextResponse.json({ docs: docStore?.data || {} })
+  }
 
   let list = data.onboarding || []
   if (email)  list = list.filter(o => o.applicant?.email === email)
@@ -74,12 +81,19 @@ export async function POST(request) {
       reviewedAt:  null,
       reviewedBy:  null,
       reviewNote:  '',
-      applicant: { ...body, docs },
+      applicant: { ...body, hasDocs: true }, // Store metadata only, no docs in main JSON
       catatan:   body.catatan || '',
       timeline: [
         { action: 'SUBMITTED', at: new Date().toISOString(), by: body.name, note: 'Pengajuan dikirim oleh intern' }
       ]
     }
+
+    // ─── PARTITIONING: Save heavy docs to a separate locker ───
+    await prisma.jsonStore.upsert({
+      where: { key: `docs_${id}` },
+      update: { data: docs },
+      create: { key: `docs_${id}`, data: docs }
+    })
 
     if (!data.onboarding) data.onboarding = []
     data.onboarding.push(entry)
