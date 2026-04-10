@@ -10,15 +10,15 @@ export async function GET(request) {
     const userId = searchParams.get('userId')
     if (!userId) return NextResponse.json({ error: 'userId diperlukan' }, { status: 400 })
 
-    const data = await getDB()
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
 
     // ── Find intern profile ─────────────────────────
-    const intern = (data.interns || []).find(i => i.userId === userId && !i.deletedAt)
-      || (data.interns || []).find(i => i.userId === userId)
+    const intern = await prisma.intern.findUnique({
+      where: { userId }
+    })
 
-    if (!intern) {
+    if (!intern || intern.deletedAt) {
       return NextResponse.json({ error: 'Profil intern tidak ditemukan' }, { status: 404 })
     }
 
@@ -77,6 +77,14 @@ export async function GET(request) {
     const elapsedDays = (periodStart) ? Math.ceil((today - periodStart) / 86400000) : null
     const progressPct = (totalDuration && elapsedDays) ? Math.min(100, Math.round((elapsedDays / totalDuration) * 100)) : 0
 
+    // Fetch residual JSON data for rare fields (evals/mood/announcements) safely
+    let data; 
+    try {
+      data = await getDB();
+    } catch(e) {
+      data = {}; // graceful
+    }
+
     // ── Evaluations (only own) ───────────────────────
     const myEvals = ((data.evaluations || []).filter(e => e.internId === intern.id))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -102,66 +110,35 @@ export async function GET(request) {
         const [y, m, day] = d.split('-')
         return `${y}-${m.padStart(2, '0')}-${day.padStart(2, '0')}`
       }
-      // Match D/M/YYYY or DD/MM/YYYY
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)) {
-        const [day, m, y] = d.split('/')
-        return `${y}-${m.padStart(2, '0')}-${day.padStart(2, '0')}`
-      }
       return d 
     }
 
-    // ── Allowance / Payroll (Real-time from SQL - seluruh masa magang) ──
+    // ── Allowance / Payroll ──
     const nowMonth = new Date()
     const periodKey = `${nowMonth.getFullYear()}-${String(nowMonth.getMonth() + 1).padStart(2, '0')}`
     const myPayroll = (data.payrolls || []).find(p => p.internId === intern.id && p.period === periodKey)
     
-    // Semua hari yang hadir (PRESENT atau LATE) dari SQL, seluruh masa magang
-    const allValidAttendance = rawLogs.filter(l =>
-      ['PRESENT', 'LATE'].includes(l.status)
-    )
+    const allValidAttendance = rawLogs.filter(l => ['PRESENT', 'LATE'].includes(l.status))
 
-    // Kehadiran bulan ini saja
-    const attendanceThisMonth = allValidAttendance.filter(l => {
-      const norm = normalizeDate(l.date)
-      return norm && norm.startsWith(periodKey)
-    })
+    const allReports = await prisma.dailyReport.findMany({
+        where: { userId: userId, status: { not: 'DRAFT' } }
+    });
 
-    // Laporan harian seluruh masa (non-draft)
-    const allReports = (data.reports || []).filter(r =>
-      r.userId === userId && r.status !== 'DRAFT'
-    )
-
-    // Laporan harian bulan ini
-    const reportsThisMonth = allReports.filter(r => {
-      const rDate = r.date || r.reportDate
-      const norm = normalizeDate(rDate)
-      return norm && norm.startsWith(periodKey)
-    })
-    
-    // Cross-check total: hari yang punya ABSEN + LAPORAN (seluruh masa magang)
+    // Cross-check total: hari yang punya ABSEN + LAPORAN
     const allVerifiedDays = allValidAttendance.filter(l => {
       const lNorm = normalizeDate(l.date)
-      return allReports.some(r => normalizeDate(r.date || r.reportDate) === lNorm)
+      return allReports.some(r => normalizeDate(r.date) === lNorm)
     })
 
-    // Cross-check bulan ini saja
-    const verifiedThisMonth = attendanceThisMonth.filter(l => {
-      const lNorm = normalizeDate(l.date)
-      return reportsThisMonth.some(r => normalizeDate(r.date || r.reportDate) === lNorm)
-    })
-
-    const allowanceRate = 25000 // FLAT_RATE seragam Rp 25.000/hari
+    const allowanceRate = 25000 
     const estimatedAllowanceTotal = allVerifiedDays.length * allowanceRate
-    const estimatedAllowanceThisMonth = verifiedThisMonth.length * allowanceRate
     
     const allowanceInfo = {
       period: periodKey,
       status: myPayroll?.status || 'PENDING',
       paidAt: myPayroll?.paidAt || null,
       totalAllowance: myPayroll?.totalAllowance || estimatedAllowanceTotal,
-      presenceCount: allVerifiedDays.length,       // Total verified seluruh masa magang
-      presenceThisMonth: verifiedThisMonth.length,  // Verified bulan ini
-      attendanceOnlyCount: allValidAttendance.length, // Total hadir seluruh masa
+      presenceCount: allVerifiedDays.length,
       allowanceRate,
     }
 
@@ -173,27 +150,23 @@ export async function GET(request) {
         return new Date(b.createdAt) - new Date(a.createdAt)
       })
       .slice(0, 5)
-      .map(a => ({ id: a.id, title: a.title, content: a.content, priority: a.priority, pinned: a.pinned, createdAt: a.createdAt, createdBy: a.createdBy }))
 
-    // ── Events (filtered by Bidang + National Holidays) ──
+    // ── Events ──
     const dbEvents = (data.events || [])
       .filter(ev => {
         const isFuture = new Date(ev.date) >= today
         const isTargeted = !ev.targetGroup || ev.targetGroup === 'ALL' || ev.targetGroup === intern.bidang
         return isFuture && isTargeted
       })
-      .map(ev => ({ id: ev.id, title: ev.title, date: ev.date, type: ev.type, description: ev.description }))
-
     const holidayEvents = INDONESIA_HOLIDAYS_2026
       .filter(h => new Date(h) >= today)
       .map(h => ({ id: 'h' + h, title: 'Hari Libur Nasional', date: h, type: 'HOLIDAY', description: 'Libur resmi nasional Indonesia' }))
-
     const events = [...dbEvents, ...holidayEvents]
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .slice(0, 10)
 
-    // ── Onboarding progress (own) ────────────────────
-    const myOnboarding = (data.onboarding || []).filter(o => o.internId === intern.id)
+    // ── Onboarding progress (SQL) ────────────────────
+    const myOnboarding = await prisma.onboarding.findMany({ where: { internId: intern.id } });
     const onboardingTotal = myOnboarding.length
     const onboardingDone = myOnboarding.filter(o => o.status === 'APPROVED').length
 

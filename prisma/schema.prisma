@@ -109,3 +109,44 @@ model AuditLog {
   details   Json?
   timestamp DateTime @default(now())
 }
+
+// ─── Daily Reports ────────────────────────────────────────
+model DailyReport {
+  id          String   @id @default(cuid())
+  userId      String
+  date        String
+  activity    String
+  supervisor  String?
+  field       String?
+  internName  String?
+  nim_nis     String?
+  status      String   @default("TERCATAT") // DRAFT, TERCATAT, REVISION
+
+  commentText String?
+  reviewerId  String?
+  reviewerName String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Onboarding ───────────────────────────────────────────
+model Onboarding {
+  id          String   @id @default(cuid())
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, REVISION
+  
+  applicant   Json     // Store name, email, nim_nis, major etc as structured json
+  docs        Json?    // Store doc URLs if any
+  catatan     String?
+  
+  reviewNote  String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+
+  internId    String?
+  timeline    Json?
+
+  timestamp   DateTime @default(now())
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

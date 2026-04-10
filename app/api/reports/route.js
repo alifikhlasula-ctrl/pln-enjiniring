@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getDB, saveDB, db } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,33 +11,32 @@ export async function GET(request) {
     const userId = searchParams.get('userId')
     const internId = searchParams.get('internId') // For HR tracking
     
-    const data = await getDB()
-    let reports = data.reports || []
+    let targetUserId = userId;
 
-    if (userId) {
-      reports = reports.filter(r => r.userId === userId)
-    } else if (internId) {
-      // Find the user ID for this internId
-      const intern = (data.interns || []).find(i => i.id === internId)
-      if (intern) {
-        reports = reports.filter(r => r.userId === intern.userId)
-      }
+    if (!targetUserId && internId) {
+      const intern = await prisma.intern.findUnique({ where: { id: internId } })
+      if (intern) targetUserId = intern.userId;
     }
 
-    // Sort by date desc
-    reports.sort((a, b) => new Date(b.date) - new Date(a.date))
+    const where = targetUserId ? { userId: targetUserId } : {};
 
-    // Calculate stats for intern view (simplified)
-    let periodStart = null
-    const stats = userId ? {
-      total: reports.length,
-      tercatat: reports.filter(r => r.status === 'TERCATAT').length,
-      draft: reports.filter(r => r.status === 'DRAFT').length
-    } : {}
-    
-    if (userId) {
-       const internMeta = (data.interns || []).find(i => i.userId === userId)
-       periodStart = internMeta?.periodStart || null
+    const reports = await prisma.dailyReport.findMany({
+      where,
+      orderBy: { date: 'desc' }
+    })
+
+    let stats = {};
+    let periodStart = null;
+
+    if (targetUserId) {
+      const internMeta = await prisma.intern.findUnique({ where: { userId: targetUserId } })
+      periodStart = internMeta?.periodStart || null;
+
+      stats = {
+        total: reports.length,
+        tercatat: reports.filter(r => r.status === 'TERCATAT').length,
+        draft: reports.filter(r => r.status === 'DRAFT').length
+      }
     }
 
     return NextResponse.json({ reports, stats, periodStart })
@@ -58,20 +58,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Data tidak lengkap (Poin aktivitas wajib diisi)' }, { status: 400 })
     }
 
-    const data = await getDB()
-    const intern = (data.interns || []).find(i => i.userId === userId)
+    const intern = await prisma.intern.findUnique({ where: { userId } })
     
     if (intern?.periodStart && date < intern.periodStart) {
        return NextResponse.json({ error: `Anda tidak dapat mengisi laporan sebelum tanggal mulai magang (${intern.periodStart})` }, { status: 400 })
     }
-    
-    if (!data.reports) data.reports = []
 
     // Check if report for this date already exists for this user
-    const existingIdx = data.reports.findIndex(r => r.userId === userId && r.date === date)
+    const existing = await prisma.dailyReport.findFirst({
+      where: { userId, date }
+    })
     
-    const newReport = {
-      id: existingIdx !== -1 ? data.reports[existingIdx].id : 'rep' + Date.now(),
+    const dataObj = {
       userId,
       date,
       activity,
@@ -79,23 +77,25 @@ export async function POST(request) {
       field: field || '',
       internName: intern?.name || 'Unknown',
       nim_nis: intern?.nim_nis || '-',
-      status: body.isDraft ? 'DRAFT' : 'TERCATAT',
-      updatedAt: new Date().toISOString()
+      status: body.isDraft ? 'DRAFT' : 'TERCATAT'
     }
 
-    if (existingIdx !== -1) {
-      data.reports[existingIdx] = newReport
+    let report;
+    if (existing) {
+      report = await prisma.dailyReport.update({
+        where: { id: existing.id },
+        data: dataObj
+      })
     } else {
-      newReport.createdAt = new Date().toISOString()
-      data.reports.push(newReport)
+      report = await prisma.dailyReport.create({
+        data: dataObj
+      })
     }
-
-    await saveDB(data)
     
     // Log action
-    await db.addLog(userId, 'SUBMIT_DAILY_REPORT', { date })
+    db.addLog(userId, 'SUBMIT_DAILY_REPORT', { date }).catch(()=>{})
 
-    return NextResponse.json({ success: true, report: newReport })
+    return NextResponse.json({ success: true, report })
   } catch (err) {
     console.error('[POST /api/reports] Error:', err)
     return NextResponse.json({ error: 'Gagal menyimpan laporan' }, { status: 500 })
@@ -110,24 +110,20 @@ export async function PUT(request) {
 
     if (!id) return NextResponse.json({ error: 'ID laporan wajib ada' }, { status: 400 })
 
-    const data = await getDB()
-    const idx = (data.reports || []).findIndex(r => r.id === id)
-    if (idx === -1) return NextResponse.json({ error: 'Laporan tidak ditemukan' }, { status: 404 })
+    const existing = await prisma.dailyReport.findUnique({ where: { id } })
+    if (!existing) return NextResponse.json({ error: 'Laporan tidak ditemukan' }, { status: 404 })
 
-    const report = data.reports[idx]
-
-    // Action based logic (Simplified for Intern only)
-    Object.assign(report, {
-      ...body,
-      updatedAt: new Date().toISOString(),
-      status: body.isDraft ? 'DRAFT' : 'TERCATAT'
+    const report = await prisma.dailyReport.update({
+      where: { id },
+      data: {
+        ...body,
+        status: body.isDraft ? 'DRAFT' : 'TERCATAT'
+      }
     })
-
-    await saveDB(data)
     
     // Log audit activity
     if (!body.isDraft) {
-      await db.addLog(report.userId, 'SUBMIT_DAILY_REPORT', { date: report.date })
+      db.addLog(report.userId, 'SUBMIT_DAILY_REPORT', { date: report.date }).catch(()=>{})
     }
 
     return NextResponse.json({ success: true, report })
@@ -144,15 +140,12 @@ export async function DELETE(request) {
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'ID wajib ada' }, { status: 400 })
 
-    const data = await getDB()
-    const idx = (data.reports || []).findIndex(r => r.id === id)
-    if (idx === -1) return NextResponse.json({ error: 'Laporan tidak ditemukan' }, { status: 404 })
+    const rep = await prisma.dailyReport.findUnique({ where: { id } })
+    if (!rep) return NextResponse.json({ error: 'Laporan tidak ditemukan' }, { status: 404 })
 
-    const rep = data.reports[idx]
-    data.reports.splice(idx, 1)
-    await saveDB(data)
+    await prisma.dailyReport.delete({ where: { id } })
     
-    await db.addLog(rep.userId, 'DELETE_DAILY_REPORT', { date: rep.date })
+    db.addLog(rep.userId, 'DELETE_DAILY_REPORT', { date: rep.date }).catch(()=>{})
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('[DELETE /api/reports] Error:', err)

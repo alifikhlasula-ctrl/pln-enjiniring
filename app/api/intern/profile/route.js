@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { getDB, saveDB, db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -28,61 +29,76 @@ export async function POST(request) {
     const { userId, ...profileData } = body
     if (!userId) return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
 
-    const data = await getDB()
-    const internIndex = (data.interns || []).findIndex(i => i.userId === userId && !i.deletedAt)
-    
-    // We restrict some fields that intern should NOT modify themselves, like status and duration
-    // Actually, duration is calculated in onboarding. Should they edit periodStart/End? Yes, if not set.
-    // If they change periodEnd, status might be derived but it's handled on read usually using `getEffectiveStatus`.
+    const existingIntern = await prisma.intern.findUnique({
+      where: { userId }
+    })
 
-    let updatedIntern = {}
+    let updatedIntern = {};
 
-    if (internIndex > -1) {
-      // Update existing
-      updatedIntern = {
-        ...data.interns[internIndex],
-        ...profileData,
-        // Protect vital administrative fields from being wiped by the intern frontend
-        status: data.interns[internIndex].status,
-        userId: data.interns[internIndex].userId,
-        id: data.interns[internIndex].id,
-        periodStart: data.interns[internIndex].periodStart || profileData.periodStart,
-        periodEnd: data.interns[internIndex].periodEnd || profileData.periodEnd,
-        duration: data.interns[internIndex].duration || profileData.duration,
-        bidang: data.interns[internIndex].bidang || profileData.bidang,
-        wilayah: data.interns[internIndex].wilayah || profileData.wilayah,
+    if (existingIntern) {
+      // Calculate duration securely
+      let duration = existingIntern.duration || profileData.duration;
+      const start = existingIntern.periodStart || profileData.periodStart;
+      const end = existingIntern.periodEnd || profileData.periodEnd;
+      
+      if (start && end) {
+        const calcDur = (s, e) => {
+          const a=new Date(s), b=new Date(e)
+          if(isNaN(a)||isNaN(b)||b<a) return ''
+          const d=Math.ceil(Math.abs(b-a)/86400000), m=Math.floor(d/30), r=d%30
+          return `${m>0?m+' Bulan ':''}${r>0?r+' Hari':''}`
+        }
+        duration = calcDur(start, end)
       }
-      data.interns[internIndex] = updatedIntern
+
+      updatedIntern = await prisma.intern.update({
+        where: { userId },
+        data: {
+          ...profileData,
+          periodStart: start,
+          periodEnd: end,
+          duration: duration,
+          status: existingIntern.status, // Protect status
+          bidang: existingIntern.bidang || profileData.bidang,
+          wilayah: existingIntern.wilayah || profileData.wilayah,
+        }
+      })
     } else {
-      // Insert new intern record if they somehow bypassed onboarding
+      // Insert new intern record if bypassed
       const ts = Date.now()
-      updatedIntern = {
-        id: 'i' + ts,
-        userId: userId,
-        status: 'ACTIVE',
-        deletedAt: null,
-        ...profileData, // Base data provided by form
+      
+      let duration = null;
+      if (profileData.periodStart && profileData.periodEnd) {
+         const calcDur = (s, e) => {
+           const a=new Date(s), b=new Date(e)
+           if(isNaN(a)||isNaN(b)||b<a) return ''
+           const d=Math.ceil(Math.abs(b-a)/86400000), m=Math.floor(d/30), r=d%30
+           return `${m>0?m+' Bulan ':''}${r>0?r+' Hari':''}`
+         }
+         duration = calcDur(profileData.periodStart, profileData.periodEnd)
       }
-      if (!data.interns) data.interns = []
-      data.interns.push(updatedIntern)
+
+      updatedIntern = await prisma.intern.create({
+        data: {
+          id: 'i' + ts,
+          userId: userId,
+          status: 'ACTIVE',
+          deletedAt: null,
+          duration,
+          nim_nis: profileData.nim_nis || '-',
+          university: profileData.university || '-',
+          major: profileData.major || '-',
+          bidang: profileData.bidang || '-',
+          ...profileData
+        }
+      })
     }
 
-    // Attempt to calculate duration if start and end are provided
-    if (updatedIntern.periodStart && updatedIntern.periodEnd) {
-       const calcDur = (s, e) => {
-         const a=new Date(s), b=new Date(e)
-         if(isNaN(a)||isNaN(b)||b<a) return ''
-         const d=Math.ceil(Math.abs(b-a)/86400000), m=Math.floor(d/30), r=d%30
-         return `${m>0?m+' Bulan ':''}${r>0?r+' Hari':''}`
-       }
-       updatedIntern.duration = calcDur(updatedIntern.periodStart, updatedIntern.periodEnd)
-    }
-
-    await saveDB(data)
-    await db.addLog(userId, 'PROFILE_UPDATE', { internId: updatedIntern.id })
+    db.addLog(userId, 'PROFILE_UPDATE', { internId: updatedIntern.id }).catch(()=>{})
 
     return NextResponse.json({ success: true, intern: updatedIntern })
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    console.error("Profile update error:", err)
+    return NextResponse.json({ error: 'Terjadi kesalahan saat menyimpan profil.' }, { status: 500 })
   }
 }

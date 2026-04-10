@@ -1,0 +1,4407 @@
+{
+  "interns": [
+    {
+      "id": "i1774582160229",
+      "userId": "u1774582160229",
+      "name": "Mutia Aqila Fazilatunnisa",
+      "nim_nis": "2311501791",
+      "gender": "Perempuan",
+      "university": "Universitas Budi Luhur",
+      "jenjang": "S1",
+      "major": "Teknik Informatika",
+      "status": "ACTIVE",
+      "bidang": "Informasi Teknologi",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-08",
+      "periodEnd": "2026-06-07",
+      "duration": "3 Bulan 1 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "mutiaaqila.1791@intern.plne.co.id"
+    },
+    {
+      "id": "i1774583697565",
+      "userId": "u1774583697565",
+      "name": "Shifa Khoirunnisa",
+      "nim_nis": "2311501080",
+      "gender": "Perempuan",
+      "university": "Universitas Budi Luhur",
+      "jenjang": "S1",
+      "major": "Teknik Informatika",
+      "status": "ACTIVE",
+      "bidang": "Informasi Teknologi",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-08",
+      "periodEnd": "2026-06-07",
+      "duration": "3 Bulan 1 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "shifakhoir.1080@intern.plne.co.id"
+    },
+    {
+      "id": "i1774583769711",
+      "userId": "u1774583769711",
+      "name": "Nayla Aimee Taradiva",
+      "nim_nis": "210510230032",
+      "gender": "Perempuan",
+      "university": "Universitas Padjadjaran",
+      "jenjang": "S1",
+      "major": "Manajemen Komunikasi",
+      "status": "ACTIVE",
+      "bidang": "Komunikasi dan Manajemen Stakeholder",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-01",
+      "periodEnd": "2026-07-01",
+      "duration": "4 Bulan 2 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774583769711",
+        "email": "intern1774583769711@hris.com",
+        "password": "password123",
+        "name": "Nayla Aimee Taradiva",
+        "role": "INTERN"
+      },
+      "email": "naylaaimee.0032@intern.plne.co.id"
+    },
+    {
+      "id": "i1774584740777",
+      "userId": "u1774584740777",
+      "name": "Wisnu Santoso",
+      "nim_nis": "202214033",
+      "gender": "Laki-Laki",
+      "university": "Institut Teknologi PLN",
+      "jenjang": "S1",
+      "major": "Teknik Tenaga Listrik",
+      "status": "ACTIVE",
+      "bidang": "Power System dan Digital Centre",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2025-12-31",
+      "periodEnd": "2026-06-29",
+      "duration": "6 Bulan ",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "wisnusanto.4033@intern.plne.co.id"
+    },
+    {
+      "id": "i1774584811236",
+      "userId": "u1774584811236",
+      "name": "Muhammad Danu Nofiandi",
+      "nim_nis": "15000123140283",
+      "gender": "Laki-Laki",
+      "university": "Universitas Diponegoro",
+      "jenjang": "S1",
+      "major": "Psikologi",
+      "status": "ACTIVE",
+      "bidang": "Human Capital Management",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-01",
+      "periodEnd": "2026-05-21",
+      "duration": "2 Bulan 21 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "muhammadda.0283@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424682",
+      "userId": "u1774853424682",
+      "name": "Ibnu Masyhur Al Fathani",
+      "nim_nis": "23080574502",
+      "gender": "Laki-Laki",
+      "university": "Universitas Negeri Surabaya",
+      "jenjang": "S1",
+      "major": "Manajemen",
+      "status": "ACTIVE",
+      "bidang": "Human Capital Management",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-02-22",
+      "periodEnd": "2026-06-22",
+      "duration": "4 Bulan ",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "ibnumasyhu.4502@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424683",
+      "userId": "u1774853424683",
+      "name": "Vanessa Sauqila Olivian",
+      "nim_nis": "46123010119",
+      "gender": "Perempuan",
+      "university": "Universitas Mercu Buana",
+      "jenjang": "S1",
+      "major": "Psikologi",
+      "status": "ACTIVE",
+      "bidang": "Human Capital Management",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-02-17",
+      "periodEnd": "2026-08-17",
+      "duration": "6 Bulan 1 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "vanessasau.0119@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424684",
+      "userId": "u1774853424684",
+      "name": "Randy Arya Dwi Permana",
+      "nim_nis": "23511091",
+      "gender": "Laki-Laki",
+      "university": "Universitas Islam Indonesia",
+      "jenjang": "S1",
+      "major": "Teknik Sipil",
+      "status": "ACTIVE",
+      "bidang": "Unit Pelaksana CNG",
+      "wilayah": "Lokasi Proyek",
+      "tahun": "2026",
+      "periodStart": "2026-02-11",
+      "periodEnd": "2026-04-10",
+      "duration": "1 Bulan 28 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424684",
+        "email": "intern1774853424684@hris.com",
+        "password": "password123",
+        "name": "Randy Arya Dwi Permana",
+        "role": "INTERN"
+      },
+      "email": "randyaryad.1091@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424685",
+      "userId": "u1774853424685",
+      "name": "Muhammad Calvin Pasya",
+      "nim_nis": "13122130",
+      "gender": "Laki-Laki",
+      "university": "Institut Teknologi Bandung",
+      "jenjang": "S1",
+      "major": "Teknik Mesin",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Mekanikal Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-02-08",
+      "periodEnd": "2026-04-30",
+      "duration": "2 Bulan 21 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "muhammadca.2130@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424686",
+      "userId": "u1774853424686",
+      "name": "Kanaya Fellicita Perdana",
+      "nim_nis": "2310314039",
+      "gender": "Perempuan",
+      "university": "Universitas Pembangunan Nasional Veteran Jakarta (UPNVJ)",
+      "jenjang": "S1",
+      "major": "Teknik Elektro",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-02-08",
+      "periodEnd": "2026-06-02",
+      "duration": "3 Bulan 24 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "kanayafell.4039@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424687",
+      "userId": "u1774853424687",
+      "name": "Mahira Dinda Putri Anggrianto",
+      "nim_nis": "2310314018",
+      "gender": "Perempuan",
+      "university": "Universitas Pembangunan Nasional Veteran Jakarta",
+      "jenjang": "S1",
+      "major": "Teknik Elektro",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-02-08",
+      "periodEnd": "2026-06-02",
+      "duration": "3 Bulan 24 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "mahiradind.4018@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424696",
+      "userId": "u1774853424696",
+      "name": "Rafael Diel Nakamaya Lande",
+      "nim_nis": "2702375380",
+      "gender": "Laki-Laki",
+      "university": "Binus University",
+      "jenjang": "S1",
+      "major": "Manajemen",
+      "status": "ACTIVE",
+      "bidang": "Perencanaan Korporat",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-31",
+      "periodEnd": "2026-06-29",
+      "duration": "4 Bulan 29 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "rafaeldiel.5380@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424697",
+      "userId": "u1774853424697",
+      "name": "Muhammad Al Farezi Widian",
+      "nim_nis": "23511221",
+      "gender": "Laki-Laki",
+      "university": "Universitas Islam Indonesia",
+      "jenjang": "S1",
+      "major": "Teknik Sipil",
+      "status": "ACTIVE",
+      "bidang": "Unit Pelaksana CNG",
+      "wilayah": "Lokasi Proyek",
+      "tahun": "2026",
+      "periodStart": "2026-01-31",
+      "periodEnd": "2026-04-10",
+      "duration": "2 Bulan 9 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424697",
+        "email": "intern1774853424697@hris.com",
+        "password": "password123",
+        "name": "Muhammad Al Farezi Widian",
+        "role": "INTERN"
+      },
+      "email": "muhammadal.1221@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424698",
+      "userId": "u1774853424698",
+      "name": "Muhammad Ghiyats Aghniyal Fawaz",
+      "nim_nis": "23511225",
+      "gender": "Laki-Laki",
+      "university": "Universitas Islam Indonesia",
+      "jenjang": "S1",
+      "major": "Teknik Sipil",
+      "status": "ACTIVE",
+      "bidang": "Unit Pelaksana CNG",
+      "wilayah": "Lokasi Proyek",
+      "tahun": "2026",
+      "periodStart": "2026-01-31",
+      "periodEnd": "2026-04-10",
+      "duration": "2 Bulan 9 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424698",
+        "email": "intern1774853424698@hris.com",
+        "password": "password123",
+        "name": "Muhammad Ghiyats Aghniyal Fawaz",
+        "role": "INTERN"
+      },
+      "email": "muhammadgh.1225@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424699",
+      "userId": "u1774853424699",
+      "name": "Muhammad Ahsantal Haqqo",
+      "nim_nis": "23511066",
+      "gender": "Laki-Laki",
+      "university": "Universitas Islam Indonesia",
+      "jenjang": "S1",
+      "major": "Teknik Sipil",
+      "status": "ACTIVE",
+      "bidang": "Unit Pelaksana CNG",
+      "wilayah": "Lokasi Proyek",
+      "tahun": "2026",
+      "periodStart": "2026-01-31",
+      "periodEnd": "2026-04-09",
+      "duration": "2 Bulan 8 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "muhammadah.1066@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424704",
+      "userId": "u1774853424704",
+      "name": "Reviana Junita Putri",
+      "nim_nis": "2305821",
+      "gender": "Perempuan",
+      "university": "Universitas Pendidikan Indonesia",
+      "jenjang": "S1",
+      "major": "Bisnis Digital",
+      "status": "ACTIVE",
+      "bidang": "Komunikasi dan Manajemen Stakeholder",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-25",
+      "periodEnd": "2026-05-31",
+      "duration": "4 Bulan 6 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424704",
+        "email": "intern1774853424704@hris.com",
+        "password": "password123",
+        "name": "Reviana Junita Putri",
+        "role": "INTERN"
+      },
+      "email": "revianajun.5821@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424705",
+      "userId": "u1774853424705",
+      "name": "Sufi Widyarini",
+      "nim_nis": "1800013025",
+      "gender": "Perempuan",
+      "university": "Universitas Ahmad Dahlan",
+      "jenjang": "S1",
+      "major": "Teknik Tenaga Listrik",
+      "status": "ACTIVE",
+      "bidang": "Pelaksana Pengadaan",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-18",
+      "periodEnd": "2026-06-12",
+      "duration": "4 Bulan 25 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "sufiwidyar.3025@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424706",
+      "userId": "u1774853424706",
+      "name": "Hana Aisyah Shabrina",
+      "nim_nis": "9207022",
+      "gender": "Perempuan",
+      "university": "ISI Padangpanjang",
+      "jenjang": "S1",
+      "major": "Psikologi",
+      "status": "ACTIVE",
+      "bidang": "Komunikasi dan Manajemen Stakeholder",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-18",
+      "periodEnd": "2026-04-30",
+      "duration": "3 Bulan 12 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424706",
+        "email": "intern1774853424706@hris.com",
+        "password": "password123",
+        "name": "Hana Aisyah Shabrina",
+        "role": "INTERN"
+      },
+      "email": "hanaaisyah.7022@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424709",
+      "userId": "u1774853424709",
+      "name": "Radja Faridza Widiansyaputra",
+      "nim_nis": "2315031002",
+      "gender": "Laki-Laki",
+      "university": "Universitas Lampung",
+      "jenjang": "S1",
+      "major": "Accounting/Akuntansi",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Mekanikal dan Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-21",
+      "duration": "4 Bulan 17 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "radjafarid.1002@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424710",
+      "userId": "u1774853424710",
+      "name": "M. Joelyandro Revansyah",
+      "nim_nis": "2315031074",
+      "gender": "Laki-Laki",
+      "university": "Universitas Lampung",
+      "jenjang": "S1",
+      "major": "Teknik Elektro",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Mekanikal dan Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-21",
+      "duration": "4 Bulan 17 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "mjoelyandr.1074@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424711",
+      "userId": "u1774853424711",
+      "name": "Kyla Gibran Ahmad",
+      "nim_nis": "2315031010",
+      "gender": "Laki-Laki",
+      "university": "Universitas Lampung",
+      "jenjang": "S1",
+      "major": "Teknik Elektro",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Mekanikal dan Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-21",
+      "duration": "4 Bulan 17 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "kylagibran.1010@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424712",
+      "userId": "u1774853424712",
+      "name": "Joy Mega Nika Purba",
+      "nim_nis": "2315031137",
+      "gender": "Perempuan",
+      "university": "Universitas Lampung",
+      "jenjang": "S1",
+      "major": "Teknik Elektro",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Penunjang",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-21",
+      "duration": "4 Bulan 17 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "joymeganik.1137@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424713",
+      "userId": "u1774853424713",
+      "name": "Ammar Nadhif Wicaksono",
+      "nim_nis": "2315031096",
+      "gender": "Laki-Laki",
+      "university": "Universitas Lampung",
+      "jenjang": "S1",
+      "major": "Teknik Elektro",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Penunjang",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-21",
+      "duration": "4 Bulan 17 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "ammarnadhi.1096@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424714",
+      "userId": "u1774853424714",
+      "name": "Mareta Dwi Lestari",
+      "nim_nis": "2315031025",
+      "gender": "Perempuan",
+      "university": "Universitas Lampung",
+      "jenjang": "S1",
+      "major": "Teknik Elektro",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Penunjang",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-21",
+      "duration": "4 Bulan 17 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "maretadwil.1025@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424719",
+      "userId": "u1774853424719",
+      "name": "Eka Nova Setiawan",
+      "nim_nis": "4123600040",
+      "gender": "Laki-Laki",
+      "university": "Politeknik Elektronika Negeri Surabaya",
+      "jenjang": "S1",
+      "major": "Teknik Mesin",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Mekanikal dan Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-04",
+      "duration": "4 Bulan ",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "ekanovaset.0040@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424720",
+      "userId": "u1774853424720",
+      "name": "Raihan Giga Bajurah",
+      "nim_nis": "4123600055",
+      "gender": "Laki-Laki",
+      "university": "POLITEKNIK ELEKTRONIKA NEGERI SURABAYA",
+      "jenjang": "S1",
+      "major": "Teknik Mekatronika",
+      "status": "ACTIVE",
+      "bidang": "Enjiniring Mekanikal dan Proses",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-01-04",
+      "periodEnd": "2026-05-04",
+      "duration": "4 Bulan ",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "raihangiga.0055@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424726",
+      "userId": "u1774853424726",
+      "name": "Salsabila",
+      "nim_nis": "2214290031",
+      "gender": "Perempuan",
+      "university": "Universitas Persada Indonesia Y.A.I",
+      "jenjang": "S1",
+      "major": "Manajemen",
+      "status": "ACTIVE",
+      "bidang": "Human Capital Management",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2025",
+      "periodStart": "2025-12-07",
+      "periodEnd": "2026-06-08",
+      "duration": "6 Bulan 3 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "salsabila.0031@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424731",
+      "userId": "u1774853424731",
+      "name": "Ayu May Diana",
+      "nim_nis": "3101220038",
+      "gender": "Perempuan",
+      "university": "Universitas Bung Karno",
+      "jenjang": "S1",
+      "major": "Manajemen",
+      "status": "ACTIVE",
+      "bidang": "Pelaksana Pengadaan",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2025",
+      "periodStart": "2025-11-09",
+      "periodEnd": "2026-06-03",
+      "duration": "6 Bulan 26 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424731",
+        "email": "intern1774853424731@hris.com",
+        "password": "password123",
+        "name": "Ayu May Diana",
+        "role": "INTERN"
+      },
+      "email": "ayumaydian.0038@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424767",
+      "userId": "u1774853424767",
+      "name": "Firda Nur Apriani",
+      "nim_nis": "1519622014",
+      "gender": "Perempuan",
+      "university": "Universitas Negeri Jakarta",
+      "jenjang": "S1",
+      "major": "Sistem dan Teknologi Informasi",
+      "status": "ACTIVE",
+      "bidang": "Informasi Teknologi",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2025",
+      "periodStart": "2025-08-10",
+      "periodEnd": "2026-05-02",
+      "duration": "8 Bulan 25 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424767",
+        "email": "intern1774853424767@hris.com",
+        "password": "password123",
+        "name": "Firda Nur Apriani",
+        "role": "INTERN"
+      },
+      "email": "firdanurap.2014@intern.plne.co.id"
+    },
+    {
+      "id": "i1774853424769",
+      "userId": "u1774853424769",
+      "name": "Dhila Mahira",
+      "nim_nis": "1202300215",
+      "gender": "Perempuan",
+      "university": "President University",
+      "jenjang": "S1",
+      "major": "Teknik Informatika",
+      "status": "ACTIVE",
+      "bidang": "Informasi Teknologi",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2025",
+      "periodStart": "2025-08-06",
+      "periodEnd": "2026-07-14",
+      "duration": "11 Bulan 12 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774853424769",
+        "email": "intern1774853424769@hris.com",
+        "password": "password123",
+        "name": "Dhila Mahira",
+        "role": "INTERN"
+      },
+      "email": "dhilamahir.0215@intern.plne.co.id"
+    },
+    {
+      "id": "i1774928664461",
+      "userId": "u1774928664461",
+      "name": "Ahmad Faiz Birqi",
+      "nim_nis": "15000123140355",
+      "gender": "Laki-Laki",
+      "university": "Universitas Diponegoro",
+      "jenjang": "S1",
+      "major": "Psikologi",
+      "status": "ACTIVE",
+      "bidang": "Keuangan",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-01",
+      "periodEnd": "2026-05-21",
+      "duration": "2 Bulan 21 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "ahmadfaizb.0355@intern.plne.co.id"
+    },
+    {
+      "id": "i1774928664462",
+      "userId": "u1774928664462",
+      "name": "R Ghiffari M Affan Syawal",
+      "nim_nis": "15000123140338",
+      "gender": "Laki-Laki",
+      "university": "Universitas Diponegoro",
+      "jenjang": "S1",
+      "major": "Psikologi",
+      "status": "ACTIVE",
+      "bidang": "Human Capital Management",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-01",
+      "periodEnd": "2026-05-21",
+      "duration": "2 Bulan 21 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "rghiffarim.0338@intern.plne.co.id"
+    },
+    {
+      "id": "i1774928664463",
+      "userId": "u1774928664463",
+      "name": "Roghib Albi Panggar Besi",
+      "nim_nis": "0701522040",
+      "gender": "Laki-Laki",
+      "university": "Universitas Al-Azhar Indonesia",
+      "jenjang": "S1",
+      "major": "Ilmu Hukum",
+      "status": "ACTIVE",
+      "bidang": "Human Capital Management",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-29",
+      "periodEnd": "2026-07-03",
+      "duration": "3 Bulan 6 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774928664463",
+        "email": "intern1774928664463@hris.com",
+        "password": "password123",
+        "name": "Roghib Albi Panggar Besi",
+        "role": "INTERN"
+      },
+      "email": "roghibalbi.2040@intern.plne.co.id"
+    },
+    {
+      "id": "i1774928664464",
+      "userId": "u1774928664464",
+      "name": "Priatama Zaky Al Fathoni",
+      "nim_nis": "0701522038",
+      "gender": "Laki-Laki",
+      "university": "Universitas Al-Azhar Indonesia",
+      "jenjang": "S1",
+      "major": "Ilmu Hukum",
+      "status": "ACTIVE",
+      "bidang": "Pelaksana Pengadaan",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-29",
+      "periodEnd": "2026-08-30",
+      "duration": "5 Bulan 4 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "priatamaza.2038@intern.plne.co.id"
+    },
+    {
+      "id": "i1774928664465",
+      "userId": "u1774928664465",
+      "name": "Muhammad Abdu Ar Rafi",
+      "nim_nis": "0701522054",
+      "gender": "Laki-Laki",
+      "university": "Universitas Al-Azhar Indonesia",
+      "jenjang": "S1",
+      "major": "Ilmu hukum",
+      "status": "ACTIVE",
+      "bidang": "Pelaksana Pengadaan",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-29",
+      "periodEnd": "2026-08-30",
+      "duration": "5 Bulan 4 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "email": "muhammadab.2054@intern.plne.co.id"
+    },
+    {
+      "id": "i1774928664466",
+      "userId": "u1774928664466",
+      "name": "Muhammad Fauzan Haqiqi",
+      "nim_nis": "120304230043",
+      "gender": "Laki-Laki",
+      "university": "Universitas Padjadjaran",
+      "jenjang": "S1",
+      "major": "Bisnis Internasional",
+      "status": "ACTIVE",
+      "bidang": "Komunikasi dan Manajemen Stakeholder",
+      "wilayah": "Kantor Pusat",
+      "tahun": "2026",
+      "periodStart": "2026-03-31",
+      "periodEnd": "2026-06-30",
+      "duration": "3 Bulan 1 Hari",
+      "suratPenerimaan": "",
+      "tanggalSuratPenerimaan": "",
+      "spk": "",
+      "tanggalSPK": "",
+      "amandemen": "",
+      "tanggalAmandemen": "",
+      "suratSelesai": "",
+      "tanggalSuratSelesai": "",
+      "deletedAt": null,
+      "user": {
+        "id": "u1774928664466",
+        "email": "intern1774928664466@hris.com",
+        "password": "password123",
+        "name": "Muhammad Fauzan Haqiqi",
+        "role": "INTERN"
+      },
+      "email": "muhammadfa.0043@intern.plne.co.id"
+    }
+  ],
+  "users": [
+    {
+      "id": "u1",
+      "email": "admin@hris.com",
+      "password": "password123",
+      "name": "Admin HR",
+      "role": "ADMIN_HR",
+      "image": "/uploads/avatars/avatar_u1_1775534732970.jpeg"
+    },
+    {
+      "id": "u2",
+      "email": "john@company.com",
+      "password": "password123",
+      "name": "John Supervisor",
+      "role": "SUPERVISOR"
+    },
+    {
+      "id": "u3",
+      "email": "alice@univ.edu",
+      "password": "password123",
+      "name": "Alice Intern",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774582160229",
+      "email": "mutiaaqila.1791@intern.plne.co.id",
+      "password": "PLNE-576354",
+      "name": "Mutia Aqila Fazilatunnisa",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774583697565",
+      "email": "shifakhoir.1080@intern.plne.co.id",
+      "password": "PLNE-848491",
+      "name": "Shifa Khoirunnisa",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774583769711",
+      "email": "naylaaimee.0032@intern.plne.co.id",
+      "password": "PLNE-439158",
+      "name": "Nayla Aimee Taradiva",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774583895973",
+      "email": "intern1774583895973@hris.com",
+      "password": "password123",
+      "name": "Muhammad Ghozali Umaro",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774584740777",
+      "email": "wisnusanto.4033@intern.plne.co.id",
+      "password": "PLNE-650480",
+      "name": "Wisnu Santoso",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774584811236",
+      "email": "muhammadda.0283@intern.plne.co.id",
+      "password": "PLNE-863810",
+      "name": "Muhammad Danu Nofiandi",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774586239307",
+      "email": "admin@hris.com",
+      "password": "password123",
+      "name": "Admin HR",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424681",
+      "email": "intern1774853424681@hris.com",
+      "password": "password123",
+      "name": "Ahmad Faiz Birqi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424682",
+      "email": "ibnumasyhu.4502@intern.plne.co.id",
+      "password": "PLNE-242563",
+      "name": "Ibnu Masyhur Al Fathani",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424683",
+      "email": "vanessasau.0119@intern.plne.co.id",
+      "password": "PLNE-686465",
+      "name": "Vanessa Sauqila Olivian",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424684",
+      "email": "randyaryad.1091@intern.plne.co.id",
+      "password": "PLNE-981591",
+      "name": "Randy Arya Dwi Permana",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424685",
+      "email": "muhammadca.2130@intern.plne.co.id",
+      "password": "PLNE-280867",
+      "name": "Muhammad Calvin Pasya",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424686",
+      "email": "kanayafell.4039@intern.plne.co.id",
+      "password": "PLNE-167024",
+      "name": "Kanaya Fellicita Perdana",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424687",
+      "email": "mahiradind.4018@intern.plne.co.id",
+      "password": "PLNE-262712",
+      "name": "Mahira Dinda Putri Anggrianto",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424688",
+      "email": "intern1774853424688@hris.com",
+      "password": "password123",
+      "name": "Kafuri Fathya Azzahra Putri Suseno",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424689",
+      "email": "intern1774853424689@hris.com",
+      "password": "password123",
+      "name": "Lintang Pasinggih",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424691",
+      "email": "intern1774853424691@hris.com",
+      "password": "password123",
+      "name": "Naila Belvashana Lauda",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424692",
+      "email": "intern1774853424692@hris.com",
+      "password": "password123",
+      "name": "Tiara Alviany",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424693",
+      "email": "intern1774853424693@hris.com",
+      "password": "password123",
+      "name": "Anita Ria Swara",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424694",
+      "email": "intern1774853424694@hris.com",
+      "password": "password123",
+      "name": "Fajar Hamdani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424695",
+      "email": "intern1774853424695@hris.com",
+      "password": "password123",
+      "name": "Syahril Saputra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424696",
+      "email": "rafaeldiel.5380@intern.plne.co.id",
+      "password": "PLNE-153427",
+      "name": "Rafael Diel Nakamaya Lande",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424697",
+      "email": "muhammadal.1221@intern.plne.co.id",
+      "password": "PLNE-753626",
+      "name": "Muhammad Al Farezi Widian",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424698",
+      "email": "muhammadgh.1225@intern.plne.co.id",
+      "password": "PLNE-247554",
+      "name": "Muhammad Ghiyats Aghniyal Fawaz",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424699",
+      "email": "muhammadah.1066@intern.plne.co.id",
+      "password": "PLNE-659847",
+      "name": "Muhammad Ahsantal Haqqo",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424700",
+      "email": "intern1774853424700@hris.com",
+      "password": "password123",
+      "name": "Muhamad Jalika",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424701",
+      "email": "intern1774853424701@hris.com",
+      "password": "password123",
+      "name": "Rendy Hidayat",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424702",
+      "email": "intern1774853424702@hris.com",
+      "password": "password123",
+      "name": "Herdi Farel",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424703",
+      "email": "intern1774853424703@hris.com",
+      "password": "password123",
+      "name": "Vania Febyana Cantika",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424704",
+      "email": "revianajun.5821@intern.plne.co.id",
+      "password": "PLNE-783510",
+      "name": "Reviana Junita Putri",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424705",
+      "email": "sufiwidyar.3025@intern.plne.co.id",
+      "password": "PLNE-934873",
+      "name": "Sufi Widyarini",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424706",
+      "email": "hanaaisyah.7022@intern.plne.co.id",
+      "password": "PLNE-940974",
+      "name": "Hana Aisyah Shabrina",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424707",
+      "email": "intern1774853424707@hris.com",
+      "password": "password123",
+      "name": "Farhan Irfansyah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424708",
+      "email": "intern1774853424708@hris.com",
+      "password": "password123",
+      "name": "Aliya Briany Sasongko",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424709",
+      "email": "radjafarid.1002@intern.plne.co.id",
+      "password": "PLNE-102163",
+      "name": "Radja Faridza Widiansyaputra",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424710",
+      "email": "mjoelyandr.1074@intern.plne.co.id",
+      "password": "PLNE-431221",
+      "name": "M. Joelyandro Revansyah",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424711",
+      "email": "kylagibran.1010@intern.plne.co.id",
+      "password": "PLNE-587482",
+      "name": "Kyla Gibran Ahmad",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424712",
+      "email": "joymeganik.1137@intern.plne.co.id",
+      "password": "PLNE-373298",
+      "name": "Joy Mega Nika Purba",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424713",
+      "email": "ammarnadhi.1096@intern.plne.co.id",
+      "password": "PLNE-536035",
+      "name": "Ammar Nadhif Wicaksono",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424714",
+      "email": "maretadwil.1025@intern.plne.co.id",
+      "password": "PLNE-980018",
+      "name": "Mareta Dwi Lestari",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424715",
+      "email": "intern1774853424715@hris.com",
+      "password": "password123",
+      "name": "Bellghis Loya Zirga",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424716",
+      "email": "intern1774853424716@hris.com",
+      "password": "password123",
+      "name": "Khairul Rasyid",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424717",
+      "email": "intern1774853424717@hris.com",
+      "password": "password123",
+      "name": "Nazwa Fauziah Hanum",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424718",
+      "email": "intern1774853424718@hris.com",
+      "password": "password123",
+      "name": "Sarahusna",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424719",
+      "email": "ekanovaset.0040@intern.plne.co.id",
+      "password": "PLNE-540784",
+      "name": "Eka Nova Setiawan",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424720",
+      "email": "raihangiga.0055@intern.plne.co.id",
+      "password": "PLNE-565184",
+      "name": "Raihan Giga Bajurah",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424721",
+      "email": "intern1774853424721@hris.com",
+      "password": "password123",
+      "name": "Dihyan Aryasuta",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424722",
+      "email": "intern1774853424722@hris.com",
+      "password": "password123",
+      "name": "Denis Fathullah Pratama",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424723",
+      "email": "intern1774853424723@hris.com",
+      "password": "password123",
+      "name": "Wildan Sophal Jamil",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424724",
+      "email": "intern1774853424724@hris.com",
+      "password": "password123",
+      "name": "Fredly Andrias Nussy",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424725",
+      "email": "intern1774853424725@hris.com",
+      "password": "password123",
+      "name": "Belinda Ruspadewi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424726",
+      "email": "salsabila.0031@intern.plne.co.id",
+      "password": "PLNE-245278",
+      "name": "Salsabila",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424727",
+      "email": "intern1774853424727@hris.com",
+      "password": "password123",
+      "name": "Azzahrah Shafahana Prajnaparamita Utomo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424728",
+      "email": "intern1774853424728@hris.com",
+      "password": "password123",
+      "name": "Anissa Rania Lizaldhi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424729",
+      "email": "intern1774853424729@hris.com",
+      "password": "password123",
+      "name": "Paramitha Br. Tarigan Sibero",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424730",
+      "email": "intern1774853424730@hris.com",
+      "password": "password123",
+      "name": "Arik Azel Syahputra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424731",
+      "email": "ayumaydian.0038@intern.plne.co.id",
+      "password": "PLNE-649666",
+      "name": "Ayu May Diana",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424732",
+      "email": "intern1774853424732@hris.com",
+      "password": "password123",
+      "name": "Pipit Yuditha Darmawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424733",
+      "email": "intern1774853424733@hris.com",
+      "password": "password123",
+      "name": "Xena Nisa Elfarabi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424734",
+      "email": "intern1774853424734@hris.com",
+      "password": "password123",
+      "name": "Egia Fitrah Bastanta",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424735",
+      "email": "intern1774853424735@hris.com",
+      "password": "password123",
+      "name": "Salamah Salsabilah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424736",
+      "email": "intern1774853424736@hris.com",
+      "password": "password123",
+      "name": "Iif Latifah Sukriah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424737",
+      "email": "intern1774853424737@hris.com",
+      "password": "password123",
+      "name": "Amreza Addin",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424738",
+      "email": "intern1774853424738@hris.com",
+      "password": "password123",
+      "name": "Ridho Iqbal Firdaus",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424739",
+      "email": "intern1774853424739@hris.com",
+      "password": "password123",
+      "name": "Mohammad Iyan Furqaan Alwy",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424740",
+      "email": "intern1774853424740@hris.com",
+      "password": "password123",
+      "name": "Risqi Alfarisi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424741",
+      "email": "intern1774853424741@hris.com",
+      "password": "password123",
+      "name": "Cahyo Dwi Qhori",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424742",
+      "email": "intern1774853424742@hris.com",
+      "password": "password123",
+      "name": "Bagoes Ardian Dewantara",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424743",
+      "email": "intern1774853424743@hris.com",
+      "password": "password123",
+      "name": "Vito Daffa Nayottama",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424744",
+      "email": "intern1774853424744@hris.com",
+      "password": "password123",
+      "name": "Raden Muhammad Asyam Rafi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424745",
+      "email": "intern1774853424745@hris.com",
+      "password": "password123",
+      "name": "Afif Furqon",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424746",
+      "email": "intern1774853424746@hris.com",
+      "password": "password123",
+      "name": "A.Nurul Aqilah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424747",
+      "email": "intern1774853424747@hris.com",
+      "password": "password123",
+      "name": "Inayah Ananda Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424748",
+      "email": "intern1774853424748@hris.com",
+      "password": "password123",
+      "name": "Ringga",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424750",
+      "email": "intern1774853424750@hris.com",
+      "password": "password123",
+      "name": "Siti Nadia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424751",
+      "email": "intern1774853424751@hris.com",
+      "password": "password123",
+      "name": "Amie Fatimah Yunani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424752",
+      "email": "intern1774853424752@hris.com",
+      "password": "password123",
+      "name": "Elok Faiqoh",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424753",
+      "email": "intern1774853424753@hris.com",
+      "password": "password123",
+      "name": "Muh Raihan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424754",
+      "email": "intern1774853424754@hris.com",
+      "password": "password123",
+      "name": "Tania Riska Indriani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424755",
+      "email": "intern1774853424755@hris.com",
+      "password": "password123",
+      "name": "Nazwa Revanda",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424756",
+      "email": "intern1774853424756@hris.com",
+      "password": "password123",
+      "name": "Fharel Ramadhan Trisasmita",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424757",
+      "email": "intern1774853424757@hris.com",
+      "password": "password123",
+      "name": "Xcel Ibrahimovic",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424758",
+      "email": "intern1774853424758@hris.com",
+      "password": "password123",
+      "name": "Ridho Fajri Al Fath",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424759",
+      "email": "intern1774853424759@hris.com",
+      "password": "password123",
+      "name": "Syamsul Ma'Arif",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424760",
+      "email": "intern1774853424760@hris.com",
+      "password": "password123",
+      "name": "Ghozy Abiyyu",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424761",
+      "email": "intern1774853424761@hris.com",
+      "password": "password123",
+      "name": "Susan Andini",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424762",
+      "email": "intern1774853424762@hris.com",
+      "password": "password123",
+      "name": "Deza Fazrul Falah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424763",
+      "email": "intern1774853424763@hris.com",
+      "password": "password123",
+      "name": "Syafira Nabiila",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424764",
+      "email": "intern1774853424764@hris.com",
+      "password": "password123",
+      "name": "Muhammad Arif Ikhtiar",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424765",
+      "email": "intern1774853424765@hris.com",
+      "password": "password123",
+      "name": "Muhammad Raflian Syah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424766",
+      "email": "intern1774853424766@hris.com",
+      "password": "password123",
+      "name": "Sukmawati",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424767",
+      "email": "firdanurap.2014@intern.plne.co.id",
+      "password": "PLNE-819644",
+      "name": "Firda Nur Apriani",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424768",
+      "email": "intern1774853424768@hris.com",
+      "password": "password123",
+      "name": "Favian Rias Ramadhan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424769",
+      "email": "dhilamahir.0215@intern.plne.co.id",
+      "password": "PLNE-168142",
+      "name": "Dhila Mahira",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774853424770",
+      "email": "intern1774853424770@hris.com",
+      "password": "password123",
+      "name": "Ashila Rifa Hanafiah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424771",
+      "email": "intern1774853424771@hris.com",
+      "password": "password123",
+      "name": "Muhammad Raihan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424772",
+      "email": "intern1774853424772@hris.com",
+      "password": "password123",
+      "name": "Prety Shinta",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424773",
+      "email": "intern1774853424773@hris.com",
+      "password": "password123",
+      "name": "Syifa Nadafa Qolbani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424774",
+      "email": "intern1774853424774@hris.com",
+      "password": "password123",
+      "name": "Aulia Zahra Amalia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424775",
+      "email": "intern1774853424775@hris.com",
+      "password": "password123",
+      "name": "Yudistira Adiayaksa Kurniawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424776",
+      "email": "intern1774853424776@hris.com",
+      "password": "password123",
+      "name": "Miftahul Jannah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424777",
+      "email": "intern1774853424777@hris.com",
+      "password": "password123",
+      "name": "Shafira Putri Amalia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424778",
+      "email": "intern1774853424778@hris.com",
+      "password": "password123",
+      "name": "Rafa Fawwaz",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424779",
+      "email": "intern1774853424779@hris.com",
+      "password": "password123",
+      "name": "Taufan Wijaya Perkasa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424780",
+      "email": "intern1774853424780@hris.com",
+      "password": "password123",
+      "name": "Gagah Nabil Abudurahman",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424781",
+      "email": "intern1774853424781@hris.com",
+      "password": "password123",
+      "name": "Yuniar Mawar Pramesti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424782",
+      "email": "intern1774853424782@hris.com",
+      "password": "password123",
+      "name": "Maulana Ikbal",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424783",
+      "email": "intern1774853424783@hris.com",
+      "password": "password123",
+      "name": "MUHAMMAD YAFIE SAID ALI",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424784",
+      "email": "intern1774853424784@hris.com",
+      "password": "password123",
+      "name": "Bagus Pramana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424785",
+      "email": "intern1774853424785@hris.com",
+      "password": "password123",
+      "name": "Riski Abdillah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424786",
+      "email": "intern1774853424786@hris.com",
+      "password": "password123",
+      "name": "Akbar Syahrur",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424787",
+      "email": "intern1774853424787@hris.com",
+      "password": "password123",
+      "name": "Akil Fadilah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424788",
+      "email": "intern1774853424788@hris.com",
+      "password": "password123",
+      "name": "Rhesa Rizky",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424789",
+      "email": "intern1774853424789@hris.com",
+      "password": "password123",
+      "name": "Luthfia Fairuz Mulyana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424790",
+      "email": "intern1774853424790@hris.com",
+      "password": "password123",
+      "name": "Gladys Akiko Gonta",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424791",
+      "email": "intern1774853424791@hris.com",
+      "password": "password123",
+      "name": "Gadia Adhikaputra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424792",
+      "email": "intern1774853424792@hris.com",
+      "password": "password123",
+      "name": "Yuni Refatul ‘ulya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424793",
+      "email": "intern1774853424793@hris.com",
+      "password": "password123",
+      "name": "Raissa Ardinda Sarwono",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424794",
+      "email": "intern1774853424794@hris.com",
+      "password": "password123",
+      "name": "M. Faiz Fadhlurrahman",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424795",
+      "email": "intern1774853424795@hris.com",
+      "password": "password123",
+      "name": "Oktavia Ramadhani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424796",
+      "email": "intern1774853424796@hris.com",
+      "password": "password123",
+      "name": "Chairunnisa Salsabila",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424797",
+      "email": "intern1774853424797@hris.com",
+      "password": "password123",
+      "name": "Nadilla Syahira",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424798",
+      "email": "intern1774853424798@hris.com",
+      "password": "password123",
+      "name": "Haidar Satrio Wibowo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424799",
+      "email": "intern1774853424799@hris.com",
+      "password": "password123",
+      "name": "Nadinda Zakiyanti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424800",
+      "email": "intern1774853424800@hris.com",
+      "password": "password123",
+      "name": "Clarisha Fitri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424801",
+      "email": "intern1774853424801@hris.com",
+      "password": "password123",
+      "name": "Ayu Kania",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424802",
+      "email": "intern1774853424802@hris.com",
+      "password": "password123",
+      "name": "Alif Naufal Patria",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424803",
+      "email": "intern1774853424803@hris.com",
+      "password": "password123",
+      "name": "Muhammad Sahal Aslam",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424804",
+      "email": "intern1774853424804@hris.com",
+      "password": "password123",
+      "name": "Salman Rabbani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424805",
+      "email": "intern1774853424805@hris.com",
+      "password": "password123",
+      "name": "Muhammad Rizqullah Bimo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424806",
+      "email": "intern1774853424806@hris.com",
+      "password": "password123",
+      "name": "Naufal Saqib Athaya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424807",
+      "email": "intern1774853424807@hris.com",
+      "password": "password123",
+      "name": "Rico Sanjaya Kesuma",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424808",
+      "email": "intern1774853424808@hris.com",
+      "password": "password123",
+      "name": "Khalid Ahmad",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424809",
+      "email": "intern1774853424809@hris.com",
+      "password": "password123",
+      "name": "Muhammad Aulia Iskandar",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424810",
+      "email": "intern1774853424810@hris.com",
+      "password": "password123",
+      "name": "Irene Sihombing",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424811",
+      "email": "intern1774853424811@hris.com",
+      "password": "password123",
+      "name": "Halimatusa Diyah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424812",
+      "email": "intern1774853424812@hris.com",
+      "password": "password123",
+      "name": "Nisrina Azzahra Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424813",
+      "email": "intern1774853424813@hris.com",
+      "password": "password123",
+      "name": "Meyva Deswita",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424815",
+      "email": "intern1774853424815@hris.com",
+      "password": "password123",
+      "name": "Siti Julaeha",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424816",
+      "email": "intern1774853424816@hris.com",
+      "password": "password123",
+      "name": "Muh Rurry Syailendra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424817",
+      "email": "intern1774853424817@hris.com",
+      "password": "password123",
+      "name": "Muhammad Raihan Arrafi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424818",
+      "email": "intern1774853424818@hris.com",
+      "password": "password123",
+      "name": "Mohammad Deazha Busrol Karim",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424819",
+      "email": "intern1774853424819@hris.com",
+      "password": "password123",
+      "name": "Intan Nurhaliza",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424820",
+      "email": "intern1774853424820@hris.com",
+      "password": "password123",
+      "name": "Dhevia Pragatti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424821",
+      "email": "intern1774853424821@hris.com",
+      "password": "password123",
+      "name": "My Hope Max Fabian Kanikir",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424822",
+      "email": "intern1774853424822@hris.com",
+      "password": "password123",
+      "name": "Dava Muhammad Jibran",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424823",
+      "email": "intern1774853424823@hris.com",
+      "password": "password123",
+      "name": "Dimas Fabiyansyah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424824",
+      "email": "intern1774853424824@hris.com",
+      "password": "password123",
+      "name": "Nabiel Makariem",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424825",
+      "email": "intern1774853424825@hris.com",
+      "password": "password123",
+      "name": "Gracia Dessy Crisantha Hasibuan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424826",
+      "email": "intern1774853424826@hris.com",
+      "password": "password123",
+      "name": "Khusnul Maudi Ayu Sholawati",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424827",
+      "email": "intern1774853424827@hris.com",
+      "password": "password123",
+      "name": "Dewi Putri Yulianingsih",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424828",
+      "email": "intern1774853424828@hris.com",
+      "password": "password123",
+      "name": "Deya Ananda Pitaloka",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424829",
+      "email": "intern1774853424829@hris.com",
+      "password": "password123",
+      "name": "Susana Salsabila",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424830",
+      "email": "intern1774853424830@hris.com",
+      "password": "password123",
+      "name": "Muhammad Padeswara Bimata Agung",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424831",
+      "email": "intern1774853424831@hris.com",
+      "password": "password123",
+      "name": "Amira Marella",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424832",
+      "email": "intern1774853424832@hris.com",
+      "password": "password123",
+      "name": "Farhan Anggarakhsa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424833",
+      "email": "intern1774853424833@hris.com",
+      "password": "password123",
+      "name": "Nasywa Dzakirah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424834",
+      "email": "intern1774853424834@hris.com",
+      "password": "password123",
+      "name": "Nur Maulidiya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424835",
+      "email": "intern1774853424835@hris.com",
+      "password": "password123",
+      "name": "Muhammad Fariz Fadillah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424836",
+      "email": "intern1774853424836@hris.com",
+      "password": "password123",
+      "name": "Rizal Fiqri Muttaqin",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424837",
+      "email": "intern1774853424837@hris.com",
+      "password": "password123",
+      "name": "Bintar Andika Putra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424838",
+      "email": "intern1774853424838@hris.com",
+      "password": "password123",
+      "name": "Sulthon Muhammad Nazhif",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424839",
+      "email": "intern1774853424839@hris.com",
+      "password": "password123",
+      "name": "Makhyana Ulya Rosyadi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424840",
+      "email": "intern1774853424840@hris.com",
+      "password": "password123",
+      "name": "Shinta Febrianti Mosse",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424841",
+      "email": "intern1774853424841@hris.com",
+      "password": "password123",
+      "name": "Farrel Alfared Carasiola",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424842",
+      "email": "intern1774853424842@hris.com",
+      "password": "password123",
+      "name": "Wijaya Kusuma",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424843",
+      "email": "intern1774853424843@hris.com",
+      "password": "password123",
+      "name": "Vezy Hiskya Banjarnahor",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424844",
+      "email": "intern1774853424844@hris.com",
+      "password": "password123",
+      "name": "Miranda Damai Agustiani Gultom",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424845",
+      "email": "intern1774853424845@hris.com",
+      "password": "password123",
+      "name": "Muhammad Heidyr Hadiningrat",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424846",
+      "email": "intern1774853424846@hris.com",
+      "password": "password123",
+      "name": "Ananda Batara Putra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424847",
+      "email": "intern1774853424847@hris.com",
+      "password": "password123",
+      "name": "Gisela Aurora Gitapoetri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424848",
+      "email": "intern1774853424848@hris.com",
+      "password": "password123",
+      "name": "Ida Safitri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424849",
+      "email": "intern1774853424849@hris.com",
+      "password": "password123",
+      "name": "Kristiana Murni",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424850",
+      "email": "intern1774853424850@hris.com",
+      "password": "password123",
+      "name": "Daniel Krisdiantoro",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424851",
+      "email": "intern1774853424851@hris.com",
+      "password": "password123",
+      "name": "Qory Aisha Colina",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424852",
+      "email": "intern1774853424852@hris.com",
+      "password": "password123",
+      "name": "Billie Orlando Kurniawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424853",
+      "email": "intern1774853424853@hris.com",
+      "password": "password123",
+      "name": "Muhammad Aldi Yustisio",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424854",
+      "email": "intern1774853424854@hris.com",
+      "password": "password123",
+      "name": "Immanuel Raja Hasudungan Damanik",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424855",
+      "email": "intern1774853424855@hris.com",
+      "password": "password123",
+      "name": "Nabila Puspita Dewi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424856",
+      "email": "intern1774853424856@hris.com",
+      "password": "password123",
+      "name": "Aurora Ma'Isyah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424857",
+      "email": "intern1774853424857@hris.com",
+      "password": "password123",
+      "name": "Aisya Shalifa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424858",
+      "email": "intern1774853424858@hris.com",
+      "password": "password123",
+      "name": "Nazwa Aulia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424859",
+      "email": "intern1774853424859@hris.com",
+      "password": "password123",
+      "name": "Margita Zahra Ramandanisya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424860",
+      "email": "intern1774853424860@hris.com",
+      "password": "password123",
+      "name": "Shafa Artamevia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424861",
+      "email": "intern1774853424861@hris.com",
+      "password": "password123",
+      "name": "Christy Clarrimond Kewas",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424863",
+      "email": "intern1774853424863@hris.com",
+      "password": "password123",
+      "name": "Randy Mahendra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424864",
+      "email": "intern1774853424864@hris.com",
+      "password": "password123",
+      "name": "Rini Amalia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774853424865",
+      "email": "intern1774853424865@hris.com",
+      "password": "password123",
+      "name": "Nasya Fadya Aulia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664181",
+      "email": "intern1774928664181@hris.com",
+      "password": "password123",
+      "name": "Rafael Evan Pradipa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664182",
+      "email": "intern1774928664182@hris.com",
+      "password": "password123",
+      "name": "Fajar Rian Nugroho",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664184",
+      "email": "intern1774928664184@hris.com",
+      "password": "password123",
+      "name": "Yohanna Tobing",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664185",
+      "email": "intern1774928664185@hris.com",
+      "password": "password123",
+      "name": "Khaira Safiraj",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664186",
+      "email": "intern1774928664186@hris.com",
+      "password": "password123",
+      "name": "Bintang Ronaria",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664187",
+      "email": "intern1774928664187@hris.com",
+      "password": "password123",
+      "name": "Salsabila Rifda Permana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664188",
+      "email": "intern1774928664188@hris.com",
+      "password": "password123",
+      "name": "Ikhsan Ruwahda Putra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664189",
+      "email": "intern1774928664189@hris.com",
+      "password": "password123",
+      "name": "Amadhea Noor Aliyah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664190",
+      "email": "intern1774928664190@hris.com",
+      "password": "password123",
+      "name": "Annisa Nursya’Bani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664192",
+      "email": "intern1774928664192@hris.com",
+      "password": "password123",
+      "name": "Fildza Salma Aninditha",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664193",
+      "email": "intern1774928664193@hris.com",
+      "password": "password123",
+      "name": "Wulandari Syah Putri Br P",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664194",
+      "email": "intern1774928664194@hris.com",
+      "password": "password123",
+      "name": "Natasha Nurafipah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664195",
+      "email": "intern1774928664195@hris.com",
+      "password": "password123",
+      "name": "Sofi Muarofah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664196",
+      "email": "intern1774928664196@hris.com",
+      "password": "password123",
+      "name": "Restu Irsandi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664197",
+      "email": "intern1774928664197@hris.com",
+      "password": "password123",
+      "name": "Nabila Oktaviana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664198",
+      "email": "intern1774928664198@hris.com",
+      "password": "password123",
+      "name": "Tesya Febriani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664199",
+      "email": "intern1774928664199@hris.com",
+      "password": "password123",
+      "name": "Agung Purnama",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664201",
+      "email": "intern1774928664201@hris.com",
+      "password": "password123",
+      "name": "Sabila Silmi Nurpadilah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664202",
+      "email": "intern1774928664202@hris.com",
+      "password": "password123",
+      "name": "Fajriyah Safti Salsabila",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664203",
+      "email": "intern1774928664203@hris.com",
+      "password": "password123",
+      "name": "Mazaya Muhammad Aulia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664204",
+      "email": "intern1774928664204@hris.com",
+      "password": "password123",
+      "name": "Muhammad Rafli Fidyanto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664205",
+      "email": "intern1774928664205@hris.com",
+      "password": "password123",
+      "name": "Nagaoka Dimas Pramono",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664206",
+      "email": "intern1774928664206@hris.com",
+      "password": "password123",
+      "name": "Aurelia Christy Simanjuntak",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664207",
+      "email": "intern1774928664207@hris.com",
+      "password": "password123",
+      "name": "Ni Made Wulandari",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664208",
+      "email": "intern1774928664208@hris.com",
+      "password": "password123",
+      "name": "Adek Akbar Zahid",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664209",
+      "email": "intern1774928664209@hris.com",
+      "password": "password123",
+      "name": "Naufal Fajar Kusumawardhana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664210",
+      "email": "intern1774928664210@hris.com",
+      "password": "password123",
+      "name": "Yusuf Agung Nugraha",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664211",
+      "email": "intern1774928664211@hris.com",
+      "password": "password123",
+      "name": "Bonaventura Riko Kumara Datta",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664212",
+      "email": "intern1774928664212@hris.com",
+      "password": "password123",
+      "name": "Oasis Prakash Pasha",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664213",
+      "email": "intern1774928664213@hris.com",
+      "password": "password123",
+      "name": "I Made Kharisma Agung Putra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664215",
+      "email": "intern1774928664215@hris.com",
+      "password": "password123",
+      "name": "Diaz Eka Cipta",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664216",
+      "email": "intern1774928664216@hris.com",
+      "password": "password123",
+      "name": "Muhammad Iqbal Damara",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664217",
+      "email": "intern1774928664217@hris.com",
+      "password": "password123",
+      "name": "Kevin Christian Yustisi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664219",
+      "email": "intern1774928664219@hris.com",
+      "password": "password123",
+      "name": "Lukas Bagus Sutejo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664220",
+      "email": "intern1774928664220@hris.com",
+      "password": "password123",
+      "name": "Irgi Salsa Destriawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664221",
+      "email": "intern1774928664221@hris.com",
+      "password": "password123",
+      "name": "Rahmad Naufal Winandri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664222",
+      "email": "intern1774928664222@hris.com",
+      "password": "password123",
+      "name": "Dwi Hermawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664223",
+      "email": "intern1774928664223@hris.com",
+      "password": "password123",
+      "name": "Zaid Abdul Azis",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664224",
+      "email": "intern1774928664224@hris.com",
+      "password": "password123",
+      "name": "Muhammad Riehan Arraief",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664225",
+      "email": "intern1774928664225@hris.com",
+      "password": "password123",
+      "name": "The Sandro Ongki Wijaya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664226",
+      "email": "intern1774928664226@hris.com",
+      "password": "password123",
+      "name": "Muhamad Sidik Alfandi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664227",
+      "email": "intern1774928664227@hris.com",
+      "password": "password123",
+      "name": "Aldo Benhard Saragih",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664228",
+      "email": "intern1774928664228@hris.com",
+      "password": "password123",
+      "name": "Prayagati Yolanda Sunarya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664229",
+      "email": "intern1774928664229@hris.com",
+      "password": "password123",
+      "name": "Aninda Kuswanti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664230",
+      "email": "intern1774928664230@hris.com",
+      "password": "password123",
+      "name": "Marla Dea Sitompul",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664231",
+      "email": "intern1774928664231@hris.com",
+      "password": "password123",
+      "name": "Fadhil Umar Al Farouq",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664232",
+      "email": "intern1774928664232@hris.com",
+      "password": "password123",
+      "name": "Aisya Rafa Maharani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664233",
+      "email": "intern1774928664233@hris.com",
+      "password": "password123",
+      "name": "Fandi Andrianto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664234",
+      "email": "intern1774928664234@hris.com",
+      "password": "password123",
+      "name": "Mochammad Harits Fajar Kusuma",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664235",
+      "email": "intern1774928664235@hris.com",
+      "password": "password123",
+      "name": "Dwi Restu Wijaya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664237",
+      "email": "intern1774928664237@hris.com",
+      "password": "password123",
+      "name": "Syarif Muhamad Fajri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664238",
+      "email": "intern1774928664238@hris.com",
+      "password": "password123",
+      "name": "Robertus Jelalut",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664239",
+      "email": "intern1774928664239@hris.com",
+      "password": "password123",
+      "name": "Shaffa Mutia Zahra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664240",
+      "email": "intern1774928664240@hris.com",
+      "password": "password123",
+      "name": "Nadine Almira Widjanarko",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664241",
+      "email": "intern1774928664241@hris.com",
+      "password": "password123",
+      "name": "Erina Fitriyanti Suandi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664242",
+      "email": "intern1774928664242@hris.com",
+      "password": "password123",
+      "name": "Putri Ainun Aliyullah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664243",
+      "email": "intern1774928664243@hris.com",
+      "password": "password123",
+      "name": "Muhammad Rizal Cemang",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664244",
+      "email": "intern1774928664244@hris.com",
+      "password": "password123",
+      "name": "Lucky Agusta Triadarma",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664245",
+      "email": "intern1774928664245@hris.com",
+      "password": "password123",
+      "name": "Najmii Khairsyah Nasution",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664246",
+      "email": "intern1774928664246@hris.com",
+      "password": "password123",
+      "name": "Fatahillah Putra Wibowo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664247",
+      "email": "intern1774928664247@hris.com",
+      "password": "password123",
+      "name": "Yanuar Arbi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664248",
+      "email": "intern1774928664248@hris.com",
+      "password": "password123",
+      "name": "Tasya Azzahra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664249",
+      "email": "intern1774928664249@hris.com",
+      "password": "password123",
+      "name": "Bella Amelia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664250",
+      "email": "intern1774928664250@hris.com",
+      "password": "password123",
+      "name": "Rizki Pratama Putra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664251",
+      "email": "intern1774928664251@hris.com",
+      "password": "password123",
+      "name": "Arnes Eliezer Sitinjak",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664252",
+      "email": "intern1774928664252@hris.com",
+      "password": "password123",
+      "name": "Renaldi Anggara",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664253",
+      "email": "intern1774928664253@hris.com",
+      "password": "password123",
+      "name": "Dimas Akbar Saputra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664254",
+      "email": "intern1774928664254@hris.com",
+      "password": "password123",
+      "name": "Tasya Alea Zahwa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664255",
+      "email": "intern1774928664255@hris.com",
+      "password": "password123",
+      "name": "Ulfa Gita Rusmala",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664256",
+      "email": "intern1774928664256@hris.com",
+      "password": "password123",
+      "name": "Pafian Anggas Fabiyantoro",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664257",
+      "email": "intern1774928664257@hris.com",
+      "password": "password123",
+      "name": "Bagas Karuniadi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664258",
+      "email": "intern1774928664258@hris.com",
+      "password": "password123",
+      "name": "Hananto Dimas Prasetyo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664259",
+      "email": "intern1774928664259@hris.com",
+      "password": "password123",
+      "name": "Al Amin Bintang Mas",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664260",
+      "email": "intern1774928664260@hris.com",
+      "password": "password123",
+      "name": "Aulia Widyani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664262",
+      "email": "intern1774928664262@hris.com",
+      "password": "password123",
+      "name": "Ramadhan Ammar",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664263",
+      "email": "intern1774928664263@hris.com",
+      "password": "password123",
+      "name": "Wanda Nur Azizah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664264",
+      "email": "intern1774928664264@hris.com",
+      "password": "password123",
+      "name": "Nilam Cahya Ningrum",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664265",
+      "email": "intern1774928664265@hris.com",
+      "password": "password123",
+      "name": "Prima Falaqia Windara",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664266",
+      "email": "intern1774928664266@hris.com",
+      "password": "password123",
+      "name": "Safitri Dwi Wulansari",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664267",
+      "email": "intern1774928664267@hris.com",
+      "password": "password123",
+      "name": "Yulina Wilujeng Nugrahani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664268",
+      "email": "intern1774928664268@hris.com",
+      "password": "password123",
+      "name": "Firman Wahyudi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664269",
+      "email": "intern1774928664269@hris.com",
+      "password": "password123",
+      "name": "Muhammad Farhan Septian",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664270",
+      "email": "intern1774928664270@hris.com",
+      "password": "password123",
+      "name": "Muhamad Nabil Syihab",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664271",
+      "email": "intern1774928664271@hris.com",
+      "password": "password123",
+      "name": "Astuti B.P Simanullang",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664272",
+      "email": "intern1774928664272@hris.com",
+      "password": "password123",
+      "name": "Riris Silaban",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664273",
+      "email": "intern1774928664273@hris.com",
+      "password": "password123",
+      "name": "Syalomita Fenesia Manalu",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664274",
+      "email": "intern1774928664274@hris.com",
+      "password": "password123",
+      "name": "Clara Jessica",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664275",
+      "email": "intern1774928664275@hris.com",
+      "password": "password123",
+      "name": "Syifa Mutiara Rachmah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664276",
+      "email": "intern1774928664276@hris.com",
+      "password": "password123",
+      "name": "Syifa Yulifa Sari",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664277",
+      "email": "intern1774928664277@hris.com",
+      "password": "password123",
+      "name": "Rizkia Nur Afriani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664278",
+      "email": "intern1774928664278@hris.com",
+      "password": "password123",
+      "name": "Nurliana Zavira",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664279",
+      "email": "intern1774928664279@hris.com",
+      "password": "password123",
+      "name": "Ari Nugroho",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664280",
+      "email": "intern1774928664280@hris.com",
+      "password": "password123",
+      "name": "Muhammad Khadafi Al Fajri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664281",
+      "email": "intern1774928664281@hris.com",
+      "password": "password123",
+      "name": "Puangthalita Amanda Ak",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664282",
+      "email": "intern1774928664282@hris.com",
+      "password": "password123",
+      "name": "Indra Nur Tarmidzi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664283",
+      "email": "intern1774928664283@hris.com",
+      "password": "password123",
+      "name": "Kasyifal Muntazhor",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664284",
+      "email": "intern1774928664284@hris.com",
+      "password": "password123",
+      "name": "Maunding Risma",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664285",
+      "email": "intern1774928664285@hris.com",
+      "password": "password123",
+      "name": "Muayyad Rosadi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664286",
+      "email": "intern1774928664286@hris.com",
+      "password": "password123",
+      "name": "Angges Bakda Maulana Putra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664287",
+      "email": "intern1774928664287@hris.com",
+      "password": "password123",
+      "name": "Rendy Cahya Perdana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664288",
+      "email": "intern1774928664288@hris.com",
+      "password": "password123",
+      "name": "Muhammad Alif Abdillah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664289",
+      "email": "intern1774928664289@hris.com",
+      "password": "password123",
+      "name": "Siti Rubiah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664290",
+      "email": "intern1774928664290@hris.com",
+      "password": "password123",
+      "name": "Riza Ariyanti Rumodar",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664291",
+      "email": "intern1774928664291@hris.com",
+      "password": "password123",
+      "name": "Aurelia Sherissa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664292",
+      "email": "intern1774928664292@hris.com",
+      "password": "password123",
+      "name": "Vika Putri Amalia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664293",
+      "email": "intern1774928664293@hris.com",
+      "password": "password123",
+      "name": "Jumiarti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664294",
+      "email": "intern1774928664294@hris.com",
+      "password": "password123",
+      "name": "Arrija Tulnafizin",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664295",
+      "email": "intern1774928664295@hris.com",
+      "password": "password123",
+      "name": "Mahira Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664296",
+      "email": "intern1774928664296@hris.com",
+      "password": "password123",
+      "name": "Muhammad Misbah Effendy",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664297",
+      "email": "intern1774928664297@hris.com",
+      "password": "password123",
+      "name": "Muhammad Padeswara Bimata Agung",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664298",
+      "email": "intern1774928664298@hris.com",
+      "password": "password123",
+      "name": "Muhammad Hafidz Subhan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664299",
+      "email": "intern1774928664299@hris.com",
+      "password": "password123",
+      "name": "Muhammad Ariq Arranairy Madjid",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664300",
+      "email": "intern1774928664300@hris.com",
+      "password": "password123",
+      "name": "Muhamad Rian Kurniawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664301",
+      "email": "intern1774928664301@hris.com",
+      "password": "password123",
+      "name": "Raffi Mumtaz Indrapura",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664302",
+      "email": "intern1774928664302@hris.com",
+      "password": "password123",
+      "name": "Mochamad Kevin Luthfi Baihaqi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664303",
+      "email": "intern1774928664303@hris.com",
+      "password": "password123",
+      "name": "Nafedz Azra Asyadda",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664304",
+      "email": "intern1774928664304@hris.com",
+      "password": "password123",
+      "name": "Raden Satrio Wicaksono",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664305",
+      "email": "intern1774928664305@hris.com",
+      "password": "password123",
+      "name": "Michael Ivan Setiawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664306",
+      "email": "intern1774928664306@hris.com",
+      "password": "password123",
+      "name": "Jaya Parluasan Simangunsong",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664307",
+      "email": "intern1774928664307@hris.com",
+      "password": "password123",
+      "name": "Rizki Alfiansyah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664308",
+      "email": "intern1774928664308@hris.com",
+      "password": "password123",
+      "name": "Raditya Prajnabuwana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664310",
+      "email": "intern1774928664310@hris.com",
+      "password": "password123",
+      "name": "I Putu Buddhi Gunawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664311",
+      "email": "intern1774928664311@hris.com",
+      "password": "password123",
+      "name": "Naufal Dzaky Asyam",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664312",
+      "email": "intern1774928664312@hris.com",
+      "password": "password123",
+      "name": "Natanael Bimo Priambodo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664313",
+      "email": "intern1774928664313@hris.com",
+      "password": "password123",
+      "name": "Timothy Joseph Mordechai Simangunsong",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664314",
+      "email": "intern1774928664314@hris.com",
+      "password": "password123",
+      "name": "Jeriko Hasian Munthe",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664315",
+      "email": "intern1774928664315@hris.com",
+      "password": "password123",
+      "name": "Muhammad Zaki Muharram",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664316",
+      "email": "intern1774928664316@hris.com",
+      "password": "password123",
+      "name": "Erwin Uday Rianto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664317",
+      "email": "intern1774928664317@hris.com",
+      "password": "password123",
+      "name": "Tri Wisnutama",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664318",
+      "email": "intern1774928664318@hris.com",
+      "password": "password123",
+      "name": "Zafira Nooranisa Ayu",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664319",
+      "email": "intern1774928664319@hris.com",
+      "password": "password123",
+      "name": "Sulthan Daffa Azzikra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664320",
+      "email": "intern1774928664320@hris.com",
+      "password": "password123",
+      "name": "Marsya Aurellia Nandaputri Budiman",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664321",
+      "email": "intern1774928664321@hris.com",
+      "password": "password123",
+      "name": "Julius Mahendra Sihombing",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664322",
+      "email": "intern1774928664322@hris.com",
+      "password": "password123",
+      "name": "Della Wiyanti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664323",
+      "email": "intern1774928664323@hris.com",
+      "password": "password123",
+      "name": "Astrid Belaristy",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664324",
+      "email": "intern1774928664324@hris.com",
+      "password": "password123",
+      "name": "Muhammad Naufal Hasan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664325",
+      "email": "intern1774928664325@hris.com",
+      "password": "password123",
+      "name": "Zahrah Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664326",
+      "email": "intern1774928664326@hris.com",
+      "password": "password123",
+      "name": "Fadli Naufal Ardianto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664327",
+      "email": "intern1774928664327@hris.com",
+      "password": "password123",
+      "name": "Daffa Ihsan Tritama",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664328",
+      "email": "intern1774928664328@hris.com",
+      "password": "password123",
+      "name": "Daffa Rifqi Farghani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664329",
+      "email": "intern1774928664329@hris.com",
+      "password": "password123",
+      "name": "Melly Nur Haliza",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664330",
+      "email": "intern1774928664330@hris.com",
+      "password": "password123",
+      "name": "Muthia Hanifah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664331",
+      "email": "intern1774928664331@hris.com",
+      "password": "password123",
+      "name": "Muhammad Fajar",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664332",
+      "email": "intern1774928664332@hris.com",
+      "password": "password123",
+      "name": "Nurhaliza",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664333",
+      "email": "intern1774928664333@hris.com",
+      "password": "password123",
+      "name": "Ninda Kusuma Wardani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664334",
+      "email": "intern1774928664334@hris.com",
+      "password": "password123",
+      "name": "Sieravina Happy Rezkyani Bettay",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664335",
+      "email": "intern1774928664335@hris.com",
+      "password": "password123",
+      "name": "Salma Djafar Do Hasan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664336",
+      "email": "intern1774928664336@hris.com",
+      "password": "password123",
+      "name": "Dhifan Faza Matondang",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664337",
+      "email": "intern1774928664337@hris.com",
+      "password": "password123",
+      "name": "Anne Claudya Viona Uly",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664338",
+      "email": "intern1774928664338@hris.com",
+      "password": "password123",
+      "name": "Farid Handoyo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664339",
+      "email": "intern1774928664339@hris.com",
+      "password": "password123",
+      "name": "Shafa Nabila Lubis",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664340",
+      "email": "intern1774928664340@hris.com",
+      "password": "password123",
+      "name": "Nova Chandra Ramadhan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664341",
+      "email": "intern1774928664341@hris.com",
+      "password": "password123",
+      "name": "Elsha Nabila",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664342",
+      "email": "intern1774928664342@hris.com",
+      "password": "password123",
+      "name": "Rahma Septiany Faojiah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664343",
+      "email": "intern1774928664343@hris.com",
+      "password": "password123",
+      "name": "T. Alief Rizky Bayhaqi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664344",
+      "email": "intern1774928664344@hris.com",
+      "password": "password123",
+      "name": "Rahel Gracia Listiadi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664345",
+      "email": "intern1774928664345@hris.com",
+      "password": "password123",
+      "name": "Khalisatuz Zahro",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664346",
+      "email": "intern1774928664346@hris.com",
+      "password": "password123",
+      "name": "Dhea Nurfitri Aditya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664347",
+      "email": "intern1774928664347@hris.com",
+      "password": "password123",
+      "name": "Annisa Fee Amanda",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664348",
+      "email": "intern1774928664348@hris.com",
+      "password": "password123",
+      "name": "Konita Hasna",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664349",
+      "email": "intern1774928664349@hris.com",
+      "password": "password123",
+      "name": "Atika Yumna",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664350",
+      "email": "intern1774928664350@hris.com",
+      "password": "password123",
+      "name": "Indah Rezki Kurnia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664352",
+      "email": "intern1774928664352@hris.com",
+      "password": "password123",
+      "name": "Achmad Riandi Fadil",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664353",
+      "email": "intern1774928664353@hris.com",
+      "password": "password123",
+      "name": "Muhammad Zidane Hukma Shabiyya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664354",
+      "email": "intern1774928664354@hris.com",
+      "password": "password123",
+      "name": "Tri Sanjaya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664355",
+      "email": "intern1774928664355@hris.com",
+      "password": "password123",
+      "name": "Farah Fadhilah Ridana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664356",
+      "email": "intern1774928664356@hris.com",
+      "password": "password123",
+      "name": "Almira Nindya Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664357",
+      "email": "intern1774928664357@hris.com",
+      "password": "password123",
+      "name": "Nurul Azmi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664358",
+      "email": "intern1774928664358@hris.com",
+      "password": "password123",
+      "name": "Nevan Falsetto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664359",
+      "email": "intern1774928664359@hris.com",
+      "password": "password123",
+      "name": "Mirja Arrasyd",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664360",
+      "email": "intern1774928664360@hris.com",
+      "password": "password123",
+      "name": "Anggagar Bimo Priyambodo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664361",
+      "email": "intern1774928664361@hris.com",
+      "password": "password123",
+      "name": "Gaza Al Ghifary Rifky Kasmal",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664362",
+      "email": "intern1774928664362@hris.com",
+      "password": "password123",
+      "name": "Dina Sekar Juliati",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664363",
+      "email": "intern1774928664363@hris.com",
+      "password": "password123",
+      "name": "Tasya Aulia Syahputri Hrp",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664364",
+      "email": "intern1774928664364@hris.com",
+      "password": "password123",
+      "name": "Radhitia Maulida Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664365",
+      "email": "intern1774928664365@hris.com",
+      "password": "password123",
+      "name": "Abraham Sahala Parluhutan Hutauruk",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664366",
+      "email": "intern1774928664366@hris.com",
+      "password": "password123",
+      "name": "Adam Dharmawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664367",
+      "email": "intern1774928664367@hris.com",
+      "password": "password123",
+      "name": "Arif Saputra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664368",
+      "email": "intern1774928664368@hris.com",
+      "password": "password123",
+      "name": "Faiq Ahmad Pudwajanu",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664369",
+      "email": "intern1774928664369@hris.com",
+      "password": "password123",
+      "name": "Marsellinus Jonathan Siagian",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664370",
+      "email": "intern1774928664370@hris.com",
+      "password": "password123",
+      "name": "Muhammad Luthfi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664371",
+      "email": "intern1774928664371@hris.com",
+      "password": "password123",
+      "name": "Nicolas Arthur Utomo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664372",
+      "email": "intern1774928664372@hris.com",
+      "password": "password123",
+      "name": "Vira Najah Nazihah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664373",
+      "email": "intern1774928664373@hris.com",
+      "password": "password123",
+      "name": "Iqraya Muhammad",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664374",
+      "email": "intern1774928664374@hris.com",
+      "password": "password123",
+      "name": "Hafidh Hamonangan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664375",
+      "email": "intern1774928664375@hris.com",
+      "password": "password123",
+      "name": "Sabina Maharani Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664376",
+      "email": "intern1774928664376@hris.com",
+      "password": "password123",
+      "name": "Syarif Hidayat",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664377",
+      "email": "intern1774928664377@hris.com",
+      "password": "password123",
+      "name": "M.H Agit Fernanda",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664378",
+      "email": "intern1774928664378@hris.com",
+      "password": "password123",
+      "name": "Samuel Hamonangan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664379",
+      "email": "intern1774928664379@hris.com",
+      "password": "password123",
+      "name": "Fiqo Aulia Icksan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664380",
+      "email": "intern1774928664380@hris.com",
+      "password": "password123",
+      "name": "Natanael Chrystian Aprianto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664381",
+      "email": "intern1774928664381@hris.com",
+      "password": "password123",
+      "name": "Mirna Sambo Kaiyang",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664382",
+      "email": "intern1774928664382@hris.com",
+      "password": "password123",
+      "name": "Muhammad Fanani Hafifudin",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664383",
+      "email": "intern1774928664383@hris.com",
+      "password": "password123",
+      "name": "Muhammad Iqbal",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664384",
+      "email": "intern1774928664384@hris.com",
+      "password": "password123",
+      "name": "Faiza Alfiani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664385",
+      "email": "intern1774928664385@hris.com",
+      "password": "password123",
+      "name": "Daula Nur Hafzi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664386",
+      "email": "intern1774928664386@hris.com",
+      "password": "password123",
+      "name": "Hardi Fazrian Malik",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664387",
+      "email": "intern1774928664387@hris.com",
+      "password": "password123",
+      "name": "Rozan Ananda Farsya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664388",
+      "email": "intern1774928664388@hris.com",
+      "password": "password123",
+      "name": "Ditha Nevella Sembiring",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664389",
+      "email": "intern1774928664389@hris.com",
+      "password": "password123",
+      "name": "Evan Wicaksono",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664390",
+      "email": "intern1774928664390@hris.com",
+      "password": "password123",
+      "name": "Stephanie Shinta Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664392",
+      "email": "intern1774928664392@hris.com",
+      "password": "password123",
+      "name": "Khoirotun Nisa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664393",
+      "email": "intern1774928664393@hris.com",
+      "password": "password123",
+      "name": "Kayla Anandita Julianti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664394",
+      "email": "intern1774928664394@hris.com",
+      "password": "password123",
+      "name": "Fauzan Azima",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664395",
+      "email": "intern1774928664395@hris.com",
+      "password": "password123",
+      "name": "Fitri Ameliasari",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664396",
+      "email": "intern1774928664396@hris.com",
+      "password": "password123",
+      "name": "Safirah Hasdi Wijayanti",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664397",
+      "email": "intern1774928664397@hris.com",
+      "password": "password123",
+      "name": "Salsabillah Fakriah Daryanto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664398",
+      "email": "intern1774928664398@hris.com",
+      "password": "password123",
+      "name": "Fathi Farhat Asyari",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664399",
+      "email": "intern1774928664399@hris.com",
+      "password": "password123",
+      "name": "Delfahmi Lutfika Pohan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664400",
+      "email": "intern1774928664400@hris.com",
+      "password": "password123",
+      "name": "Muhammad Farid Dhiyaulhaq",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664401",
+      "email": "intern1774928664401@hris.com",
+      "password": "password123",
+      "name": "Sri Oktaviani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664402",
+      "email": "intern1774928664402@hris.com",
+      "password": "password123",
+      "name": "Devi Divarah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664403",
+      "email": "intern1774928664403@hris.com",
+      "password": "password123",
+      "name": "Ulul Aulia Herinkian",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664404",
+      "email": "intern1774928664404@hris.com",
+      "password": "password123",
+      "name": "Muhammad Hafizh Assariy",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664405",
+      "email": "intern1774928664405@hris.com",
+      "password": "password123",
+      "name": "Najma Khairani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664406",
+      "email": "intern1774928664406@hris.com",
+      "password": "password123",
+      "name": "Fadhila Az Zahra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664407",
+      "email": "intern1774928664407@hris.com",
+      "password": "password123",
+      "name": "Megawati Nur Sagita Putri",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664408",
+      "email": "intern1774928664408@hris.com",
+      "password": "password123",
+      "name": "Nabilah Annisa Oktavia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664409",
+      "email": "intern1774928664409@hris.com",
+      "password": "password123",
+      "name": "Nur Aini Cahyaningrum",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664410",
+      "email": "intern1774928664410@hris.com",
+      "password": "password123",
+      "name": "Aliza Qory Imeltha",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664411",
+      "email": "intern1774928664411@hris.com",
+      "password": "password123",
+      "name": "Delia Amalia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664412",
+      "email": "intern1774928664412@hris.com",
+      "password": "password123",
+      "name": "Utami Dewi Amelia",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664413",
+      "email": "intern1774928664413@hris.com",
+      "password": "password123",
+      "name": "Sae Salsabiila",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664414",
+      "email": "intern1774928664414@hris.com",
+      "password": "password123",
+      "name": "Ananda Norma Elvira Ramadan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664415",
+      "email": "intern1774928664415@hris.com",
+      "password": "password123",
+      "name": "Fatimah Aulia Nuraini",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664416",
+      "email": "intern1774928664416@hris.com",
+      "password": "password123",
+      "name": "Qory Aisha Colina",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664418",
+      "email": "intern1774928664418@hris.com",
+      "password": "password123",
+      "name": "Rachmadini Cahyaningrum",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664419",
+      "email": "intern1774928664419@hris.com",
+      "password": "password123",
+      "name": "Sarah Qanitin Rachman",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664420",
+      "email": "intern1774928664420@hris.com",
+      "password": "password123",
+      "name": "Joshua Ryan Susanto",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664421",
+      "email": "intern1774928664421@hris.com",
+      "password": "password123",
+      "name": "Fikka Pertiwi Hanriyani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664422",
+      "email": "intern1774928664422@hris.com",
+      "password": "password123",
+      "name": "Farhan Anggarakhsa",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664423",
+      "email": "intern1774928664423@hris.com",
+      "password": "password123",
+      "name": "Dioni Rizky",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664424",
+      "email": "intern1774928664424@hris.com",
+      "password": "password123",
+      "name": "Muh Rurry Syailendra",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664425",
+      "email": "intern1774928664425@hris.com",
+      "password": "password123",
+      "name": "Sonko Yusuf",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664426",
+      "email": "intern1774928664426@hris.com",
+      "password": "password123",
+      "name": "Muhammad Raihan Arrafi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664427",
+      "email": "intern1774928664427@hris.com",
+      "password": "password123",
+      "name": "Nasywa Wahyu Haighi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664428",
+      "email": "intern1774928664428@hris.com",
+      "password": "password123",
+      "name": "Yohanes Satrio Adi Nugroho",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664430",
+      "email": "intern1774928664430@hris.com",
+      "password": "password123",
+      "name": "Muhammad Aulia Iskandar",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664431",
+      "email": "intern1774928664431@hris.com",
+      "password": "password123",
+      "name": "Yuni Refatul ‘Ulya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664433",
+      "email": "intern1774928664433@hris.com",
+      "password": "password123",
+      "name": "Tizka Adawatussilmi",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664434",
+      "email": "intern1774928664434@hris.com",
+      "password": "password123",
+      "name": "Oktavia Ramadhani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664435",
+      "email": "intern1774928664435@hris.com",
+      "password": "password123",
+      "name": "Miftahul Jannah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664436",
+      "email": "intern1774928664436@hris.com",
+      "password": "password123",
+      "name": "Riski Abdillah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664437",
+      "email": "intern1774928664437@hris.com",
+      "password": "password123",
+      "name": "Susan Andini",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664439",
+      "email": "intern1774928664439@hris.com",
+      "password": "password123",
+      "name": "Muhammad Yafie Said Ali",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664440",
+      "email": "intern1774928664440@hris.com",
+      "password": "password123",
+      "name": "Muhammad Rafli Azzara",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664441",
+      "email": "intern1774928664441@hris.com",
+      "password": "password123",
+      "name": "Muhammad Raditya Prakoso",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664442",
+      "email": "intern1774928664442@hris.com",
+      "password": "password123",
+      "name": "M. Irhamsah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664443",
+      "email": "intern1774928664443@hris.com",
+      "password": "password123",
+      "name": "Ahmad Faidz Dzazuli",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664444",
+      "email": "intern1774928664444@hris.com",
+      "password": "password123",
+      "name": "Vinna Nur Rachmawati",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664446",
+      "email": "intern1774928664446@hris.com",
+      "password": "password123",
+      "name": "Tania Riska Indriani",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664447",
+      "email": "intern1774928664447@hris.com",
+      "password": "password123",
+      "name": "Elok Faiqoh",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664448",
+      "email": "intern1774928664448@hris.com",
+      "password": "password123",
+      "name": "Abel Bagus Pratama",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664449",
+      "email": "intern1774928664449@hris.com",
+      "password": "password123",
+      "name": "Risqi Chandra Wijaya",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664450",
+      "email": "intern1774928664450@hris.com",
+      "password": "password123",
+      "name": "Pipit Yuditha Darmawan",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664452",
+      "email": "intern1774928664452@hris.com",
+      "password": "password123",
+      "name": "Azzahrah Shafahana Prajnaparamita Utomo",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664453",
+      "email": "intern1774928664453@hris.com",
+      "password": "password123",
+      "name": "Khairul Rasyid",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664454",
+      "email": "intern1774928664454@hris.com",
+      "password": "password123",
+      "name": "Dihyan Aryasuta",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664455",
+      "email": "intern1774928664455@hris.com",
+      "password": "password123",
+      "name": "Billy Mohammad Yusuf Taswaneno",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664456",
+      "email": "intern1774928664456@hris.com",
+      "password": "password123",
+      "name": "Farhan Irfansyah",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664458",
+      "email": "intern1774928664458@hris.com",
+      "password": "password123",
+      "name": "Saipul Rahman",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664459",
+      "email": "intern1774928664459@hris.com",
+      "password": "password123",
+      "name": "Muhammad Ramadana",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664460",
+      "email": "intern1774928664460@hris.com",
+      "password": "password123",
+      "name": "Aliya Briany Sasongko",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774928664461",
+      "email": "ahmadfaizb.0355@intern.plne.co.id",
+      "password": "PLNE-754410",
+      "name": "Ahmad Faiz Birqi",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774928664462",
+      "email": "rghiffarim.0338@intern.plne.co.id",
+      "password": "PLNE-310628",
+      "name": "R Ghiffari M Affan Syawal",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774928664463",
+      "email": "roghibalbi.2040@intern.plne.co.id",
+      "password": "PLNE-738293",
+      "name": "Roghib Albi Panggar Besi",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774928664464",
+      "email": "priatamaza.2038@intern.plne.co.id",
+      "password": "PLNE-993141",
+      "name": "Priatama Zaky Al Fathoni",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774928664465",
+      "email": "muhammadab.2054@intern.plne.co.id",
+      "password": "PLNE-832740",
+      "name": "Muhammad Abdu Ar Rafi",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774928664466",
+      "email": "muhammadfa.0043@intern.plne.co.id",
+      "password": "PLNE-604193",
+      "name": "Muhammad Fauzan Haqiqi",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774937930242",
+      "email": "tes123@gmail.com",
+      "password": "password123",
+      "name": "Tes",
+      "role": "INTERN"
+    },
+    {
+      "id": "u1774940179052",
+      "email": "test@intern.com",
+      "password": "password123",
+      "name": "Test Intern",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1774942183415",
+      "email": "sync@test.com",
+      "password": "tes123",
+      "name": "Sync Tester",
+      "role": "INTERN",
+      "mustChangePassword": false
+    },
+    {
+      "id": "u1774945431238",
+      "email": "full@data.com",
+      "password": "password123",
+      "name": "Full Data Intern",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1775030025870",
+      "email": "tes@intern.com",
+      "password": "password123",
+      "name": "tes",
+      "role": "INTERN",
+      "mustChangePassword": true
+    },
+    {
+      "id": "u1775030268590",
+      "email": "cek@intern.com",
+      "password": "pass123",
+      "name": "cek12",
+      "role": "INTERN",
+      "mustChangePassword": false,
+      "image": "/uploads/avatars/avatar_u1775030268590_1775534107452.jpg"
+    },
+    {
+      "id": "u1775541602731",
+      "email": "fusha@legion.com",
+      "password": "PLNE-795863",
+      "name": "Fusha",
+      "role": "INTERN",
+      "mustChangePassword": true
+    }
+  ],
+  "attendances": [],
+  "reports": [],
+  "evaluations": [],
+  "payrolls": [],
+  "surveys": [],
+  "settings": {
+    "capacityTargets": {}
+  },
+  "events": [
+    {
+      "id": "evt1",
+      "title": "Orientasi Peserta Magang April",
+      "date": "2026-04-01",
+      "type": "ORIENTATION",
+      "description": "Orientasi dan pengenalan lingkungan kerja batch April 2026",
+      "createdAt": "2026-03-27T04:05:15.109Z"
+    },
+    {
+      "id": "evt1774584605147",
+      "title": "Onboarding Magang",
+      "date": "2026-03-30",
+      "type": "ORIENTATION",
+      "description": "Onboard 2 orang magang",
+      "createdAt": "2026-03-27T04:10:05.147Z"
+    }
+  ],
+  "announcements": [
+    {
+      "id": "ann1",
+      "title": "Selamat Datang di InternHub!",
+      "content": "Sistem HRIS InternHub resmi digunakan. Pastikan semua data  sudah diinput dengan benar.",
+      "priority": "INFO",
+      "pinned": true,
+      "createdAt": "2026-03-27T04:05:15.109Z",
+      "createdBy": "Admin HR",
+      "updatedAt": "2026-04-02T09:11:18.870Z"
+    }
+  ],
+  "logs": []
+}
