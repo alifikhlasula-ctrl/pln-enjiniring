@@ -121,6 +121,17 @@ export async function GET(request) {
   }
 }
 
+// ── Helper to safely parse Date from separate YYYY-MM-DD and HH:mm strings ──
+function parseDateTime(dateStr, timeStr) {
+  if (!dateStr || !timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return null
+  try {
+    const dt = new Date(`${dateStr}T${timeStr}:00+07:00`)
+    return isNaN(dt.getTime()) ? null : dt
+  } catch (e) {
+    return null
+  }
+}
+
 /**
  * PATCH /api/admin/attendance
  * Admin manual edit or create attendance entry.
@@ -134,29 +145,41 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'id atau (internId + date) wajib diisi' }, { status: 400 })
     }
 
+    // target date for construction if missing in 'id' mode
+    const targetDate = date
+
     const now = new Date()
     let log
 
     if (id) {
       // Existing log: update fields that were provided
       const updateData = {}
-      if (checkIn  !== undefined) updateData.checkIn  = checkIn  ? new Date(`${date}T${checkIn}:00+07:00`)  : null
-      if (checkOut !== undefined) updateData.checkOut = checkOut ? new Date(`${date}T${checkOut}:00+07:00`) : null
-      if (status   !== undefined) updateData.status   = status
-      if (checkIn)  updateData.checkInLoc  = `Edit Manual — ${editedBy}`
-      if (checkOut) updateData.checkOutLoc = `Edit Manual — ${editedBy}`
+      
+      // Only update if explicit values were provided
+      if (checkIn !== undefined) {
+        updateData.checkIn = parseDateTime(targetDate, checkIn)
+        if (checkIn) updateData.checkInLoc = `Edit Manual — ${editedBy}`
+      }
+      
+      if (checkOut !== undefined) {
+        updateData.checkOut = parseDateTime(targetDate, checkOut)
+        if (checkOut) updateData.checkOutLoc = `Edit Manual — ${editedBy}`
+      }
+      
+      if (status !== undefined) updateData.status = status
+      
       updateData.editedBy = editedBy
       updateData.editedAt = now
 
       log = await prisma.attendanceLog.update({ where: { id }, data: updateData })
     } else {
       // Upsert: create if missing
-      const dIn  = checkIn  ? new Date(`${date}T${checkIn}:00+07:00`)  : new Date(`${date}T08:00:00+07:00`)
-      const dOut = checkOut ? new Date(`${date}T${checkOut}:00+07:00`) : null
-      const computedStatus = status || (dIn > new Date(`${date}T07:30:00+07:00`) ? 'LATE' : 'PRESENT')
+      const dIn  = parseDateTime(targetDate, checkIn) || new Date(`${targetDate}T08:00:00+07:00`)
+      const dOut = parseDateTime(targetDate, checkOut)
+      const computedStatus = status || (dIn > new Date(`${targetDate}T07:30:00+07:00`) ? 'LATE' : 'PRESENT')
 
       log = await prisma.attendanceLog.upsert({
-        where:  { internId_date: { internId, date } },
+        where:  { internId_date: { internId, date: targetDate } },
         update: {
           checkIn: dIn, checkOut: dOut, status: computedStatus,
           checkInLoc: `Admin Manual — ${editedBy}`,
@@ -164,7 +187,7 @@ export async function PATCH(request) {
           editedBy, editedAt: now
         },
         create: {
-          internId, date,
+          internId, date: targetDate,
           checkIn: dIn, checkOut: dOut, status: computedStatus,
           checkInLoc: `Input Manual oleh Admin — ${editedBy}`,
           checkOutLoc: dOut ? `Input Manual oleh Admin — ${editedBy}` : null,
