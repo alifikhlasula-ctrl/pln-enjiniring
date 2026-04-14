@@ -306,9 +306,11 @@ export default function AdminOnboardingPage() {
 
   useEffect(() => {
     fetchRequests()
-    // Poll every 15 seconds - near real-time for Admin HR
-    pollRef.current = setInterval(() => fetchRequests(true), 15000)
-    return () => clearInterval(pollRef.current)
+    // TEMPORARY FIX: Disabled 15s auto-refresh polling. 
+    // The aggressive polling was hammering the database while the Disk I/O budget is depleted.
+    // Users can manually refresh the page using the refresh button.
+    const interval = setInterval(fetchRequests, 300000) // Poll every 5 minutes instead
+    return () => clearInterval(interval)
   }, [fetchRequests])
 
   // ── Handle Review Action ─────────────────────────
