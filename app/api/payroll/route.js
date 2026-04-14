@@ -34,19 +34,20 @@ function buildPayrollItem(intern, data, month, year) {
     })
   }
 
-  // Cross-Validate with Reports and complete clock-in/out
+  // Cross-Validate with Reports and clock-in OR clock-out (salah satu cukup)
   let validPresenceCount = 0
   let missingReportsCount = 0
 
   attendances.forEach(att => {
-    // 1. Validasi Absensi: Wajib ada Check-In dan Check-Out
-    if (!att.checkIn || !att.checkOut) {
-      missingReportsCount++ // Dihitung sebagai tidak valid/tidak lengkap
+    // 1. Validasi Absensi: Minimal ada Check-In ATAU Check-Out (salah satu cukup)
+    const hasAttendance = !!(att.checkIn || att.checkOut)
+    if (!hasAttendance) {
+      missingReportsCount++ // Tidak ada absensi sama sekali
       return
     }
 
-    // 2. Validasi Laporan: Wajib ada laporan dengan tanggal yang sama
-    const attNorm = normalizeDate(att.date || att.checkIn)
+    // 2. Validasi Laporan: Wajib ada laporan harian yang valid
+    const attNorm = normalizeDate(att.date || att.checkIn || att.checkOut)
     const reportExists = (data.reports || []).some(
       r => r.userId === intern.userId && 
            normalizeDate(r.date || r.reportDate) === attNorm && 
@@ -56,7 +57,7 @@ function buildPayrollItem(intern, data, month, year) {
     if (reportExists) {
       validPresenceCount++
     } else {
-      missingReportsCount++
+      missingReportsCount++ // Ada absensi tapi tidak ada laporan harian
     }
   })
 
@@ -181,15 +182,16 @@ export async function GET(request) {
     let missingReportsCount = 0
 
     attendances.forEach(att => {
-      // 1. Validasi Absensi: Wajib ada Check-In dan Check-Out
-      if (!att.checkIn || !att.checkOut) {
-        missingReportsCount++ // Dihitung tidak lengkap, sama seperti laporan kosong
+      // 1. Validasi Absensi: Minimal ada Check-In ATAU Check-Out (salah satu cukup)
+      const hasAttendance = !!(att.checkIn || att.checkOut)
+      if (!hasAttendance) {
+        missingReportsCount++ // Tidak ada absensi sama sekali
         return
       }
 
-      const attNorm = normalizeDate(att.date || att.checkIn)
+      const attNorm = normalizeDate(att.date || att.checkIn || att.checkOut)
 
-      // ── [FIX] Cross-validate laporan di KEDUA lapisan database ──
+      // ── Cross-validate laporan di KEDUA lapisan database ──
       // Layer 1: Tabel relational PostgreSQL (intern baru 2026)
       const reportInRelational = allRelationalReports.some(
         r => r.userId === intern.userId && normalizeDate(r.date) === attNorm
@@ -202,9 +204,9 @@ export async function GET(request) {
       )
 
       if (reportInRelational || reportInLegacy) {
-        validPresenceCount++
+        validPresenceCount++ // ✅ Hadir (salah satu absensi + laporan harian valid)
       } else {
-        missingReportsCount++
+        missingReportsCount++ // ⚠️ Ada absensi tapi tidak ada laporan harian
       }
     })
 
