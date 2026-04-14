@@ -1,80 +1,69 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getDB } from '@/lib/db'
 
 export const dynamic = 'force-dynamic' // No caching
 export const revalidate = 0
 
-export async function GET(request) {
+export async function GET() {
   try {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
 
-    const logs = await prisma.attendanceLog.findMany({
-      where: { date: todayStr },
-      orderBy: { checkIn: 'desc' }
-    })
+    // ── Single source of truth: Prisma (same data as Manajemen Peserta Magang) ──
+    // This guarantees Monitor Absensi is always in sync.
+    // When Admin changes intern status to COMPLETED/DISMISSED in Manajemen Peserta,
+    // they will automatically disappear from Monitor Absensi on the next refresh.
+    const [logs, activeInterns] = await Promise.all([
+      prisma.attendanceLog.findMany({
+        where: { date: todayStr },
+        orderBy: { checkIn: 'desc' }
+      }),
+      prisma.intern.findMany({
+        where: {
+          deletedAt: null,
+          status: { equals: 'ACTIVE', mode: 'insensitive' }
+        },
+        select: { id: true, name: true, bidang: true },
+        orderBy: { name: 'asc' }
+      })
+    ])
 
-    // Fetch interns from both Prisma and Legacy JSON
-    const prismaInterns = await prisma.intern.findMany({
-      where: { 
-        deletedAt: null, 
-        status: { equals: 'ACTIVE', mode: 'insensitive' } 
-      },
-      select: { id: true, name: true, bidang: true }
-    })
-
-    let legacyInterns = []
-    try {
-      const db = await getDB()
-      legacyInterns = (db.interns || []).filter(i => 
-        !i.deletedAt && i.status?.toUpperCase() === 'ACTIVE'
-      )
-    } catch(e) {}
-
-    const internMap = new Map()
-    legacyInterns.forEach(i => internMap.set(i.id, { id: i.id, name: i.name, bidang: i.bidang || '-' }))
-    prismaInterns.forEach(i => internMap.set(i.id, i)) 
-
-    const allActiveInterns = Array.from(internMap.values())
-
-    const payload = allActiveInterns.map(i => {
+    const payload = activeInterns.map(i => {
       const log = logs.find(l => l.internId === i.id)
 
       // For Supabase Storage URLs: send directly (short string, fast)
       // For Base64: DON'T embed in response (too large) — send logId for lazy-load
-      const faceInUrl  = log?.faceInUrl  || null   // Supabase URL (always safe to send)
-      const faceOutUrl = log?.faceOutUrl || null   // Supabase URL (always safe to send)
-      const hasBase64In  = !faceInUrl  && !!log?.faceInBase64   // has old-style Base64
-      const hasBase64Out = !faceOutUrl && !!log?.faceOutBase64  // has old-style Base64
+      const faceInUrl    = log?.faceInUrl  || null
+      const faceOutUrl   = log?.faceOutUrl || null
+      const hasBase64In  = !faceInUrl  && !!log?.faceInBase64
+      const hasBase64Out = !faceOutUrl && !!log?.faceOutBase64
 
       return {
-        internId:    i.id,
-        name:        i.name,
-        bidang:      i.bidang,
-        status:      log ? log.status : 'ABSENT',
-        checkIn:     log?.checkIn  || null,
-        checkOut:    log?.checkOut || null,
-        checkInLoc:  log?.checkInLoc || null,
-        logId:       log?.id || null,         // used for lazy photo load
-        faceInUrl,                             // direct URL if available
-        faceOutUrl,                            // direct URL if available
-        hasBase64In,                           // true = fetch via /photo?logId=&type=in
-        hasBase64Out,                          // true = fetch via /photo?logId=&type=out
+        internId:     i.id,
+        name:         i.name,
+        bidang:       i.bidang || '-',
+        status:       log ? log.status : 'ABSENT',
+        checkIn:      log?.checkIn  || null,
+        checkOut:     log?.checkOut || null,
+        checkInLoc:   log?.checkInLoc || null,
+        logId:        log?.id || null,
+        faceInUrl,
+        faceOutUrl,
+        hasBase64In,
+        hasBase64Out,
       }
     })
 
-    // Sort by status: PRESENT first, LATE, then ABSENT, then by checkIn time desc
-    const sorted = payload.sort((a,b) => {
-      if (a.status !== b.status) {
-        const order = { 'PRESENT': 0, 'LATE': 1, 'ABSENT': 2 }
-        return order[a.status] - order[b.status]
-      }
+    // Sort: PRESENT → LATE → SAKIT → IZIN → ABSENT; within same status sort by checkIn desc
+    const ORDER = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 3, ABSENT: 4 }
+    const sorted = payload.sort((a, b) => {
+      const diff = (ORDER[a.status] ?? 4) - (ORDER[b.status] ?? 4)
+      if (diff !== 0) return diff
       if (a.checkIn && b.checkIn) return new Date(b.checkIn) - new Date(a.checkIn)
-      return 0
+      return a.name.localeCompare(b.name, 'id')
     })
 
-    return NextResponse.json({ live: sorted, timestamp: new Date().toISOString() })
+    return NextResponse.json({ live: sorted, total: sorted.length, timestamp: new Date().toISOString() })
   } catch (err) {
     console.error('[GET /api/admin/attendance/live]', err)
     return NextResponse.json({ error: 'Failed to fetch live attendance' }, { status: 500 })
