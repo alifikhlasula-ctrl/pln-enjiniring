@@ -8,117 +8,122 @@ export const dynamic = 'force-dynamic'
  * GET /api/admin/attendance
  * Returns ALL intern attendance for a given date, including:
  * - Interns who clocked in (with photos)
- * - Interns who clocked in via manual backdate
  * - Interns who submitted Sakit/Izin
  * - Interns who are ABSENT (no record at all)
+ *
+ * Query: ?date=YYYY-MM-DD  (defaults to today WIB)
  */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const date      = searchParams.get('date')
-    const startDate = searchParams.get('startDate')
-    const endDate   = searchParams.get('endDate')
-    const internId  = searchParams.get('internId')
+    const date = searchParams.get('date')
 
-    // ── Target date for "today summary" ──
+    // ── Target date (default = today WIB) ──
     const today = date || new Date(new Date().getTime() + 7 * 3600000).toISOString().split('T')[0]
 
-    // ── Build Prisma where for range queries ──
-    const where = {}
-    if (internId) where.internId = internId
-    if (startDate && endDate) {
-      where.date = { gte: startDate, lte: endDate }
-    } else {
-      where.date = today
-    }
+    // ── 1. Fetch attendance logs for this date ──
+    const logs = await prisma.attendanceLog.findMany({
+      where: { date: today },
+      orderBy: { checkIn: 'asc' }
+    })
 
-    // ── Fetch logs & interns in parallel ──
-    const [logs, prismaInterns] = await Promise.all([
-      prisma.attendanceLog.findMany({ where, orderBy: { date: 'desc' } }),
-      prisma.intern.findMany({
-        where: { deletedAt: null },
+    // ── 2. Build intern map from BOTH sources ──
+    let prismaInterns = []
+    try {
+      prismaInterns = await prisma.intern.findMany({
+        where: { deletedAt: null },  // no status filter — take all non-deleted
         select: {
           id: true, name: true, bidang: true, university: true,
-          userId: true, facePhotoUrl: true, email: true
+          userId: true, facePhotoUrl: true, email: true, status: true
         }
       })
-    ])
+      // Only keep ACTIVE interns (case-insensitive)
+      prismaInterns = prismaInterns.filter(i => (i.status || '').toUpperCase() === 'ACTIVE')
+    } catch (e) {
+      console.error('[admin/attendance] Prisma intern fetch error:', e.message)
+    }
 
-    // ── Merge with JSON legacy interns ──
     let legacyInterns = []
     try {
-      const db = await getDB('ACTIVE', { clone: false })
-      legacyInterns = (db.interns || []).filter(i => !i.deletedAt)
-    } catch (_) {}
+      const db = await getDB()
+      legacyInterns = (db.interns || []).filter(i =>
+        !i.deletedAt && (i.status || '').toUpperCase() === 'ACTIVE'
+      )
+    } catch (e) {
+      console.error('[admin/attendance] Legacy intern fetch error:', e.message)
+    }
 
+    // Merge — Prisma overrides legacy for same id
     const internMap = new Map()
     legacyInterns.forEach(i => internMap.set(i.id, {
       id: i.id, name: i.name, bidang: i.bidang || '-',
       university: i.university || '-', userId: i.userId,
       facePhotoUrl: i.facePhotoUrl || null, email: i.email || null
     }))
-    prismaInterns.forEach(i => internMap.set(i.id, i))
+    prismaInterns.forEach(i => internMap.set(i.id, {
+      id: i.id, name: i.name, bidang: i.bidang || '-',
+      university: i.university || '-', userId: i.userId,
+      facePhotoUrl: i.facePhotoUrl || null, email: i.email || null
+    }))
+    const allInterns = Array.from(internMap.values())
 
-    // ── Serialize all logs (include all photo sources) ──
-    const serializeLog = (log, internMeta) => ({
-      id: log.id,
-      internId: log.internId,
-      date: log.date,
-      checkIn:     log.checkIn     ? log.checkIn.toISOString()     : null,
-      checkOut:    log.checkOut    ? log.checkOut.toISOString()     : null,
+    console.log(`[admin/attendance] date=${today} | prismaInterns=${prismaInterns.length} | legacyInterns=${legacyInterns.length} | total=${allInterns.length} | logs=${logs.length}`)
+
+    // ── 3. Build todaySummary: log + absent interns ──
+    const presentIds = new Set(logs.map(l => l.internId))
+
+    const serializeLog = (log, intern) => ({
+      id:          log.id,
+      internId:    log.internId,
+      date:        log.date,
+      checkIn:     log.checkIn  ? log.checkIn.toISOString()  : null,
+      checkOut:    log.checkOut ? log.checkOut.toISOString() : null,
       checkInLoc:  log.checkInLoc  || null,
       checkOutLoc: log.checkOutLoc || null,
       status:      log.status,
-      editedBy:    log.editedBy    || null,
-      editedAt:    log.editedAt    ? log.editedAt.toISOString()     : null,
-      // Photo: prefer Storage URL, then Base64 embed, then null
-      faceInUrl:   log.faceInUrl   || (log.faceInBase64  ? `data:image/jpeg;base64,${log.faceInBase64}`  : null),
-      faceOutUrl:  log.faceOutUrl  || (log.faceOutBase64 ? `data:image/jpeg;base64,${log.faceOutBase64}` : null),
-      intern: internMeta || { name: 'Unknown', bidang: '-', university: '-' }
+      editedBy:    log.editedBy || null,
+      editedAt:    log.editedAt ? log.editedAt.toISOString() : null,
+      // Photo: Storage URL preferred (fast), Base64 sendable for small records
+      faceInUrl:   log.faceInUrl  || (log.faceInBase64  ? `data:image/jpeg;base64,${log.faceInBase64}`  : null),
+      faceOutUrl:  log.faceOutUrl || (log.faceOutBase64 ? `data:image/jpeg;base64,${log.faceOutBase64}` : null),
+      intern: intern || { name: 'Unknown', bidang: '-', university: '-' }
     })
 
-    const serializedLogs = logs.map(l => serializeLog(l, internMap.get(l.internId)))
-
-    // ── Build "today" full summary (all interns + their status) ──
-    const todayLogs     = serializedLogs.filter(l => l.date === today)
-    const presentIds    = new Set(todayLogs.map(l => l.internId))
-    const allInterns    = Array.from(internMap.values())
-    const absentInterns = allInterns
+    const todayLogEntries  = logs.map(l => serializeLog(l, internMap.get(l.internId)))
+    const absentEntries    = allInterns
       .filter(i => !presentIds.has(i.id))
       .map(i => ({
         id: null, internId: i.id, date: today,
-        checkIn: null, checkOut: null,
-        status: 'ABSENT',
-        faceInUrl: null, faceOutUrl: null,
+        checkIn: null, checkOut: null, checkInLoc: null, checkOutLoc: null,
+        status: 'ABSENT', faceInUrl: null, faceOutUrl: null,
         editedBy: null, editedAt: null,
         intern: i
       }))
 
-    // Sort: PRESENT → LATE → ABSENT
-    const order = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 2, ABSENT: 3 }
-    const todaySummary = [...todayLogs, ...absentInterns].sort((a, b) => {
-      const oa = order[a.status] ?? 9
-      const ob = order[b.status] ?? 9
+    // Sort: PRESENT → LATE → SAKIT/IZIN → ABSENT, then alphabetically within group
+    const ORDER = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 2, ABSENT: 3 }
+    const todaySummary = [...todayLogEntries, ...absentEntries].sort((a, b) => {
+      const oa = ORDER[a.status] ?? 9
+      const ob = ORDER[b.status] ?? 9
       if (oa !== ob) return oa - ob
-      if (a.checkIn && b.checkIn) return new Date(a.checkIn) - new Date(b.checkIn)
-      return 0
+      return (a.intern?.name || '').localeCompare(b.intern?.name || '')
     })
 
     return NextResponse.json({
-      logs: serializedLogs,
+      logs:         todayLogEntries,
       todaySummary,
-      date: today,
+      date:         today,
       totalInterns: allInterns.length
     })
   } catch (err) {
-    console.error('[GET /api/admin/attendance]', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    console.error('[GET /api/admin/attendance] CRASH:', err)
+    return NextResponse.json({ error: err.message, todaySummary: [], logs: [], totalInterns: 0 }, { status: 500 })
   }
 }
 
 /**
  * PATCH /api/admin/attendance
- * Admin manual edit: fix checkIn/checkOut, status, or create missing entry.
+ * Admin manual edit or create attendance entry.
  * Body: { id?, internId?, date?, checkIn, checkOut, status, editedBy, note }
  */
 export async function PATCH(request) {
@@ -133,27 +138,38 @@ export async function PATCH(request) {
     let log
 
     if (id) {
-      // Update existing log
+      // Existing log: update fields that were provided
       const updateData = {}
-      if (checkIn  !== undefined) { updateData.checkIn  = checkIn  ? new Date(`${date || ''}T${checkIn}:00+07:00`)  : null }
-      if (checkOut !== undefined) { updateData.checkOut = checkOut ? new Date(`${date || ''}T${checkOut}:00+07:00`) : null }
-      if (status   !== undefined)  updateData.status   = status
-      if (checkIn)  updateData.checkInLoc  = 'Edit Manual oleh Admin'
-      if (checkOut) updateData.checkOutLoc = 'Edit Manual oleh Admin'
-      updateData.editedBy  = editedBy
-      updateData.editedAt  = now
+      if (checkIn  !== undefined) updateData.checkIn  = checkIn  ? new Date(`${date}T${checkIn}:00+07:00`)  : null
+      if (checkOut !== undefined) updateData.checkOut = checkOut ? new Date(`${date}T${checkOut}:00+07:00`) : null
+      if (status   !== undefined) updateData.status   = status
+      if (checkIn)  updateData.checkInLoc  = `Edit Manual — ${editedBy}`
+      if (checkOut) updateData.checkOutLoc = `Edit Manual — ${editedBy}`
+      updateData.editedBy = editedBy
+      updateData.editedAt = now
 
       log = await prisma.attendanceLog.update({ where: { id }, data: updateData })
     } else {
-      // Upsert (intern forgot to clock in entirely)
+      // Upsert: create if missing
       const dIn  = checkIn  ? new Date(`${date}T${checkIn}:00+07:00`)  : new Date(`${date}T08:00:00+07:00`)
       const dOut = checkOut ? new Date(`${date}T${checkOut}:00+07:00`) : null
       const computedStatus = status || (dIn > new Date(`${date}T07:30:00+07:00`) ? 'LATE' : 'PRESENT')
 
       log = await prisma.attendanceLog.upsert({
         where:  { internId_date: { internId, date } },
-        update: { checkIn: dIn, checkOut: dOut, status: computedStatus, checkInLoc: 'Admin Manual (upsert)', checkOutLoc: dOut ? 'Admin Manual (upsert)' : null, editedBy, editedAt: now },
-        create: { internId, date, checkIn: dIn, checkOut: dOut, status: computedStatus, checkInLoc: 'Input Manual oleh Admin', checkOutLoc: dOut ? 'Input Manual oleh Admin' : null, editedBy, editedAt: now }
+        update: {
+          checkIn: dIn, checkOut: dOut, status: computedStatus,
+          checkInLoc: `Admin Manual — ${editedBy}`,
+          checkOutLoc: dOut ? `Admin Manual — ${editedBy}` : null,
+          editedBy, editedAt: now
+        },
+        create: {
+          internId, date,
+          checkIn: dIn, checkOut: dOut, status: computedStatus,
+          checkInLoc: `Input Manual oleh Admin — ${editedBy}`,
+          checkOutLoc: dOut ? `Input Manual oleh Admin — ${editedBy}` : null,
+          editedBy, editedAt: now
+        }
       })
     }
 
@@ -167,7 +183,7 @@ export async function PATCH(request) {
       }
     })
   } catch (err) {
-    console.error('[PATCH /api/admin/attendance]', err)
+    console.error('[PATCH /api/admin/attendance] CRASH:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
