@@ -40,24 +40,27 @@ export async function GET(request) {
 
     const payload = allActiveInterns.map(i => {
       const log = logs.find(l => l.internId === i.id)
-      
-      // Resolve face-in photo: prefer Storage URL, then inline Base64 data URI
-      const faceInPhoto  = log?.faceInUrl
-        || (log?.faceInBase64  ? `data:image/jpeg;base64,${log.faceInBase64}`  : null)
-      // Resolve face-out photo: prefer Storage URL, then inline Base64 data URI  
-      const faceOutPhoto = log?.faceOutUrl
-        || (log?.faceOutBase64 ? `data:image/jpeg;base64,${log.faceOutBase64}` : null)
+
+      // For Supabase Storage URLs: send directly (short string, fast)
+      // For Base64: DON'T embed in response (too large) — send logId for lazy-load
+      const faceInUrl  = log?.faceInUrl  || null   // Supabase URL (always safe to send)
+      const faceOutUrl = log?.faceOutUrl || null   // Supabase URL (always safe to send)
+      const hasBase64In  = !faceInUrl  && !!log?.faceInBase64   // has old-style Base64
+      const hasBase64Out = !faceOutUrl && !!log?.faceOutBase64  // has old-style Base64
 
       return {
-        internId: i.id,
-        name: i.name,
-        bidang: i.bidang,
-        status: log ? log.status : 'ABSENT',
+        internId:    i.id,
+        name:        i.name,
+        bidang:      i.bidang,
+        status:      log ? log.status : 'ABSENT',
         checkIn:     log?.checkIn  || null,
         checkOut:    log?.checkOut || null,
         checkInLoc:  log?.checkInLoc || null,
-        faceInUrl:   faceInPhoto,   // Actual URL or data URI for photo preview
-        faceOutUrl:  faceOutPhoto,  // Actual URL or data URI for photo preview
+        logId:       log?.id || null,         // used for lazy photo load
+        faceInUrl,                             // direct URL if available
+        faceOutUrl,                            // direct URL if available
+        hasBase64In,                           // true = fetch via /photo?logId=&type=in
+        hasBase64Out,                          // true = fetch via /photo?logId=&type=out
       }
     })
 
