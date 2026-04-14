@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDB, saveDB } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 
 /* ── GET: Compute auto-alerts + custom alerts ── */
 export async function GET() {
@@ -61,7 +62,28 @@ export async function GET() {
     })
   })
 
-  // 5. Custom/manual alerts
+  // 5. Attendance Correction Pending
+  try {
+    const corrections = await prisma.attendanceCorrection.findMany({
+      where: { status: 'PENDING' }
+    });
+    corrections.forEach(c => {
+      const age = Math.floor((Date.now() - new Date(c.createdAt)) / 86400000);
+      alerts.push({
+        id: 'corr_' + c.id, 
+        type: 'CUSTOM', // using CUSTOM to use the bell icon or just CUSTOM
+        severity: age >= 2 ? 'URGENT' : 'HIGH',
+        title: `Koreksi Absen: ${c.internName}`,
+        detail: `Pengajuan perbaikan jam ${c.type === 'IN' ? 'masuk' : 'pulang'} tertinggal.`,
+        link: '/admin/monitor-attendance', // points to the admin monitor page
+        createdAt: c.createdAt.toISOString()
+      });
+    });
+  } catch (err) {
+    console.error('Error fetching corrections for notifications:', err);
+  }
+
+  // 6. Custom/manual alerts
   const custom = (data.customAlerts || []).filter(a => !a.dismissed)
 
   // Sort: URGENT → HIGH → MEDIUM

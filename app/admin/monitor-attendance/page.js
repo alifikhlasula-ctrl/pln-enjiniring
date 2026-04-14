@@ -164,6 +164,37 @@ export default function MonitorAbsensiPage() {
   const [lightbox,     setLightbox]     = useState(null)
   const [showAbsent,   setShowAbsent]   = useState(true)
 
+  // Corrections
+  const [pendingCorrections, setPendingCorrections] = useState([])
+  const [showCorrections, setShowCorrections] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const fetchCorrections = useCallback(() => {
+    fetch('/api/attendance/correction')
+      .then(r => r.json())
+      .then(d => setPendingCorrections(d.requests || []))
+      .catch(console.error)
+  }, [])
+
+  const handleAction = async (id, action) => {
+    setActionLoading(true)
+    try {
+      const res = await fetch('/api/attendance/correction', {
+        method: 'PATCH', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ id, action }) // reviewedBy defaults to 'Admin HR' in backend if omitted here
+      })
+      if (res.ok) {
+        fetchCorrections()
+        fetchLive()
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Gagal merubah status')
+      }
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const fetchLive = useCallback(() => {
     fetch('/api/admin/attendance/live?_t=' + Date.now())
       .then(r => r.json())
@@ -177,9 +208,10 @@ export default function MonitorAbsensiPage() {
 
   useEffect(() => {
     fetchLive()
-    const iv = setInterval(fetchLive, 30000)
+    fetchCorrections()
+    const iv = setInterval(() => { fetchLive(); fetchCorrections(); }, 30000)
     return () => clearInterval(iv)
-  }, [fetchLive])
+  }, [fetchLive, fetchCorrections])
 
   const bidangList = ['ALL', ...new Set(liveData.map(i => i.bidang).filter(Boolean))]
 
@@ -221,8 +253,17 @@ export default function MonitorAbsensiPage() {
               Pantau kehadiran intern hari ini. Arahkan kursor ke kotak foto untuk memuat, klik untuk preview penuh.
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <button onClick={fetchLive} style={{
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {pendingCorrections.length > 0 && (
+              <button onClick={() => setShowCorrections(true)} style={{
+                display: 'flex', alignItems: 'center', gap: 5, background: 'var(--danger)',
+                border: 'none', borderRadius: 8, padding: '6px 12px',
+                fontSize: '0.8rem', fontWeight: 800, color: '#fff', cursor: 'pointer', animation: 'livePulseRed 2s infinite'
+              }}>
+                <AlertTriangle size={14} /> Permintaan Koreksi ({pendingCorrections.length})
+              </button>
+            )}
+            <button onClick={() => { fetchLive(); fetchCorrections(); }} style={{
               display: 'flex', alignItems: 'center', gap: 5, background: 'none',
               border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px',
               fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer'
@@ -427,11 +468,51 @@ export default function MonitorAbsensiPage() {
         )}
       </div>
 
+      {showCorrections && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: 750, padding: '2rem', animation: 'fadeIn 0.2s', maxHeight: '90vh', overflowY: 'auto' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+               <h3 style={{ fontWeight: 800 }}>Daftar Permintaan Koreksi Susulan</h3>
+               <button onClick={() => setShowCorrections(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20}/></button>
+             </div>
+             {pendingCorrections.length === 0 ? <p style={{color: 'var(--text-muted)'}}>Tidak ada permintaan.</p> : (
+               <div className="table-container">
+                 <table className="table">
+                   <thead><tr><th>Tgl</th><th>Intern</th><th>Tipe</th><th>Jam</th><th>Alasan</th><th>Aksi</th></tr></thead>
+                   <tbody>
+                     {pendingCorrections.map(c => (
+                       <tr key={c.id}>
+                         <td style={{fontSize: '0.8rem'}}>{new Date(c.date + 'T00:00:00').toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}</td>
+                         <td style={{fontWeight: 700, fontSize: '0.85rem'}}>{c.internName}</td>
+                         <td><span className={`badge ${c.type === 'IN' ? 'badge-success' : 'badge-primary'}`}>{c.type === 'IN' ? 'Masuk' : 'Pulang'}</span></td>
+                         <td style={{fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem'}}>{c.time}</td>
+                         <td style={{fontSize: '0.75rem', maxWidth: 150, whiteSpace: 'normal'}}>{c.reason}</td>
+                         <td>
+                           <div style={{display: 'flex', gap: 6}}>
+                             <button className="btn btn-primary" style={{padding: '5px 10px', fontSize: '0.7rem', gap: 4}} disabled={actionLoading} onClick={() => handleAction(c.id, 'APPROVE')}><CheckCircle size={12}/> Terima</button>
+                             <button className="btn btn-secondary" style={{padding: '5px 10px', fontSize: '0.7rem', gap: 4, background: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5'}} disabled={actionLoading} onClick={() => handleAction(c.id, 'REJECT')}><XCircle size={12}/> Tolak</button>
+                           </div>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+             )}
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes livePulse {
           0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
           70%  { box-shadow: 0 0 0 7px rgba(34,197,94,0); }
           100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+        }
+        @keyframes livePulseRed {
+          0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+          70%  { box-shadow: 0 0 0 7px rgba(239,68,68,0); }
+          100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin   { to   { transform: rotate(360deg); } }

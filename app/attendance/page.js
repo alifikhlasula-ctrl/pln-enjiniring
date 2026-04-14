@@ -233,6 +233,9 @@ export default function AttendancePage() {
   const [pendingType, setPendingType] = useState(null) // 'IN' | 'OUT'
   const [toast, setToast] = useState(null)
   
+  // Correction states
+  const [correctionModal, setCorrectionModal] = useState({ open: false, log: null, type: null, time: '08:00', reason: '' })
+
   // Backdate states
   const [showManual, setShowManual] = useState(false)
   const [manualForm, setManualForm] = useState({ date: '', in: '07:30', out: '16:00' })
@@ -330,6 +333,32 @@ export default function AttendancePage() {
       await fetchLogs()
     } else {
       showToast(data?.error || 'Gagal mengirim klaim absensi', 'error')
+    }
+    setProcessing(false)
+  }
+
+  const submitCorrection = async (e) => {
+    e.preventDefault()
+    setProcessing(true)
+    const { ok, data } = await safeFetch('/api/attendance/correction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        internId: user.id, 
+        internName: internProfile?.name || user.name || 'Intern',
+        date: correctionModal.log.date,
+        type: correctionModal.type,
+        time: correctionModal.time,
+        reason: correctionModal.reason
+      })
+    })
+
+    if (ok) {
+      showToast(`Pengajuan perbaikan jam ${correctionModal.type === 'IN' ? 'Masuk' : 'Pulang'} berhasil dikirim. ✅`)
+      setCorrectionModal({ open: false, log: null, type: null, time: '', reason: '' })
+      await fetchLogs()
+    } else {
+      showToast(data?.error || 'Gagal mengirim pengajuan perbaikan', 'error')
     }
     setProcessing(false)
   }
@@ -600,6 +629,12 @@ export default function AttendancePage() {
                             <img src={log.faceInBase64} style={{ width: 28, height: 28, borderRadius: 14, objectFit: 'cover', flexShrink: 0 }} alt="in-face" />
                           )}
                           <span style={{ fontWeight: 600 }}>{fmtTime(log.checkIn)}</span>
+                          {!log.checkIn && log.checkOut && (
+                            <button onClick={() => setCorrectionModal({ open: true, log, type: 'IN', time: '07:30', reason: '' })} 
+                                    className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.65rem' }}>
+                              Ajukan Perbaikan
+                            </button>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -608,6 +643,12 @@ export default function AttendancePage() {
                             <img src={log.faceOutBase64} style={{ width: 28, height: 28, borderRadius: 14, objectFit: 'cover', flexShrink: 0 }} alt="out-face" />
                           )}
                           <span style={{ fontWeight: 600 }}>{fmtTime(log.checkOut)}</span>
+                          {log.checkIn && !log.checkOut && (
+                             <button onClick={() => setCorrectionModal({ open: true, log, type: 'OUT', time: '16:00', reason: '' })} 
+                                     className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.65rem' }}>
+                               Ajukan Perbaikan
+                             </button>
+                          )}
                         </div>
                       </td>
                       <td style={{ fontSize: '0.72rem', color: 'var(--text-muted)', maxWidth: 160 }}>
@@ -643,6 +684,36 @@ export default function AttendancePage() {
           onClose={closeCamera}
           onCapture={handleCapture}
         />
+      )}
+
+      {correctionModal.open && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: 400, padding: '2rem', animation: 'slideInUp 0.3s ease' }}>
+            <h3 style={{ fontWeight: 800, marginBottom: '0.5rem' }}>Ajukan Perbaikan Absensi</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+              Tanggal: {new Date(correctionModal.log.date + 'T00:00:00').toLocaleDateString('id-ID')}
+            </p>
+            <form onSubmit={submitCorrection}>
+              <div className="form-group">
+                <label className="label">Jam {correctionModal.type === 'IN' ? 'Masuk' : 'Pulang'} Seharusnya</label>
+                <input type="time" required className="input" value={correctionModal.time} onChange={(e) => setCorrectionModal({...correctionModal, time: e.target.value})} />
+              </div>
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="label">Alasan Lupa {correctionModal.type === 'IN' ? 'Check-In' : 'Check-Out'}</label>
+                <input type="text" required className="input" placeholder="Contoh: Baterai HP habis" value={correctionModal.reason} onChange={(e) => setCorrectionModal({...correctionModal, reason: e.target.value})} />
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setCorrectionModal({ open: false, log: null, type: null, time: '', reason: '' })}>Batal</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={processing}>
+                  {processing ? <RefreshCw size={16} className="spin" /> : 'Kirim Pengajuan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       <style>{`

@@ -109,6 +109,26 @@ model AttendanceLog {
   @@unique([internId, date])
 }
 
+model AttendanceCorrection {
+  id           String    @id @default(cuid())
+  internId     String
+  internName   String
+  date         String
+  type         String    // "IN" or "OUT"
+  time         String    // "08:00"
+  reason       String
+  status       String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  reviewedBy   String?
+  reviewedAt   DateTime?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([internId])
+  @@index([status])
+}
+
 // ─── Audit Logs ───────────────────────────────────────────
 model AuditLog {
   id        String   @id @default(cuid())
