@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getDB } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/admin/attendance
- * Fetch all attendance logs for all interns for a specific date range.
- * Supports: ?date=YYYY-MM-DD (single day) | ?startDate=...&endDate=...
+ * Returns ALL intern attendance for a given date, including:
+ * - Interns who clocked in (with photos)
+ * - Interns who clocked in via manual backdate
+ * - Interns who submitted Sakit/Izin
+ * - Interns who are ABSENT (no record at all)
  */
 export async function GET(request) {
   try {
@@ -13,26 +18,33 @@ export async function GET(request) {
     const date      = searchParams.get('date')
     const startDate = searchParams.get('startDate')
     const endDate   = searchParams.get('endDate')
-    const internId  = searchParams.get('internId') // optional filter
+    const internId  = searchParams.get('internId')
 
+    // ── Target date for "today summary" ──
+    const today = date || new Date(new Date().getTime() + 7 * 3600000).toISOString().split('T')[0]
+
+    // ── Build Prisma where for range queries ──
     const where = {}
     if (internId) where.internId = internId
-    if (date) {
-      where.date = date
-    } else if (startDate && endDate) {
+    if (startDate && endDate) {
       where.date = { gte: startDate, lte: endDate }
+    } else {
+      where.date = today
     }
 
-    // Fetch logs and intern list in parallel
+    // ── Fetch logs & interns in parallel ──
     const [logs, prismaInterns] = await Promise.all([
       prisma.attendanceLog.findMany({ where, orderBy: { date: 'desc' } }),
       prisma.intern.findMany({
         where: { deletedAt: null },
-        select: { id: true, name: true, bidang: true, university: true, userId: true, facePhotoUrl: true }
+        select: {
+          id: true, name: true, bidang: true, university: true,
+          userId: true, facePhotoUrl: true, email: true
+        }
       })
     ])
 
-    // Merge with legacy JSON interns
+    // ── Merge with JSON legacy interns ──
     let legacyInterns = []
     try {
       const db = await getDB('ACTIVE', { clone: false })
@@ -40,10 +52,15 @@ export async function GET(request) {
     } catch (_) {}
 
     const internMap = new Map()
-    legacyInterns.forEach(i => internMap.set(i.id, i))
+    legacyInterns.forEach(i => internMap.set(i.id, {
+      id: i.id, name: i.name, bidang: i.bidang || '-',
+      university: i.university || '-', userId: i.userId,
+      facePhotoUrl: i.facePhotoUrl || null, email: i.email || null
+    }))
     prismaInterns.forEach(i => internMap.set(i.id, i))
 
-    const serializedLogs = logs.map(log => ({
+    // ── Serialize all logs (include all photo sources) ──
+    const serializeLog = (log, internMeta) => ({
       id: log.id,
       internId: log.internId,
       date: log.date,
@@ -51,36 +68,47 @@ export async function GET(request) {
       checkOut:    log.checkOut    ? log.checkOut.toISOString()     : null,
       checkInLoc:  log.checkInLoc  || null,
       checkOutLoc: log.checkOutLoc || null,
-      faceInBase64:  log.faceInBase64  || null,
-      faceOutBase64: log.faceOutBase64 || null,
-      faceInUrl:   log.faceInUrl   || null,
-      faceOutUrl:  log.faceOutUrl  || null,
       status:      log.status,
       editedBy:    log.editedBy    || null,
-      editedAt:    log.editedAt ? log.editedAt.toISOString() : null,
-      // Attach intern metadata
-      intern: internMap.get(log.internId) || { name: 'Unknown', bidang: '-', university: '-' }
-    }))
+      editedAt:    log.editedAt    ? log.editedAt.toISOString()     : null,
+      // Photo: prefer Storage URL, then Base64 embed, then null
+      faceInUrl:   log.faceInUrl   || (log.faceInBase64  ? `data:image/jpeg;base64,${log.faceInBase64}`  : null),
+      faceOutUrl:  log.faceOutUrl  || (log.faceOutBase64 ? `data:image/jpeg;base64,${log.faceOutBase64}` : null),
+      intern: internMeta || { name: 'Unknown', bidang: '-', university: '-' }
+    })
 
-    // Build "today's all interns + their status" view
-    const targetDate = date || new Date(new Date().getTime() + 7*3600000).toISOString().split('T')[0]
-    const todayLogs  = serializedLogs.filter(l => l.date === targetDate)
-    const allInterns = Array.from(internMap.values())
+    const serializedLogs = logs.map(l => serializeLog(l, internMap.get(l.internId)))
 
-    // For interns without any log today → "ABSENT"
+    // ── Build "today" full summary (all interns + their status) ──
+    const todayLogs     = serializedLogs.filter(l => l.date === today)
+    const presentIds    = new Set(todayLogs.map(l => l.internId))
+    const allInterns    = Array.from(internMap.values())
     const absentInterns = allInterns
-      .filter(i => !todayLogs.find(l => l.internId === i.id))
+      .filter(i => !presentIds.has(i.id))
       .map(i => ({
-        id: null, internId: i.id, date: targetDate,
+        id: null, internId: i.id, date: today,
         checkIn: null, checkOut: null,
         status: 'ABSENT',
+        faceInUrl: null, faceOutUrl: null,
+        editedBy: null, editedAt: null,
         intern: i
       }))
 
+    // Sort: PRESENT → LATE → ABSENT
+    const order = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 2, ABSENT: 3 }
+    const todaySummary = [...todayLogs, ...absentInterns].sort((a, b) => {
+      const oa = order[a.status] ?? 9
+      const ob = order[b.status] ?? 9
+      if (oa !== ob) return oa - ob
+      if (a.checkIn && b.checkIn) return new Date(a.checkIn) - new Date(b.checkIn)
+      return 0
+    })
+
     return NextResponse.json({
       logs: serializedLogs,
-      todaySummary: [...todayLogs, ...absentInterns],
-      date: targetDate
+      todaySummary,
+      date: today,
+      totalInterns: allInterns.length
     })
   } catch (err) {
     console.error('[GET /api/admin/attendance]', err)
@@ -90,8 +118,8 @@ export async function GET(request) {
 
 /**
  * PATCH /api/admin/attendance
- * Admin manual edit for an attendance log.
- * Body: { id, checkIn, checkOut, status, editedBy, note }
+ * Admin manual edit: fix checkIn/checkOut, status, or create missing entry.
+ * Body: { id?, internId?, date?, checkIn, checkOut, status, editedBy, note }
  */
 export async function PATCH(request) {
   try {
@@ -102,45 +130,30 @@ export async function PATCH(request) {
     }
 
     const now = new Date()
-    const editNote = `[EDITED by ${editedBy} on ${now.toLocaleDateString('id-ID')}] ${note}`
-
     let log
 
-    // If id is provided → update existing record
     if (id) {
-      log = await prisma.attendanceLog.update({
-        where: { id },
-        data: {
-          checkIn:     checkIn  ? new Date(checkIn)  : undefined,
-          checkOut:    checkOut ? new Date(checkOut) : undefined,
-          status:      status   || undefined,
-          checkInLoc:  checkIn  ? 'Edit Manual oleh Admin' : undefined,
-          checkOutLoc: checkOut ? 'Edit Manual oleh Admin' : undefined,
-          editedBy,
-          editedAt: now,
-        }
-      })
+      // Update existing log
+      const updateData = {}
+      if (checkIn  !== undefined) { updateData.checkIn  = checkIn  ? new Date(`${date || ''}T${checkIn}:00+07:00`)  : null }
+      if (checkOut !== undefined) { updateData.checkOut = checkOut ? new Date(`${date || ''}T${checkOut}:00+07:00`) : null }
+      if (status   !== undefined)  updateData.status   = status
+      if (checkIn)  updateData.checkInLoc  = 'Edit Manual oleh Admin'
+      if (checkOut) updateData.checkOutLoc = 'Edit Manual oleh Admin'
+      updateData.editedBy  = editedBy
+      updateData.editedAt  = now
+
+      log = await prisma.attendanceLog.update({ where: { id }, data: updateData })
     } else {
-      // Create new record with admin-entered data (intern forgot to clock-in)
-      const [inHour, inMin]   = (checkIn  || '08:00').split(':')
-      const [outHour, outMin] = (checkOut || '17:00').split(':')
-      const dIn  = new Date(`${date}T${String(inHour).padStart(2,'0')}:${String(inMin).padStart(2,'0')}:00+07:00`)
-      const dOut = new Date(`${date}T${String(outHour).padStart(2,'0')}:${String(outMin).padStart(2,'0')}:00+07:00`)
-      const newStatus = (dIn > new Date(`${date}T07:30:00+07:00`)) ? 'LATE' : 'PRESENT'
+      // Upsert (intern forgot to clock in entirely)
+      const dIn  = checkIn  ? new Date(`${date}T${checkIn}:00+07:00`)  : new Date(`${date}T08:00:00+07:00`)
+      const dOut = checkOut ? new Date(`${date}T${checkOut}:00+07:00`) : null
+      const computedStatus = status || (dIn > new Date(`${date}T07:30:00+07:00`) ? 'LATE' : 'PRESENT')
 
       log = await prisma.attendanceLog.upsert({
-        where: { internId_date: { internId, date } },
-        update: {
-          checkIn: dIn, checkOut: dOut,
-          checkInLoc: 'Edit Manual (upsert)', checkOutLoc: 'Edit Manual (upsert)',
-          status: newStatus, editedBy, editedAt: now
-        },
-        create: {
-          internId, date,
-          checkIn: dIn, checkOut: dOut,
-          checkInLoc: 'Input Manual oleh Admin', checkOutLoc: 'Input Manual oleh Admin',
-          status: newStatus, editedBy, editedAt: now
-        }
+        where:  { internId_date: { internId, date } },
+        update: { checkIn: dIn, checkOut: dOut, status: computedStatus, checkInLoc: 'Admin Manual (upsert)', checkOutLoc: dOut ? 'Admin Manual (upsert)' : null, editedBy, editedAt: now },
+        create: { internId, date, checkIn: dIn, checkOut: dOut, status: computedStatus, checkInLoc: 'Input Manual oleh Admin', checkOutLoc: dOut ? 'Input Manual oleh Admin' : null, editedBy, editedAt: now }
       })
     }
 

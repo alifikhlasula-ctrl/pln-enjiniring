@@ -45,6 +45,85 @@ function StreakBar({ data }) {
   )
 }
 
+/* ── Status Picker: Hadir / Sakit / Izin ────────── */
+function StatusPicker({ userId, onStatusSaved }) {
+  const [mode,    setMode]    = useState(null) // 'SAKIT' | 'IZIN' | null
+  const [reason,  setReason]  = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [error,   setError]   = useState('')
+
+  const handleReport = async (statusType) => {
+    if (statusType === 'HADIR') {
+      window.location.href = '/attendance'
+      return
+    }
+    setSaving(true); setError('')
+    try {
+      const res  = await fetch('/api/attendance/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, statusType, reason })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Gagal melapor')
+      setMode(null); setReason('')
+      if (onStatusSaved) onStatusSaved()
+    } catch (e) { setError(e.message) }
+    finally { setSaving(false) }
+  }
+
+  if (mode) {
+    return (
+      <div style={{ background: mode === 'SAKIT' ? 'var(--danger-light)' : 'var(--primary-light)', borderRadius: 10, padding: '0.75rem' }}>
+        <p style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 6, color: mode === 'SAKIT' ? 'var(--danger)' : 'var(--primary)' }}>
+          {mode === 'SAKIT' ? '🤒 Laporan Sakit' : '📋 Laporan Izin'}
+        </p>
+        <input
+          type="text" className="input" placeholder={`Keterangan ${mode === 'SAKIT' ? 'sakit' : 'izin'}...`}
+          value={reason} onChange={e => setReason(e.target.value)}
+          style={{ marginBottom: 8, fontSize: '0.82rem' }}
+        />
+        {error && <p style={{ color: 'var(--danger)', fontSize: '0.78rem', marginBottom: 6 }}>{error}</p>}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => { setMode(null); setError('') }} className="btn btn-sm" style={{ flex: 1, fontSize: '0.8rem' }}>Batal</button>
+          <button onClick={() => handleReport(mode)} disabled={saving} className="btn btn-primary btn-sm" style={{ flex: 2, fontSize: '0.8rem' }}>
+            {saving ? 'Menyimpan...' : `Kirim Laporan ${mode}`}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: 8 }}>Pilih status kehadiran Anda hari ini:</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+        <button onClick={() => handleReport('HADIR')} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          padding: '0.6rem 0.25rem', borderRadius: 10, border: '2px solid #22c55e',
+          background: '#dcfce7', color: '#15803d', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer'
+        }}>
+          📸 <span>Hadir</span>
+        </button>
+        <button onClick={() => setMode('SAKIT')} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          padding: '0.6rem 0.25rem', borderRadius: 10, border: '2px solid #ef4444',
+          background: '#fee2e2', color: '#b91c1c', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer'
+        }}>
+          🤒 <span>Sakit</span>
+        </button>
+        <button onClick={() => setMode('IZIN')} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          padding: '0.6rem 0.25rem', borderRadius: 10, border: '2px solid #6366f1',
+          background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer'
+        }}>
+          📋 <span>Izin</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /* ── Main InternDashboard Component ─────────────── */
 export default function InternDashboard() {
   const { user } = useAuth()
@@ -194,7 +273,7 @@ export default function InternDashboard() {
 
       {/* ── Row 2: Absen Hari Ini + Streak Mingguan ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
-        {/* Today Card */}
+        {/* Today Card — REVAMPED with Hadir/Sakit/Izin */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
             <Clock size={16} strokeWidth={2} style={{ color: 'var(--secondary)' }} /> Absensi Hari Ini
@@ -205,7 +284,7 @@ export default function InternDashboard() {
                 <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', background: today.checkedIn ? 'var(--secondary-light)' : 'var(--bg-main)', border: `1px solid ${today.checkedIn ? 'var(--secondary)' : 'var(--border)'}`, textAlign: 'center' }}>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>CHECK IN</p>
                   <p style={{ fontSize: '1.1rem', fontWeight: 800, color: today.checkedIn ? 'var(--secondary)' : 'var(--text-muted)' }}>{today.checkedIn ? fmtTime(today.checkInTime) : '–:––'}</p>
-                  {today.status && <span className={`badge ${today.status === 'LATE' ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.6rem', marginTop: 4 }}>{today.status}</span>}
+                  {today.status && <span className={`badge ${today.status === 'LATE' ? 'badge-warning' : today.status === 'SAKIT' ? 'badge-danger' : today.status === 'IZIN' ? 'badge-primary' : 'badge-success'}`} style={{ fontSize: '0.6rem', marginTop: 4 }}>{today.status}</span>}
                 </div>
                 <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', background: today.checkedOut ? 'var(--danger-light)' : 'var(--bg-main)', border: `1px solid ${today.checkedOut ? 'var(--danger)' : 'var(--border)'}`, textAlign: 'center' }}>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600 }}>CHECK OUT</p>
@@ -217,9 +296,23 @@ export default function InternDashboard() {
                   <MapPin size={11} /> {today.checkInLoc}
                 </div>
               )}
-              <a href="/attendance" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}>
-                {today.checkedIn && !today.checkedOut ? '🟢 Lakukan Check Out' : !today.checkedIn ? '📸 Lakukan Check In' : '✓ Lihat Detail Absensi'}
-              </a>
+
+              {/* ── Status Picker: Hadir / Sakit / Izin ── */}
+              {!today.checkedIn && !['SAKIT','IZIN'].includes(today.status) ? (
+                <StatusPicker userId={user?.id} onStatusSaved={fetchDash} />
+              ) : today.checkedIn && !today.checkedOut ? (
+                <a href="/attendance" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}>
+                  🟢 Lakukan Check Out
+                </a>
+              ) : ['SAKIT','IZIN'].includes(today.status) ? (
+                <div style={{ textAlign: 'center', padding: '0.5rem', background: 'var(--primary-light)', borderRadius: 8, fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)' }}>
+                  ✓ Status {today.status} sudah tercatat hari ini
+                </div>
+              ) : (
+                <a href="/attendance" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}>
+                  ✓ Lihat Detail Absensi
+                </a>
+              )}
             </>
           )}
         </div>

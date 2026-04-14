@@ -48,7 +48,9 @@ export async function GET(request) {
         checkIn: log?.checkIn || null,
         checkOut: log?.checkOut || null,
         checkInLoc: log?.checkInLoc || null,
-        faceInBase64: log?.faceInBase64 ? true : false, // Just boolean for UI payload size optimization
+        // Return actual face photo URL (Supabase Storage URL preferred, then Base64 flag)
+        faceInUrl: log?.faceInUrl || null,
+        faceInBase64: log?.faceInBase64 ? true : false,
       }
     })
 
