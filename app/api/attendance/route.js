@@ -56,7 +56,7 @@ export async function POST(request) {
   console.log('[POST /api/attendance] Request received')
   try {
     const body = await request.json()
-    const { userId, type, location, faceBase64, date, checkInTime, checkOutTime } = body
+    const { userId, type, location, faceBase64, faceUrl, date, checkInTime, checkOutTime } = body
 
     if (!userId || !type) {
       return NextResponse.json({ error: 'userId dan type wajib diisi' }, { status: 400 })
@@ -88,11 +88,10 @@ export async function POST(request) {
     }
 
     const now = new Date()
-    // Tentukan referensi 'hari ini' dalam zona waktu WIB (UTC+7)
     const nowWIB = new Date(now.getTime() + (7 * 3600000))
     const today = nowWIB.toISOString().split('T')[0]
 
-    // ── Gembok Akhir Pekan (Saturday/Sunday) ─────────────────────
+    // ── Gembok Akhir Pekan ─────────────────────────────────────────────
     if (type === 'IN' || type === 'OUT') {
       if (isWeekend(today)) {
         return NextResponse.json({ error: 'Absensi terkunci pada hari Sabtu dan Minggu.' }, { status: 400 })
@@ -102,7 +101,6 @@ export async function POST(request) {
       return NextResponse.json({ error: `Tanggal ${date} adalah akhir pekan. Absensi tidak diperbolehkan.` }, { status: 400 })
     }
 
-    // Determine status LATE/PRESENT
     const limit = new Date(`${today}T07:30:00+07:00`)
     const status = (type === 'IN' && now > limit) ? 'LATE' : 'PRESENT'
 
@@ -121,7 +119,9 @@ export async function POST(request) {
           date: today,
           checkIn: now,
           checkInLoc: location || 'Lokasi tidak tersedia',
-          faceInBase64: faceBase64 || null,
+          // Prefer Storage URL over Base64 (keeps DB lean)
+          faceInUrl:    faceUrl    || null,
+          faceInBase64: !faceUrl && faceBase64 ? faceBase64 : null,
           status
         }
       })
@@ -180,7 +180,9 @@ export async function POST(request) {
         data: {
           checkOut: now,
           checkOutLoc: location || 'Lokasi tidak tersedia',
-          faceOutBase64: faceBase64 || null
+          // Prefer Storage URL over Base64 (keeps DB lean)
+          faceOutUrl:    faceUrl    || null,
+          faceOutBase64: !faceUrl && faceBase64 ? faceBase64 : null,
         }
       })
       try { await db.addLog(userId, 'CLOCK_OUT', { location }) } catch (_) {}

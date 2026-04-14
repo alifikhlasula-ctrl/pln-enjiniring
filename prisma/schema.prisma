@@ -95,6 +95,14 @@ model AttendanceLog {
   faceInBase64  String?  @db.Text
   faceOutBase64 String?  @db.Text
 
+  // Supabase Storage URLs (preferred over Base64 - keeps DB lean)
+  faceInUrl     String?
+  faceOutUrl    String?
+
+  // Admin manual edit audit trail
+  editedBy      String?
+  editedAt      DateTime?
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
