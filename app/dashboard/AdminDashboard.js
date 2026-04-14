@@ -1,5 +1,7 @@
 'use client'
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
+import useSWR from 'swr'
+import { fetcher } from '@/lib/fetcher'
 import {
   Users, Clock, FileText, TrendingUp, CheckCircle2, AlertCircle,
   BarChart3, CalendarDays, Bell, Plus, Edit, Trash, X, Pin,
@@ -606,18 +608,14 @@ function QuickActions() {
 
 /* ── Announcements Widget (CRUD) ─────────────────── */
 function AnnouncementsWidget() {
-  const [items,setItems]   = useState([])
-  const [loading,setLoading] = useState(true)
   const [showForm,setShowForm] = useState(false)
   const [editItem,setEditItem] = useState(null)
   const [form,setForm]     = useState({title:'',content:'',priority:'INFO',pinned:false})
   const [saving,setSaving] = useState(false)
 
-  const fetch_ = async () => {
-    setLoading(true)
-    const r = await fetch('/api/announcements'); setItems(await r.json()); setLoading(false)
-  }
-  useEffect(()=>{fetch_()},[])
+  // SWR automatically handles fetching, caching, deduplication, and loading state
+  const { data: items, isLoading: loading, mutate } = useSWR('/api/announcements', fetcher)
+  const safeItems = items || []
 
   const openForm = (item=null) => {
     setEditItem(item)
@@ -630,16 +628,16 @@ function AnnouncementsWidget() {
     setSaving(true)
     if (editItem) await fetch('/api/announcements',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...editItem,...form})})
     else          await fetch('/api/announcements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
-    setSaving(false); setShowForm(false); fetch_()
+    setSaving(false); setShowForm(false); mutate()
   }
 
   const handleDelete = async id => {
     if (!confirm('Hapus pengumuman ini?')) return
-    await fetch(`/api/announcements?id=${id}`,{method:'DELETE'}); fetch_()
+    await fetch(`/api/announcements?id=${id}`,{method:'DELETE'}); mutate()
   }
 
   const togglePin = async item => {
-    await fetch('/api/announcements',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...item,pinned:!item.pinned})}); fetch_()
+    await fetch('/api/announcements',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...item,pinned:!item.pinned})}); mutate()
   }
 
   const P = PRIO_STYLE
@@ -682,9 +680,9 @@ function AnnouncementsWidget() {
       <div style={{display:'flex',flexDirection:'column',gap:'0.5rem',maxHeight:320,overflowY:'auto'}}>
         {loading
           ? [...Array(2)].map((_,i)=><div key={i} style={{height:60,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/>)
-          : items.length===0
+          : safeItems.length===0
             ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'1.5rem'}}>Belum ada pengumuman. Klik "+ Buat" untuk memulai.</p>
-            : items.map(ann=>{
+            : safeItems.map(ann=>{
                 const s = P[ann.priority]||P.INFO
                 return (
                   <div key={ann.id} style={{padding:'0.75rem',background:'var(--bg-main)',borderRadius:'var(--radius-md)',border:`1px solid ${ann.pinned?'rgba(99,102,241,0.3)':'var(--border)'}`,borderLeft:`3px solid ${s.color}`}}>
@@ -715,36 +713,31 @@ function AnnouncementsWidget() {
 
 /* ── HR Tasks Widget (CRUD) ──────────────────────── */
 function HRTasksWidget() {
-  const [tasks,setTasks]   = useState([])
-  const [loading,setLoading] = useState(true)
   const [showForm,setShowForm] = useState(false)
   const [form,setForm]     = useState({title:'',dueDate:'',priority:'MEDIUM'})
   const [saving,setSaving] = useState(false)
 
-  const fetch_ = async () => {
-    setLoading(true)
-    const r = await fetch('/api/tasks-hr'); setTasks(await r.json()); setLoading(false)
-  }
-  useEffect(()=>{fetch_()},[])
+  const { data: tasks, isLoading: loading, mutate } = useSWR('/api/tasks-hr', fetcher)
+  const safeTasks = tasks || []
 
   const handleAdd = async () => {
     if (!form.title.trim()) return
     setSaving(true)
     await fetch('/api/tasks-hr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
-    setSaving(false); setShowForm(false); setForm({title:'',dueDate:'',priority:'MEDIUM'}); fetch_()
+    setSaving(false); setShowForm(false); setForm({title:'',dueDate:'',priority:'MEDIUM'}); mutate()
   }
 
   const toggleDone = async task => {
-    await fetch('/api/tasks-hr',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...task,completed:!task.completed})}); fetch_()
+    await fetch('/api/tasks-hr',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...task,completed:!task.completed})}); mutate()
   }
 
   const handleDelete = async id => {
-    await fetch(`/api/tasks-hr?id=${id}`,{method:'DELETE'}); fetch_()
+    await fetch(`/api/tasks-hr?id=${id}`,{method:'DELETE'}); mutate()
   }
 
   const P = PRIO_STYLE
-  const done  = tasks.filter(t=>t.completed).length
-  const total = tasks.length
+  const done  = safeTasks.filter(t=>t.completed).length
+  const total = safeTasks.length
 
   return (
     <div className="card" style={{minHeight:280}}>
@@ -791,9 +784,9 @@ function HRTasksWidget() {
       <div style={{display:'flex',flexDirection:'column',gap:'0.375rem',maxHeight:300,overflowY:'auto'}}>
         {loading
           ? [...Array(3)].map((_,i)=><div key={i} style={{height:40,background:'var(--border)',borderRadius:6,animation:'pulse 1.4s ease-in-out infinite'}}/>)
-          : tasks.length===0
+          : safeTasks.length===0
             ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'1.25rem'}}>Tidak ada tugas. Klik "+ Tambah" untuk membuat reminder.</p>
-            : tasks.map(t=>{
+            : safeTasks.map(t=>{
                 const s=P[t.priority]||P.MEDIUM
                 const overdue = t.dueDate && !t.completed && new Date(t.dueDate)<new Date()
                 return (
@@ -825,18 +818,13 @@ function HRTasksWidget() {
 
 /* ── Events Widget (CRUD) ────────────────────────── */
 function EventsWidget() {
-  const [events,setEvents] = useState([])
-  const [loading,setLoading] = useState(true)
   const [showForm,setShowForm] = useState(false)
   const [editItem,setEditItem] = useState(null)
   const [form,setForm]     = useState({title:'',date:'',type:'GENERAL',description:''})
   const [saving,setSaving] = useState(false)
 
-  const fetch_ = async () => {
-    setLoading(true)
-    const r = await fetch('/api/events'); setEvents(await r.json()); setLoading(false)
-  }
-  useEffect(()=>{fetch_()},[])
+  const { data: events, isLoading: loading, mutate } = useSWR('/api/events', fetcher)
+  const safeEvents = events || []
 
   const openForm = (item=null) => {
     setEditItem(item)
@@ -849,12 +837,12 @@ function EventsWidget() {
     setSaving(true)
     if (editItem) await fetch('/api/events',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...editItem,...form})})
     else          await fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
-    setSaving(false); setShowForm(false); fetch_()
+    setSaving(false); setShowForm(false); mutate()
   }
 
   const handleDelete = async id => {
     if (!confirm('Hapus event ini?')) return
-    await fetch(`/api/events?id=${id}`,{method:'DELETE'}); fetch_()
+    await fetch(`/api/events?id=${id}`,{method:'DELETE'}); mutate()
   }
 
   const today = new Date(); today.setHours(0,0,0,0)
@@ -895,9 +883,9 @@ function EventsWidget() {
       <div style={{display:'flex',flexDirection:'column',gap:'0.5rem',maxHeight:320,overflowY:'auto'}}>
         {loading
           ? [...Array(3)].map((_,i)=><div key={i} style={{height:52,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/>)
-          : events.length===0
+          : safeEvents.length===0
             ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'1.5rem'}}>Belum ada event terjadwal.</p>
-            : events.map(ev=>{
+            : safeEvents.map(ev=>{
                 const evDate  = new Date(ev.date); evDate.setHours(0,0,0,0)
                 const past    = evDate < today
                 const today_  = evDate.getTime()===today.getTime()
@@ -984,28 +972,20 @@ function JenjangChart({data,loading}) {
 
 /* ── Main Admin Dashboard ────────────────────────── */
 export default function AdminDashboard() {
-  const [dash,  setDash]   = useState(null)
-  const [loading,setLoading] = useState(true)
-  const [lastRefresh,setLastRefresh] = useState(new Date())
   const [selectedYear, setSelectedYear] = useState('2026')
 
-  const fetchDash = useCallback(async () => {
-    setLoading(true)
-    try {
-      const r = await fetch(`/api/dashboard?tahun=${selectedYear}`)
-      setDash(await r.json())
-      setLastRefresh(new Date())
-    } catch(e) { console.error(e) }
-    finally { setLoading(false) }
-  }, [selectedYear])
+  // SWR for main dashboard stats. Will automatically re-validate.
+  // We use refreshInterval: 60000 to replicate the setInterval behavior without memory leak risks.
+  const { data: dash, isLoading: loading, mutate: fetchDash } = useSWR(`/api/dashboard?tahun=${selectedYear}`, fetcher, {
+    refreshInterval: 60000,
+    revalidateOnFocus: true, // Refresh instantly when tab is focused
+  })
+
+  // When SWR returns from cache instantly, we wouldn't know the exact fetch time 
+  // without digging inside, so we'll just show the current time if it's not currently loading.
+  const lastRefreshTime = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})
 
   const { user, switchRole } = useAuth()
-
-  useEffect(() => {
-    fetchDash()
-    const t = setInterval(fetchDash, 60000) // auto refresh every 60s
-    return () => clearInterval(t)
-  }, [fetchDash, selectedYear])
 
   const s = dash?.stats || {}
 
@@ -1091,8 +1071,8 @@ export default function AdminDashboard() {
             <option value="2025">Program 2025</option>
             <option value="2024">Program 2024</option>
           </select>
-          <span style={{fontSize:'0.72rem',color:'var(--text-muted)'}}>Refresh: {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
-          <button className="btn btn-secondary btn-sm" onClick={fetchDash} disabled={loading} title="Refresh data">
+          <span style={{fontSize:'0.72rem',color:'var(--text-muted)'}}>Status: {loading ? 'Memperbarui...' : `Live (${lastRefreshTime})`}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => fetchDash()} disabled={loading} title="Refresh data">
             <RefreshCw size={14} strokeWidth={2} style={{animation:loading?'spin 1s linear infinite':'none'}}/>
           </button>
         </div>

@@ -1,5 +1,7 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
+import useSWR from 'swr'
+import { fetcher } from '@/lib/fetcher'
 import { useAuth } from '@/context/AuthContext'
 import {
   Clock, CheckCircle2, CalendarDays, TrendingUp, Wallet,
@@ -127,28 +129,25 @@ function StatusPicker({ userId, onStatusSaved }) {
 /* ── Main InternDashboard Component ─────────────── */
 export default function InternDashboard() {
   const { user } = useAuth()
-  const [dash, setDash] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [moodSaving, setMoodSaving] = useState(false)
   const [selectedMood, setSelectedMood] = useState(null)
-  const [lastRefresh, setLastRefresh] = useState(new Date())
 
-  const fetchDash = useCallback(async () => {
-    if (!user?.id) return
-    setLoading(true)
-    try {
-      const r = await fetch(`/api/intern-dashboard?userId=${user.id}`)
-      const json = await r.json()
-      if (!json.error) {
-        setDash(json)
-        setSelectedMood(json.todayMood)
-        setLastRefresh(new Date())
+  // SWR automatically handles caching, loading state, and deduplication.
+  // It pauses fetching when user.id is null (e.g. auth still loading).
+  const { data: dash, error, isLoading: loading, mutate: fetchDash } = useSWR(
+    user?.id ? `/api/intern-dashboard?userId=${user.id}` : null,
+    fetcher,
+    {
+      refreshInterval: 60000, 
+      revalidateOnFocus: true,
+      onSuccess: (data) => {
+        // Sync local selected mood with DB on initial load
+        if (data && data.todayMood && !selectedMood) setSelectedMood(data.todayMood)
       }
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
-  }, [user?.id])
+    }
+  )
 
-  useEffect(() => { fetchDash() }, [fetchDash])
+  const lastRefreshTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 
   const handleMood = async (val) => {
     if (moodSaving) return
@@ -183,8 +182,8 @@ export default function InternDashboard() {
           <p className="subtitle">Selamat datang, <strong>{loading ? '...' : intern.name}</strong> — {intern.bidang || 'Peserta Magang'}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Refresh: {lastRefresh.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
-          <button className="btn btn-secondary btn-sm" onClick={fetchDash} disabled={loading}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Status: {loading ? 'Memperbarui...' : `Live (${lastRefreshTime})`}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => fetchDash()} disabled={loading}>
             <RefreshCw size={14} strokeWidth={2} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
           </button>
         </div>
