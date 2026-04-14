@@ -34,17 +34,25 @@ function buildPayrollItem(intern, data, month, year) {
     })
   }
 
-  // Cross-Validate with Reports
+  // Cross-Validate with Reports and complete clock-in/out
   let validPresenceCount = 0
   let missingReportsCount = 0
 
   attendances.forEach(att => {
+    // 1. Validasi Absensi: Wajib ada Check-In dan Check-Out
+    if (!att.checkIn || !att.checkOut) {
+      missingReportsCount++ // Dihitung sebagai tidak valid/tidak lengkap
+      return
+    }
+
+    // 2. Validasi Laporan: Wajib ada laporan dengan tanggal yang sama
     const attNorm = normalizeDate(att.date || att.checkIn)
     const reportExists = (data.reports || []).some(
       r => r.userId === intern.userId && 
            normalizeDate(r.date || r.reportDate) === attNorm && 
            r.status !== 'DRAFT'
     )
+    
     if (reportExists) {
       validPresenceCount++
     } else {
@@ -151,7 +159,7 @@ export async function GET(request) {
 
     // Gunakan SQL logs jika ada, jika tidak fallback ke JSON legacy
     let attendances = sqlLogs.length > 0
-      ? sqlLogs.map(l => ({ date: l.date, checkIn: l.checkIn, status: l.status, internId: l.internId }))
+      ? sqlLogs.map(l => ({ date: l.date, checkIn: l.checkIn, checkOut: l.checkOut, status: l.status, internId: l.internId }))
       : (data.attendances || []).filter(a => a.internId === intern.id && ['PRESENT', 'LATE'].includes(a.status))
 
     // Filter by tanggal
@@ -173,6 +181,12 @@ export async function GET(request) {
     let missingReportsCount = 0
 
     attendances.forEach(att => {
+      // 1. Validasi Absensi: Wajib ada Check-In dan Check-Out
+      if (!att.checkIn || !att.checkOut) {
+        missingReportsCount++ // Dihitung tidak lengkap, sama seperti laporan kosong
+        return
+      }
+
       const attNorm = normalizeDate(att.date || att.checkIn)
 
       // ── [FIX] Cross-validate laporan di KEDUA lapisan database ──
@@ -194,15 +208,8 @@ export async function GET(request) {
       }
     })
 
-    // Hitung missingReportsCount untuk sekedar peringatan (warning), 
-    // NAMUN kembalikan validPresenceCount agar sama dengan jumlah total absensi 
-    // sesuai instruksi user (allowance kembali normal).
-    // Note: missingReportsCount is already populated correctly by the loop.
-    validPresenceCount = attendances.length
-
     const allowanceRate = FLAT_RATE
-    // Restore normal calculation: Pay based on total attendances, not strictly limited by missing reports
-    const totalAllowance = attendances.length * allowanceRate
+    const totalAllowance = validPresenceCount * allowanceRate
     const periodKey = startDate && endDate ? `${startDate}_${endDate}` : pKey
     
     // Check PayrollRecord first, then fall back to JSON payrolls
