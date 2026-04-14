@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withCache } from '@/lib/cache-headers'
 
 export async function GET() {
   try {
     const list = await prisma.announcement.findMany({
       orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }]
     })
-    return NextResponse.json(list.map(a => ({ ...a, createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString() })))
+    return withCache(
+      NextResponse.json(list.map(a => ({ ...a, createdAt: a.createdAt.toISOString(), updatedAt: a.updatedAt.toISOString() }))),
+      'MEDIUM'  // 30s cache — announcements are set by Admin, not real-time
+    )
   } catch (err) {
     return NextResponse.json({ error: 'Gagal mengambil pengumuman' }, { status: 500 })
   }

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getDB, saveDB, db } from '@/lib/db'
+import { withCache } from '@/lib/cache-headers'
 
-export const dynamic = 'force-dynamic'
+// No force-dynamic: allow SHORT cache (15s) for GET listing
 
 /* ── GET: paginated, filtered, sorted + stats ─────── */
 export async function GET(request) {
@@ -88,11 +89,14 @@ export async function GET(request) {
     const startIndex = (page - 1) * limit
     const paginated  = allPar ? filtered : filtered.slice(startIndex, startIndex + limit)
 
-    return NextResponse.json({
-      data:       paginated,
-      pagination: { total, page, limit: allPar ? total : limit, totalPages: allPar ? 1 : (Math.ceil(total / limit) || 1) },
-      stats
-    })
+    return withCache(
+      NextResponse.json({
+        data:       paginated,
+        pagination: { total, page, limit: allPar ? total : limit, totalPages: allPar ? 1 : (Math.ceil(total / limit) || 1) },
+        stats
+      }),
+      'SHORT'  // 15s cache — intern list changes infrequently; safe to serve slightly stale
+    )
   } catch (err) {
       console.error('[GET /api/interns] Error:', err)
       return NextResponse.json({ error: err.message }, { status: 500 })

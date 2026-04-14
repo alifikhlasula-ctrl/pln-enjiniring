@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { withCache } from '@/lib/cache-headers'
 
 export async function GET() {
   try {
     const list = await prisma.event.findMany({ orderBy: { date: 'asc' } })
-    return NextResponse.json(list.map(e => ({ ...e, createdAt: e.createdAt.toISOString() })))
+    return withCache(
+      NextResponse.json(list.map(e => ({ ...e, createdAt: e.createdAt.toISOString() }))),
+      'MEDIUM'  // 30s cache — calendar events don't change minute-to-minute
+    )
   } catch (err) {
     return NextResponse.json({ error: 'Gagal mengambil event' }, { status: 500 })
   }

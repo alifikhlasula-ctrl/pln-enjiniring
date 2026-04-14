@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDB, saveDB } from '@/lib/db'
 import { prisma } from '@/lib/prisma'
+import { withCache } from '@/lib/cache-headers'
 
 /* ── GET: Compute auto-alerts + custom alerts ── */
 export async function GET() {
@@ -90,7 +91,10 @@ export async function GET() {
   const SEV = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }
   alerts.sort((a, b) => (SEV[a.severity] || 2) - (SEV[b.severity] || 2))
 
-  return NextResponse.json({ alerts: [...custom, ...alerts], settings: cfg, total: alerts.length + custom.length })
+  return withCache(
+    NextResponse.json({ alerts: [...custom, ...alerts], settings: cfg, total: alerts.length + custom.length }),
+    'SHORT'  // 15s cache — notifications check every 30s anyway, staleness is acceptable
+  )
 }
 
 // MONTHS helper
