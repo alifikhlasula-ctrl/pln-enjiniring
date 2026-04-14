@@ -9,14 +9,12 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─── JSON Store (replaces database.json on serverless) ───
 model JsonStore {
   key       String   @id
   data      Json
   updatedAt DateTime @updatedAt
 }
 
-// ─── Core Auth & Profiles ─────────────────────────────────
 model User {
   id                 String   @id @default(cuid())
   email              String   @unique
@@ -24,112 +22,90 @@ model User {
   name               String
   role               String   @default("INTERN")
   mustChangePassword Boolean  @default(false)
-
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
 
 model Intern {
-  id                 String       @id @default(cuid())
-  userId             String       @unique
-  name               String
-  nim_nis            String
-  email              String?
-  gender             String       @default("Laki-laki")
-  university         String
-  jenjang            String       @default("S1")
-  major              String
-
-  status             String       @default("ACTIVE")
-  bidang             String
-  wilayah            String?
-  tahun              String?
-  periodStart        String?
-  periodEnd          String?
-  duration           String?
-
-  phone              String?
-  nik                String?
-  birthDate          String?
-  address            String?
-
-  bankName           String?
-  bankAccount        String?
-  bankAccountName    String?
-
-  supervisorName     String?
-  supervisorTitle    String?
-
-  suratPenerimaan          String?
-  tanggalSuratPenerimaan   String?
-  spk                      String?
-  tanggalSPK               String?
-  amandemen                String?
-  tanggalAmandemen         String?
-  suratSelesai             String?
-  tanggalSuratSelesai      String?
-
-  fromImport         String?
-  fromOnboarding     String?
-  deletedAt          DateTime?
-
-
-
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                     String    @id @default(cuid())
+  userId                 String    @unique
+  name                   String
+  nim_nis                String
+  email                  String?
+  gender                 String    @default("Laki-laki")
+  university             String
+  jenjang                String    @default("S1")
+  major                  String
+  status                 String    @default("ACTIVE")
+  bidang                 String
+  wilayah                String?
+  tahun                  String?
+  periodStart            String?
+  periodEnd              String?
+  duration               String?
+  phone                  String?
+  nik                    String?
+  birthDate              String?
+  address                String?
+  bankName               String?
+  bankAccount            String?
+  bankAccountName        String?
+  supervisorName         String?
+  supervisorTitle        String?
+  suratPenerimaan        String?
+  tanggalSuratPenerimaan String?
+  spk                    String?
+  tanggalSPK             String?
+  amandemen              String?
+  tanggalAmandemen       String?
+  suratSelesai           String?
+  tanggalSuratSelesai    String?
+  fromImport             String?
+  fromOnboarding         String?
+  deletedAt              DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 }
 
-// ─── Attendance (migrated from SQLite) ────────────────────
 model AttendanceLog {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   internId      String
-
-
   date          String
   checkIn       DateTime?
   checkOut      DateTime?
-  status        String   @default("PRESENT")
-
+  status        String    @default("PRESENT")
   checkInLoc    String?
   checkOutLoc   String?
-  faceInBase64  String?  @db.Text
-  faceOutBase64 String?  @db.Text
-
-  // Supabase Storage URLs (preferred over Base64 - keeps DB lean)
+  faceInBase64  String?
+  faceOutBase64 String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  editedAt      DateTime?
+  editedBy      String?
   faceInUrl     String?
   faceOutUrl    String?
-
-  // Admin manual edit audit trail
-  editedBy      String?
-  editedAt      DateTime?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
 
   @@unique([internId, date])
 }
 
 model AttendanceCorrection {
-  id           String    @id @default(cuid())
-  internId     String
-  internName   String
-  date         String
-  type         String    // "IN" or "OUT"
-  time         String    // "08:00"
-  reason       String
-  status       String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  
-  reviewedBy   String?
-  reviewedAt   DateTime?
-
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  internId   String
+  internName String
+  date       String
+  type       String
+  time       String
+  reason     String
+  status     String    @default("PENDING")
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([internId])
   @@index([status])
 }
 
-// ─── Audit Logs ───────────────────────────────────────────
 model AuditLog {
   id        String   @id @default(cuid())
   userId    String
@@ -138,49 +114,40 @@ model AuditLog {
   timestamp DateTime @default(now())
 }
 
-// ─── Daily Reports ────────────────────────────────────────
 model DailyReport {
-  id          String   @id @default(cuid())
-  userId      String
-  date        String
-  activity    String
-  supervisor  String?
-  field       String?
-  internName  String?
-  nim_nis     String?
-  status      String   @default("TERCATAT") // DRAFT, TERCATAT, REVISION
-
-  commentText String?
-  reviewerId  String?
+  id           String   @id @default(cuid())
+  userId       String
+  date         String
+  activity     String
+  supervisor   String?
+  field        String?
+  internName   String?
+  nim_nis      String?
+  status       String   @default("TERCATAT")
+  commentText  String?
+  reviewerId   String?
   reviewerName String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   isLiked      Boolean  @default(false)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
-// ─── Onboarding ───────────────────────────────────────────
 model Onboarding {
-  id          String   @id @default(cuid())
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED, REVISION
-  
-  applicant   Json     // Store name, email, nim_nis, major etc as structured json
-  docs        Json?    // Store doc URLs if any
+  id          String    @id @default(cuid())
+  status      String    @default("PENDING")
+  applicant   Json
+  docs        Json?
   catatan     String?
-  
   reviewNote  String?
   reviewedBy  String?
   reviewedAt  DateTime?
-
   internId    String?
   timeline    Json?
-
-  timestamp   DateTime @default(now())
-  submittedAt DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  timestamp   DateTime  @default(now())
+  submittedAt DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
-// --- Evaluations ------------------------------------------
 model Evaluation {
   id             String    @id @default(cuid())
   internId       String
@@ -207,7 +174,6 @@ model EvaluationCriteria {
   createdAt DateTime @default(now())
 }
 
-// --- Payroll ----------------------------------------------
 model PayrollRecord {
   id                 String    @id @default(cuid())
   internId           String
@@ -228,7 +194,6 @@ model PayrollRecord {
   @@index([status])
 }
 
-// --- Surveys ----------------------------------------------
 model Survey {
   id          String    @id @default(cuid())
   title       String
@@ -255,7 +220,6 @@ model SurveyResponse {
   @@index([surveyId])
 }
 
-// --- Announcements ----------------------------------------
 model Announcement {
   id        String   @id @default(cuid())
   title     String
@@ -267,7 +231,6 @@ model Announcement {
   updatedAt DateTime @updatedAt
 }
 
-// --- Events (Calendar) ------------------------------------
 model Event {
   id          String   @id @default(cuid())
   title       String
@@ -278,7 +241,6 @@ model Event {
   updatedAt   DateTime @updatedAt
 }
 
-// --- HR Tasks ---------------------------------------------
 model HrTask {
   id        String   @id @default(cuid())
   title     String
