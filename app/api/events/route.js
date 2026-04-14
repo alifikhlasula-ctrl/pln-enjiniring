@@ -1,44 +1,52 @@
 import { NextResponse } from 'next/server'
-import { getDB, saveDB } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  const data  = await getDB()
-  const today = new Date(); today.setHours(0,0,0,0)
-  const list  = (data.events || [])
-    .sort((a,b) => new Date(a.date) - new Date(b.date))
-  return NextResponse.json(list)
+  try {
+    const list = await prisma.event.findMany({ orderBy: { date: 'asc' } })
+    return NextResponse.json(list.map(e => ({ ...e, createdAt: e.createdAt.toISOString() })))
+  } catch (err) {
+    return NextResponse.json({ error: 'Gagal mengambil event' }, { status: 500 })
+  }
 }
 
 export async function POST(request) {
-  const body = await request.json()
-  const data = await getDB()
-  if (!data.events) data.events = []
-  const nu = {
-    id: 'evt' + Date.now(),
-    title: body.title || '', date: body.date || '',
-    type: body.type || 'GENERAL', description: body.description || '',
-    createdAt: new Date().toISOString()
+  try {
+    const body = await request.json()
+    const ev = await prisma.event.create({
+      data: {
+        title: body.title || '',
+        date: body.date || '',
+        type: body.type || 'GENERAL',
+        description: body.description || ''
+      }
+    })
+    return NextResponse.json({ ...ev, createdAt: ev.createdAt.toISOString() })
+  } catch (err) {
+    return NextResponse.json({ error: 'Gagal membuat event' }, { status: 500 })
   }
-  data.events.push(nu)
-  await saveDB(data)
-  return NextResponse.json(nu)
 }
 
 export async function PUT(request) {
-  const body = await request.json()
-  const data = await getDB()
-  const idx  = (data.events || []).findIndex(e => e.id === body.id)
-  if (idx === -1) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  data.events[idx] = { ...data.events[idx], ...body }
-  await saveDB(data)
-  return NextResponse.json(data.events[idx])
+  try {
+    const body = await request.json()
+    const updated = await prisma.event.update({
+      where: { id: body.id },
+      data: { title: body.title, date: body.date, type: body.type, description: body.description }
+    })
+    return NextResponse.json({ ...updated, createdAt: updated.createdAt.toISOString() })
+  } catch (err) {
+    return NextResponse.json({ error: 'Gagal mengupdate event' }, { status: 500 })
+  }
 }
 
 export async function DELETE(request) {
-  const { searchParams } = new URL(request.url)
-  const id   = searchParams.get('id')
-  const data = await getDB()
-  data.events = (data.events || []).filter(e => e.id !== id)
-  await saveDB(data)
-  return NextResponse.json({ success: true })
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    await prisma.event.delete({ where: { id } })
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json({ error: 'Gagal menghapus event' }, { status: 500 })
+  }
 }

@@ -16,14 +16,13 @@ function serializeLog(log) {
   }
 }
 
-/* Helper: find intern by userId, using relational table for speed */
 async function findIntern(userId) {
   // Try relational Postgres first (Optimized)
   let intern = await prisma.intern.findUnique({ where: { userId } })
   
   if (!intern) {
     // Fallback to JSON blob just in case synchronization lagged
-    const data = await getDB()
+    const data = await getDB('ACTIVE', { clone: false })
     intern = (data.interns || []).find(i => i.userId === userId && !i.deletedAt)
     if (!intern) intern = (data.interns || []).find(i => i.userId === userId)
   }

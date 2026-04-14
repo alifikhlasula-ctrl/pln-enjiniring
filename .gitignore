@@ -9,6 +9,8 @@ out/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.production
 
 # Database (local only)
 database.json
@@ -41,3 +43,4 @@ public/Kredensial_Login_Intern.xlsx
 scripts/
 
 .vercel
+.env*.local

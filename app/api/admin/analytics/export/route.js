@@ -108,7 +108,7 @@ export async function GET(request) {
       const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })
       const timestamp = new Date().toISOString().split('T')[0]
 
-      const fileName = `InternHub_Analytics_${timestamp}.xlsx`
+      const fileName = `PLN_ENJINIRING_Analytics_${timestamp}.xlsx`
       
       return new Response(buf, {
         status: 200,
@@ -133,7 +133,7 @@ export async function GET(request) {
       const timestamp = new Date().toISOString().split('T')[0]
       
       doc.setFontSize(18)
-      doc.text('InternHub Analytics Report', 105, 15, { align: 'center' })
+      doc.text('PLN ENJINIRING Analytics Report', 105, 15, { align: 'center' })
       doc.setFontSize(10)
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' })
       
@@ -153,7 +153,7 @@ export async function GET(request) {
       })
       
       const pdfBuf = Buffer.from(doc.output('arraybuffer'))
-      const fileName = `InternHub_Analytics_${timestamp}.pdf`
+      const fileName = `PLN_ENJINIRING_Analytics_${timestamp}.pdf`
       
       return new Response(pdfBuf, {
         status: 200,

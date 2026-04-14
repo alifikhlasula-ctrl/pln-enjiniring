@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getDB, saveDB, db } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 export async function POST(request) {
   try {
@@ -9,16 +10,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Harap lengkapi semua data (Nama, NIM/NIS, Email & Password Baru)' }, { status: 400 })
     }
 
-    const data = await getDB()
-    const nameLower = name.toLowerCase().trim()
+    const nameLower = name.toLowerCase().replace(/\s+/g, ' ').trim()
     const nimTrim = String(nim_nis).trim()
 
-    // Find intern by name and nim_nis
-    const intern = data.interns.find(i => 
-      !i.deletedAt && 
-      i.name.toLowerCase().trim() === nameLower && 
-      String(i.nim_nis).trim() === nimTrim
-    )
+    // Find intern by name and nim_nis natively
+    const intern = await prisma.intern.findFirst({
+        where: {
+            name: { equals: nameLower, mode: 'insensitive' },
+            nim_nis: nimTrim,
+            deletedAt: null
+        }
+    })
 
     if (!intern) {
       return NextResponse.json({ 
@@ -26,18 +28,28 @@ export async function POST(request) {
       }, { status: 404 })
     }
 
-    // Find the associated user
-    const userIdx = data.users.findIndex(u => u.id === intern.userId)
-    if (userIdx === -1) {
-      return NextResponse.json({ error: 'Akun login tidak ditemukan untuk profil ini.' }, { status: 404 })
+    // Perbarui kredensial pengguna secara native
+    const oldUser = await prisma.user.findUnique({ where: { id: intern.userId } })
+    if (!oldUser) {
+        return NextResponse.json({ error: 'Akun login tidak ditemukan untuk profil ini.' }, { status: 404 })
     }
 
-    // Update credentials
-    const oldEmail = data.users[userIdx].email
-    data.users[userIdx].email = newEmail
-    data.users[userIdx].password = newPassword
+    const oldEmail = oldUser.email
 
-    await saveDB(data)
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { id: intern.userId },
+            data: {
+                email: newEmail,
+                password: newPassword,
+                mustChangePassword: false
+            }
+        }),
+        prisma.intern.update({
+            where: { id: intern.id },
+            data: { email: newEmail }
+        })
+    ])
 
     // Log the self-reset action
     await db.addLog(intern.userId, 'SELF_RESET_ACCOUNT', { 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { db } from '@/lib/db'
+import { getDB, saveDB, db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +24,34 @@ export async function GET(request) {
       where,
       orderBy: { date: 'desc' }
     })
+    
+    // Fallback: Merge Legacy JSON Reports for older interns
+    try {
+      const dbData = await getDB()
+      const legacyReports = (dbData.reports || []).filter(r => targetUserId ? r.userId === targetUserId : true)
+      
+      legacyReports.forEach(lr => {
+        const dateKey = lr.date || lr.reportDate
+        if (dateKey && !reports.some(r => r.date === dateKey)) {
+          reports.push({
+            id: lr.id,
+            userId: lr.userId,
+            date: dateKey,
+            activity: lr.activity || lr.content || '-',
+            supervisor: lr.supervisor || '',
+            field: lr.field || '',
+            internName: lr.internName || 'Unknown',
+            status: lr.status || 'TERCATAT',
+            createdAt: new Date(lr.createdAt || new Date()),
+            _isLegacy: true
+          })
+        }
+      })
+      // Re-sort effectively
+      reports.sort((a, b) => new Date(b.date) - new Date(a.date))
+    } catch (e) {
+      console.warn('[GET /api/reports] Legacy merge skipped:', e.message)
+    }
 
     let stats = {};
     let periodStart = null;
@@ -106,23 +134,55 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json()
-    const { id, action, statusChange, commentText, reviewerId, reviewerName } = body
+    const { id, action, statusChange, commentText, reviewerId, reviewerName, isDraft } = body
 
     if (!id) return NextResponse.json({ error: 'ID laporan wajib ada' }, { status: 400 })
 
-    const existing = await prisma.dailyReport.findUnique({ where: { id } })
-    if (!existing) return NextResponse.json({ error: 'Laporan tidak ditemukan' }, { status: 404 })
+    let existing = await prisma.dailyReport.findUnique({ where: { id } })
+    
+    // Check Legacy JSON if not in Prisma
+    if (!existing) {
+       const dbData = await getDB()
+       const legacyRep = (dbData.reports || []).find(r => r.id === id)
+       if (legacyRep) {
+          // Migrate on the fly
+          existing = await prisma.dailyReport.create({
+            data: {
+              id: legacyRep.id, // preserve ID
+              userId: legacyRep.userId,
+              date: legacyRep.date || legacyRep.reportDate,
+              activity: legacyRep.activity || legacyRep.content || '-',
+              supervisor: legacyRep.supervisor || '',
+              field: legacyRep.field || '',
+              internName: legacyRep.internName || 'Unknown',
+              nim_nis: legacyRep.nim_nis || '-',
+              status: legacyRep.status || 'TERCATAT'
+            }
+          })
+       } else {
+          return NextResponse.json({ error: 'Laporan tidak ditemukan' }, { status: 404 })
+       }
+    }
+
+    const dataObj = {}
+    if (statusChange) dataObj.status = statusChange
+    if (commentText !== undefined) dataObj.commentText = commentText
+    if (reviewerId) dataObj.reviewerId = reviewerId
+    if (reviewerName) dataObj.reviewerName = reviewerName
+    
+    if (body.activity !== undefined || body.content !== undefined) dataObj.activity = body.activity || body.content
+    if (body.supervisor !== undefined) dataObj.supervisor = body.supervisor
+    if (body.field !== undefined) dataObj.field = body.field
+    if (isDraft !== undefined) dataObj.status = isDraft ? 'DRAFT' : 'TERCATAT'
+    if (body.isLiked !== undefined) dataObj.isLiked = body.isLiked
 
     const report = await prisma.dailyReport.update({
       where: { id },
-      data: {
-        ...body,
-        status: body.isDraft ? 'DRAFT' : 'TERCATAT'
-      }
+      data: dataObj
     })
     
     // Log audit activity
-    if (!body.isDraft) {
+    if (!isDraft && !action) {
       db.addLog(report.userId, 'SUBMIT_DAILY_REPORT', { date: report.date }).catch(()=>{})
     }
 
@@ -133,22 +193,46 @@ export async function PUT(request) {
   }
 }
 
-/* ── DELETE: Hapus Laporan (Draft) ───────────────────── */
+/* ── DELETE: Hapus Laporan (Admin Reject / User Draft) ────── */
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'ID wajib ada' }, { status: 400 })
 
-    const rep = await prisma.dailyReport.findUnique({ where: { id } })
-    if (!rep) return NextResponse.json({ error: 'Laporan tidak ditemukan' }, { status: 404 })
+    // 1. Relational Deletion (Prisma)
+    let rep = null
+    try {
+      rep = await prisma.dailyReport.findUnique({ where: { id } })
+      if (rep) {
+        await prisma.dailyReport.delete({ where: { id } })
+      }
+    } catch (e) {
+      console.warn('[DELETE /api/reports] Prisma delete skipped (not found or already deleted)')
+    }
 
-    await prisma.dailyReport.delete({ where: { id } })
+    // 2. Legacy Sync (JSON Store)
+    const data = await getDB()
+    const initialLen = (data.reports || []).length
+    data.reports = (data.reports || []).filter(r => r.id !== id)
     
-    db.addLog(rep.userId, 'DELETE_DAILY_REPORT', { date: rep.date }).catch(()=>{})
-    return NextResponse.json({ success: true })
+    if (data.reports.length !== initialLen) {
+      await saveDB(data)
+      console.log(`[DELETE /api/reports] Legacy JSON record removed: ${id}`)
+    }
+
+    // 3. Log Audit Activity
+    if (rep || id) {
+      db.addLog(rep?.userId || 'UNKNOWN', 'ADMIN_REJECT_REPORT', { 
+        id, 
+        date: rep?.date, 
+        internName: rep?.internName 
+      }).catch(()=>{})
+    }
+
+    return NextResponse.json({ success: true, message: 'Laporan berhasil dihapus dari sistem.' })
   } catch (err) {
-    console.error('[DELETE /api/reports] Error:', err)
-    return NextResponse.json({ error: 'Gagal menghapus laporan' }, { status: 500 })
+    console.error('[DELETE /api/reports] Fatal Error:', err)
+    return NextResponse.json({ error: 'Gagal menghapus laporan secara sistem' }, { status: 500 })
   }
 }

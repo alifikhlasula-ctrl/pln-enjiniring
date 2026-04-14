@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
               <h1 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-1px', margin: 0 }}>Analytics Center</h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-               <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Infrastruktur Monitoring & Peramalan Cerdas InternHub</p>
+               <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Infrastruktur Monitoring & Peramalan Cerdas PLN ENJINIRING</p>
                <span style={{ height: '4px', width: '4px', borderRadius: '50%', background: 'var(--border)' }}></span>
                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--secondary)', animation: 'pulse 2s infinite' }}></div>

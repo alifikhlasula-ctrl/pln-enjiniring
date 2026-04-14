@@ -24,7 +24,7 @@ export default function HelpCenterPage() {
           <h1 className="title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <BookOpen size={24} strokeWidth={2} /> Pusat Bantuan
           </h1>
-          <p className="subtitle">Buku panduan penggunaan sistem InternHub bagi mahasiswa magang.</p>
+          <p className="subtitle">Buku panduan penggunaan sistem PLN ENJINIRING bagi mahasiswa magang.</p>
         </div>
         <button className="btn btn-secondary" onClick={handlePrint} style={{ gap: 8, fontWeight: 700 }}>
           <Download size={16} strokeWidth={2} /> Cetak / Download PDF
@@ -33,7 +33,7 @@ export default function HelpCenterPage() {
 
       {/* ── PRINT HEADER (Only visible when printing) ── */}
       <div className="print-only" style={{ textAlign: 'center', marginBottom: '2rem', display: 'none' }}>
-        <h1 style={{ fontSize: '24pt', fontWeight: 900, marginBottom: '8pt', color: '#000' }}>PANDUAN INTERNHUB PLN ENJINIRING</h1>
+        <h1 style={{ fontSize: '24pt', fontWeight: 900, marginBottom: '8pt', color: '#000' }}>PANDUAN PLN ENJINIRING</h1>
         <p style={{ fontSize: '12pt', color: '#555' }}>Tata Cara Penggunaan Sistem Kehadiran & Pelaporan Anak Magang</p>
         <hr style={{ margin: '20pt 0', border: '1px solid #ddd' }} />
       </div>
@@ -48,7 +48,7 @@ export default function HelpCenterPage() {
           <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             <p style={{ marginBottom: '0.5rem' }}>Langkah awal setelah Anda diterima sebagai peserta magang adalah memastikan akun Anda dapat diakses.</p>
             <ul style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <li>Buka website <strong>internhub-plne.vercel.app</strong> melalui browser (disarankan Chrome atau Safari).</li>
+              <li>Buka website <strong>pln-enjiniring-intern.vercel.app</strong> melalui browser (disarankan Chrome atau Safari).</li>
               <li>Gunakan <strong>Email Address</strong> yang telah Anda daftarkan.</li>
               <li>Masukkan password standar (default) jika belum pernah mengubahnya.</li>
               <li>Setelah berhasil login pertama kali, sistem akan memaksa Anda untuk mengubah password demi alasan keamanan. Masukkan password baru yang kuat.</li>

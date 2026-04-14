@@ -10,14 +10,26 @@ export async function GET(request) {
     const userId = searchParams.get('userId')
     if (!userId) return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
 
-    const data = await getDB()
-    const intern = (data.interns || []).find(i => i.userId === userId && !i.deletedAt)
-    // We also return the auth user data so we can auto-fill strictly if intern record does not exist
-    const user = (data.users || []).find(u => u.id === userId)
+    // ── Primary Source: Prisma Relational Database ──
+    let internAccount = await prisma.intern.findUnique({
+        where: { userId }
+    })
+
+    // ── Primary Source: Prisma User Table for base data ──
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    })
 
     if (!user) return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
 
-    return NextResponse.json({ success: true, intern: intern || null, user })
+    // ── Fallback: Legacy JSON store for older records pending migration mapping ──
+    if (!internAccount) {
+        const legacyData = await getDB();
+        const legacyIntern = (legacyData.interns || []).find(i => i.userId === userId && !i.deletedAt)
+        if (legacyIntern) internAccount = legacyIntern
+    }
+
+    return NextResponse.json({ success: true, intern: internAccount || null, user })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

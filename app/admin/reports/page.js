@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { 
   FileText, Search, Printer, Download, RefreshCw, 
   User, Calendar, Briefcase, CheckCircle2, Clock, 
-  MapPin, GraduationCap, X, ChevronRight, XCircle
+  MapPin, GraduationCap, X, ChevronRight, XCircle, Heart
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import Swal from 'sweetalert2'
@@ -48,31 +48,81 @@ export default function AdminReportsPage() {
       showCancelButton: true,
       confirmButtonColor: 'var(--danger)',
       confirmButtonText: 'Ya, Tolak & Hapus',
-      cancelButtonText: 'Batal'
+      cancelButtonText: 'Batal',
+      backdrop: 'rgba(0,0,0,0.8)'
     })
 
     if (isConfirmed) {
       try {
-        // 1. Delete the report
-        await fetch(`/api/reports?id=${rep.id}`, { method: 'DELETE' })
+        // OPTIMISTIC UI UPDATE: Remove from local state immediately
+        setReports(prev => prev.filter(r => String(r.id) !== String(rep.id)))
         
-        // 2. Create notification for intern
-        await fetch('/api/notifications', {
+        // SHOW SUCCESS IMMEDIATELY
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil Ditolak',
+          text: 'Laporan telah dihapus dan tampilan diperbarui.',
+          timer: 1500,
+          showConfirmButton: false,
+          backdrop: 'rgba(0,0,0,0.8)'
+        })
+
+        // FIRE AND FORGET: Background processing
+        const delPromise = fetch(`/api/reports?id=${rep.id}`, { method: 'DELETE' })
+          .then(res => { if (!res.ok) console.warn('Failed to delete report:', rep.id) })
+          .catch(console.error)
+        
+        const notifPromise = fetch('/api/notifications', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             severity: 'HIGH',
             title: 'Laporan Perlu di Input Ulang',
             detail: `Admin HR menolak laporan Anda tanggal ${fmtDate(rep.date || rep.reportDate)}. Silakan isi kembali dengan data yang benar.`,
-            link: '/reports'
+            link: '/reports',
+            userId: rep.userId
+          })
+        }).then(res => { if (!res.ok) console.warn('Failed to send notification:', rep.id) })
+          .catch(console.error)
+
+        // Sync in background after requests finish to ensure counts are consistent
+        Promise.allSettled([delPromise, notifPromise]).then(() => {
+           fetchAllReports()
+        })
+        
+      } catch (err) {
+        console.error('Rejection error:', err)
+        Swal.fire('Error', err.message || 'Gagal memproses penolakan.', 'error')
+      }
+    }
+  }
+
+  const toggleLike = async (rep) => {
+    // Optimistic Update
+    setReports(prev => prev.map(r => String(r.id) === String(rep.id) ? { ...r, isLiked: !r.isLiked } : r))
+    try {
+      await fetch('/api/reports', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: rep.id, isLiked: !rep.isLiked })
+      })
+      if (!rep.isLiked) {
+         await fetch('/api/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            severity: 'INFO',
+            title: 'Apresiasi Laporan',
+            detail: `Admin HR menyukai laporan harian Anda tanggal ${fmtDate(rep.date || rep.reportDate)}. Pertahankan kinerja yang baik!`,
+            link: '/reports',
+            userId: rep.userId
           })
         })
-
-        Swal.fire('Berhasil', 'Laporan ditolak dan notifikasi telah dikirim.', 'success')
-        fetchAllReports()
-      } catch (err) {
-        Swal.fire('Error', 'Gagal memproses penolakan.', 'error')
       }
+    } catch (err) {
+      console.error('Like error:', err)
+      // Revert if failed
+      setReports(prev => prev.map(r => String(r.id) === String(rep.id) ? { ...r, isLiked: rep.isLiked } : r))
     }
   }
 
@@ -416,6 +466,20 @@ export default function AdminReportsPage() {
                              <span style={{ fontSize:'0.75rem', color:'var(--text-muted)', fontWeight:600 }}>ID: #{rep.id.slice(-8).toUpperCase()}</span>
                           </div>
                         </div>
+                        <button 
+                          className="btn btn-secondary btn-sm" 
+                          onClick={() => toggleLike(rep)}
+                          style={{ 
+                            fontSize: '0.75rem', fontWeight: 800, 
+                            color: rep.isLiked ? 'var(--danger)' : 'var(--text-muted)', 
+                            gap: 6, padding: '0.6rem 1.2rem', borderRadius: 'var(--radius-md)', 
+                            borderColor: rep.isLiked ? 'var(--danger-light)' : 'var(--border)', 
+                            background: rep.isLiked ? 'var(--danger-light)' : '#fff' 
+                          }}
+                        >
+                          <Heart size={15} fill={rep.isLiked ? 'var(--danger)' : 'none'} color={rep.isLiked ? 'var(--danger)' : 'currentColor'} /> 
+                          {rep.isLiked ? 'Dinilai Bagus' : 'Apresiasi'}
+                        </button>
                         <button 
                           className="btn btn-secondary btn-sm" 
                           onClick={() => rejectAndNotify(rep)}

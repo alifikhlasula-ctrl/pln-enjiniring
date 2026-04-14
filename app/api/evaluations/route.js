@@ -1,116 +1,137 @@
 import { NextResponse } from 'next/server'
-import { getDB, saveDB, db } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 const DEFAULT_CRITERIA = [
-  { id: 'discipline',    name: 'Kedisiplinan dan Kepatuhan',       weight: 15, desc: 'Kehadiran tepat waktu, menaati tata tertib' },
-  { id: 'integrity',    name: 'Integritas dan Etika Kerja',        weight: 15, desc: 'Jujur, bertanggung jawab, menjaga kerahasiaan' },
-  { id: 'teamwork',     name: 'Kerjasama dan Adaptabilitas',       weight: 15, desc: 'Kerja tim, menghargai perbedaan, adaptif' },
-  { id: 'initiative',   name: 'Inisiatif dan Motivasi',            weight: 10, desc: 'Proaktif, kemauan belajar tinggi' },
-  { id: 'communication',name: 'Komunikasi dan Interaksi',          weight: 10, desc: 'Menyampaikan ide, sopan, menerima umpan balik' },
-  { id: 'performance',  name: 'Kinerja dan Hasil Kerja',           weight: 20, desc: 'Tuntas sesuai target & kualitas' },
-  { id: 'technical',    name: 'Pengetahuan & Kompetensi Teknis',   weight: 15, desc: 'Penguasaan dasar teknis sesuai jurusan' },
+  { key: 'discipline',    name: 'Kedisiplinan dan Kepatuhan',       weight: 15, desc: 'Kehadiran tepat waktu, menaati tata tertib', order: 1 },
+  { key: 'integrity',    name: 'Integritas dan Etika Kerja',        weight: 15, desc: 'Jujur, bertanggung jawab, menjaga kerahasiaan', order: 2 },
+  { key: 'teamwork',     name: 'Kerjasama dan Adaptabilitas',       weight: 15, desc: 'Kerja tim, menghargai perbedaan, adaptif', order: 3 },
+  { key: 'initiative',   name: 'Inisiatif dan Motivasi',            weight: 10, desc: 'Proaktif, kemauan belajar tinggi', order: 4 },
+  { key: 'communication',name: 'Komunikasi dan Interaksi',          weight: 10, desc: 'Menyampaikan ide, sopan, menerima umpan balik', order: 5 },
+  { key: 'performance',  name: 'Kinerja dan Hasil Kerja',           weight: 20, desc: 'Tuntas sesuai target & kualitas', order: 6 },
+  { key: 'technical',    name: 'Pengetahuan & Kompetensi Teknis',   weight: 15, desc: 'Penguasaan dasar teknis sesuai jurusan', order: 7 },
 ]
 
-/* ── GET: List evaluations (optionally filtered) ── */
-export async function GET(request) {
-  const { searchParams } = new URL(request.url)
-  const supervisorId = searchParams.get('supervisorId')
-  const internId     = searchParams.get('internId')
-  const data         = await getDB()
-
-  // Ensure criteria exist
-  if (!data.evaluationCriteria) {
-    data.evaluationCriteria = DEFAULT_CRITERIA; await saveDB(data)
-  }
-
-  let evals = [...(data.evaluations || [])]
-  if (supervisorId) evals = evals.filter(e => e.supervisorId === supervisorId)
-  if (internId)     evals = evals.filter(e => e.internId === internId)
-
-  // Enrich with intern + supervisor names
-  const enriched = evals.map(e => ({
-    ...e,
-    internName:      (data.interns || []).find(i => i.id === e.internId)?.name || e.internId,
-    supervisorName:  (data.users   || []).find(u => u.id === e.supervisorId)?.name || 'Admin HR',
-  })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-
-  // Hanya intern COMPLETED dengan periodEnd >= Maret 2026 yang masuk evaluasi
-  const EVAL_START = '2026-03-01'
-  const interns = (data.interns || []).filter(i =>
-    !i.deletedAt &&
-    String(i.status || '').toUpperCase() === 'COMPLETED' &&
-    i.periodEnd >= EVAL_START
-  ).map(i => ({
-    ...i,
-    latestEval: evals.filter(e => e.internId === i.id).sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt))[0] || null,
-    evalCount: evals.filter(e => e.internId === i.id).length
-  }))
-
-  return NextResponse.json({ evaluations: enriched, interns, criteria: data.evaluationCriteria || DEFAULT_CRITERIA })
+async function getOrCreateCriteria() {
+  const existing = await prisma.evaluationCriteria.findMany({ orderBy: { order: 'asc' } })
+  if (existing.length > 0) return existing
+  // Seed defaults on first run
+  await prisma.evaluationCriteria.createMany({ data: DEFAULT_CRITERIA, skipDuplicates: true })
+  return await prisma.evaluationCriteria.findMany({ orderBy: { order: 'asc' } })
 }
 
-/* ── POST: Create new evaluation ── */
-export async function POST(request) {
-  const body = await request.json()
-  const { internId, supervisorId, scores, overallNote, period } = body
-  if (!internId || !scores) return NextResponse.json({ error: 'internId dan scores diperlukan' }, { status: 400 })
+/* ── GET: List evaluations ── */
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const supervisorId = searchParams.get('supervisorId')
+    const internId     = searchParams.get('internId')
 
-  const data     = await getDB()
-  const criteria = data.evaluationCriteria || DEFAULT_CRITERIA
+    const criteria = await getOrCreateCriteria()
 
-  // Compute weighted total
-  const totalWeight = criteria.reduce((s, c) => s + c.weight, 0)
-  const weightedTotal = criteria.reduce((sum, c) => {
-    const score = scores[c.id] || 0
-    return sum + (score * c.weight)
-  }, 0)
-  const finalScore = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
+    const where = {}
+    if (supervisorId) where.supervisorId = supervisorId
+    if (internId)     where.internId = internId
 
-  const entry = {
-    id:          'ev' + Date.now(),
-    internId, supervisorId: supervisorId || 'u1',
-    scores,            // { criteriaId: 1-10 }
-    finalScore,        // weighted average
-    overallNote: overallNote || '',
-    period:      period || new Date().toISOString().slice(0, 7), // YYYY-MM
-    grade:       finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E',
-    createdAt:   new Date().toISOString()
+    const evals = await prisma.evaluation.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Fetch intern+user names for enrichment
+    const internIds = [...new Set(evals.map(e => e.internId))]
+    const interns = await prisma.intern.findMany({ where: { id: { in: internIds } } })
+    const supervisorIds = [...new Set(evals.map(e => e.supervisorId).filter(Boolean))]
+    const users = await prisma.user.findMany({ where: { id: { in: supervisorIds } } })
+
+    const enriched = evals.map(e => ({
+      ...e,
+      createdAt: e.createdAt.toISOString(),
+      updatedAt: e.updatedAt.toISOString(),
+      internName:     interns.find(i => i.id === e.internId)?.name || e.internId,
+      supervisorName: users.find(u => u.id === e.supervisorId)?.name || 'Admin HR',
+    }))
+
+    // Intern list for evaluation page (COMPLETED with periodEnd >= March 2026)
+    const EVAL_START = '2026-03-01'
+    const completedInterns = await prisma.intern.findMany({
+      where: { deletedAt: null, status: 'COMPLETED', periodEnd: { gte: EVAL_START } }
+    })
+    const internsList = completedInterns.map(i => {
+      const myEvals = evals.filter(e => e.internId === i.id).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+      return { ...i, latestEval: myEvals[0] || null, evalCount: myEvals.length }
+    })
+
+    return NextResponse.json({ evaluations: enriched, interns: internsList, criteria })
+  } catch (err) {
+    console.error('[GET /api/evaluations]', err)
+    return NextResponse.json({ error: 'Gagal mengambil data evaluasi' }, { status: 500 })
   }
+}
 
-  if (!data.evaluations) data.evaluations = []
-  data.evaluations.push(entry)
-  await saveDB(data)
-  await db.addLog(supervisorId || 'u1', 'CREATE_EVALUATION', { internId, finalScore, period: entry.period })
-  return NextResponse.json(entry)
+/* ── POST: Create evaluation ── */
+export async function POST(request) {
+  try {
+    const body = await request.json()
+    const { internId, supervisorId, scores, overallNote, period } = body
+    if (!internId || !scores) return NextResponse.json({ error: 'internId dan scores diperlukan' }, { status: 400 })
+
+    const criteria = await getOrCreateCriteria()
+    const totalWeight   = criteria.reduce((s, c) => s + c.weight, 0)
+    const weightedTotal = criteria.reduce((sum, c) => sum + ((scores[c.key] || 0) * c.weight), 0)
+    const finalScore    = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
+    const grade         = finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E'
+
+    const entry = await prisma.evaluation.create({
+      data: {
+        internId,
+        supervisorId: supervisorId || 'u1',
+        scores,
+        finalScore,
+        grade,
+        overallNote: overallNote || '',
+        period: period || new Date().toISOString().slice(0, 7),
+      }
+    })
+
+    db.addLog(supervisorId || 'u1', 'CREATE_EVALUATION', { internId, finalScore, period: entry.period }).catch(() => {})
+    return NextResponse.json({ ...entry, createdAt: entry.createdAt.toISOString(), updatedAt: entry.updatedAt.toISOString() })
+  } catch (err) {
+    console.error('[POST /api/evaluations]', err)
+    return NextResponse.json({ error: 'Gagal menyimpan evaluasi' }, { status: 500 })
+  }
 }
 
 /* ── PUT: Update evaluation ── */
 export async function PUT(request) {
-  const body = await request.json()
-  const data = await getDB()
-  const idx  = (data.evaluations || []).findIndex(e => e.id === body.id)
-  if (idx === -1) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
-  const criteria    = data.evaluationCriteria || DEFAULT_CRITERIA
-  const totalWeight = criteria.reduce((s, c) => s + c.weight, 0)
-  const weightedTotal = criteria.reduce((sum, c) => sum + ((body.scores?.[c.id] || 0) * c.weight), 0)
-  const finalScore    = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
-  const grade         = finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E'
-  data.evaluations[idx] = { ...data.evaluations[idx], ...body, finalScore, grade, updatedAt: new Date().toISOString() }
-  await saveDB(data)
-  return NextResponse.json(data.evaluations[idx])
+  try {
+    const body   = await request.json()
+    const criteria = await getOrCreateCriteria()
+    const totalWeight   = criteria.reduce((s, c) => s + c.weight, 0)
+    const weightedTotal = criteria.reduce((sum, c) => sum + (((body.scores || {})[c.key] || 0) * c.weight), 0)
+    const finalScore    = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
+    const grade         = finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E'
+
+    const updated = await prisma.evaluation.update({
+      where: { id: body.id },
+      data: { scores: body.scores, finalScore, grade, overallNote: body.overallNote, period: body.period }
+    })
+    return NextResponse.json({ ...updated, createdAt: updated.createdAt.toISOString(), updatedAt: updated.updatedAt.toISOString() })
+  } catch (err) {
+    return NextResponse.json({ error: 'Gagal mengupdate evaluasi' }, { status: 500 })
+  }
 }
 
-/* ── PATCH: Intern konfirmasi sudah membaca evaluasi ── */
+/* ── PATCH: Acknowledge evaluation ── */
 export async function PATCH(request) {
   try {
     const { id } = await request.json()
     if (!id) return NextResponse.json({ error: 'Evaluation ID diperlukan' }, { status: 400 })
-    const data = await getDB()
-    const idx  = (data.evaluations || []).findIndex(e => e.id === id)
-    if (idx === -1) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
-    data.evaluations[idx].acknowledgedAt = new Date().toISOString()
-    await saveDB(data)
-    await db.addLog(data.evaluations[idx].internId, 'EVAL_ACKNOWLEDGED', { evaluationId: id })
+    const updated = await prisma.evaluation.update({
+      where: { id },
+      data: { acknowledgedAt: new Date() }
+    })
+    db.addLog(updated.internId, 'EVAL_ACKNOWLEDGED', { evaluationId: id }).catch(() => {})
     return NextResponse.json({ success: true })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
@@ -119,10 +140,12 @@ export async function PATCH(request) {
 
 /* ── DELETE: Remove evaluation ── */
 export async function DELETE(request) {
-  const { searchParams } = new URL(request.url)
-  const id   = searchParams.get('id')
-  const data = await getDB()
-  data.evaluations = (data.evaluations || []).filter(e => e.id !== id)
-  await saveDB(data)
-  return NextResponse.json({ success: true })
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    await prisma.evaluation.delete({ where: { id } })
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json({ error: 'Gagal menghapus evaluasi' }, { status: 500 })
+  }
 }

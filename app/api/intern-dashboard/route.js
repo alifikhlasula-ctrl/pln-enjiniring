@@ -13,13 +13,17 @@ export async function GET(request) {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
 
-    // ── Find intern profile ─────────────────────────
-    const intern = await prisma.intern.findUnique({
-      where: { userId }
-    })
+    // ── Find intern profile (Primary: Prisma Relational, Fallback: JSON) ──
+    let intern = await prisma.intern.findUnique({ where: { userId } }).catch(() => null)
 
     if (!intern || intern.deletedAt) {
-      return NextResponse.json({ error: 'Profil intern tidak ditemukan' }, { status: 404 })
+      // Fallback: try the legacy JSON store for older interns
+      const legacyDB = await getDB();
+      const legacyIntern = (legacyDB.interns || []).find(i => i.userId === userId && !i.deletedAt)
+      if (!legacyIntern) {
+        return NextResponse.json({ error: 'Profil intern tidak ditemukan' }, { status: 404 })
+      }
+      intern = legacyIntern;
     }
 
     // ── Today attendance status (SQL) ───────────────
@@ -58,16 +62,14 @@ export async function GET(request) {
     const totalDays = rawLogs.length
     const onTimeRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0
 
-    // Weekly streak (last 7 days)
+    // Weekly streak (last 7 days) — compute from already-fetched rawLogs (no extra DB call)
     const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
-    const weeklyStreak = await Promise.all(
-      Array.from({ length: 7 }, async (_, i) => {
-        const d = new Date(today); d.setDate(d.getDate() - (6 - i))
-        const ds = d.toISOString().split('T')[0]
-        const log = rawLogs.find(l => l.date === ds)
-        return { day: DAYS[d.getDay()], date: ds, status: log?.status || null, hadir: !!log }
-      })
-    )
+    const weeklyStreak = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() - (6 - i))
+      const ds = d.toISOString().split('T')[0]
+      const log = rawLogs.find(l => l.date === ds)
+      return { day: DAYS[d.getDay()], date: ds, status: log?.status || null, hadir: !!log }
+    })
 
     // ── Period countdown ────────────────────────────
     const periodEnd = intern.periodEnd ? new Date(intern.periodEnd) : null
@@ -85,20 +87,29 @@ export async function GET(request) {
       data = {}; // graceful
     }
 
-    // ── Evaluations (only own) ───────────────────────
-    const myEvals = ((data.evaluations || []).filter(e => e.internId === intern.id))
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    const criteria = data.evaluationCriteria || [
-      { id: 'c1', name: 'Kedisiplinan', weight: 25 },
-      { id: 'c2', name: 'Kualitas Kerja', weight: 30 },
-      { id: 'c3', name: 'Kreativitas', weight: 20 },
-      { id: 'c4', name: 'Sikap & Attitude', weight: 15 },
-      { id: 'c5', name: 'Komunikasi', weight: 10 },
+    // ── Evaluations (from Prisma — only own) ─────────────────────────────
+    const [myEvals, criteriaRows] = await Promise.all([
+      prisma.evaluation.findMany({
+        where: { internId: intern.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      }).catch(() => []),
+      prisma.evaluationCriteria.findMany({ orderBy: { order: 'asc' } }).catch(() => [])
+    ])
+
+    const DEFAULT_CRITERIA_FALLBACK = [
+      { key: 'discipline', name: 'Kedisiplinan', weight: 25 },
+      { key: 'integrity', name: 'Kualitas Kerja', weight: 30 },
+      { key: 'technical', name: 'Kreativitas', weight: 20 },
+      { key: 'teamwork', name: 'Sikap & Attitude', weight: 15 },
+      { key: 'communication', name: 'Komunikasi', weight: 10 },
     ]
-    const latestEval = myEvals[0] || null
+    const criteria = criteriaRows.length > 0 ? criteriaRows : DEFAULT_CRITERIA_FALLBACK
+    const myEvalsMapped = myEvals.map(e => ({ ...e, createdAt: e.createdAt.toISOString() }))
+    const latestEval = myEvalsMapped[0] || null
     const radarData = latestEval ? criteria.map(c => ({
       name: c.name,
-      score: latestEval.scores?.[c.id] || 0,
+      score: latestEval.scores?.[c.key] || 0,
       max: 10
     })) : []
 
@@ -120,14 +131,33 @@ export async function GET(request) {
     
     const allValidAttendance = rawLogs.filter(l => ['PRESENT', 'LATE'].includes(l.status))
 
-    const allReports = await prisma.dailyReport.findMany({
+    // ── [FIX] Ambil laporan dari kedua layer ─────────────────────────
+    // Layer 1: Relational PostgreSQL (intern baru 2026)
+    const relationalReports = await prisma.dailyReport.findMany({
         where: { userId: userId, status: { not: 'DRAFT' } }
-    });
+    }).catch(() => []);
 
-    // Cross-check total: hari yang punya ABSEN + LAPORAN
+    // Layer 2: Legacy JSON (intern lama 2024-2025)
+    const legacyReports = (data.reports || []).filter(
+      r => r.userId === userId && r.status !== 'DRAFT'
+    );
+
+    // Cross-check: hari yang punya ABSEN + LAPORAN (cek di kedua layer)
     const allVerifiedDays = allValidAttendance.filter(l => {
       const lNorm = normalizeDate(l.date)
-      return allReports.some(r => normalizeDate(r.date) === lNorm)
+      // Cek di relational
+      const inRelational = relationalReports.some(r => normalizeDate(r.date) === lNorm)
+      // Cek di legacy JSON
+      const inLegacy = legacyReports.some(r => normalizeDate(r.date || r.reportDate) === lNorm)
+      return inRelational || inLegacy
+    })
+
+    // Hari yang hadir tapi belum punya laporan
+    const missingReportDays = allValidAttendance.filter(l => {
+      const lNorm = normalizeDate(l.date)
+      const inRelational = relationalReports.some(r => normalizeDate(r.date) === lNorm)
+      const inLegacy = legacyReports.some(r => normalizeDate(r.date || r.reportDate) === lNorm)
+      return !inRelational && !inLegacy
     })
 
     const allowanceRate = 25000 
@@ -139,25 +169,27 @@ export async function GET(request) {
       paidAt: myPayroll?.paidAt || null,
       totalAllowance: myPayroll?.totalAllowance || estimatedAllowanceTotal,
       presenceCount: allVerifiedDays.length,
+      missingReportsCount: missingReportDays.length,
+      totalPresenceDays: allValidAttendance.length,
       allowanceRate,
     }
 
-    // ── Announcements (read-only, all published) ─────
-    const announcements = [...(data.announcements || [])]
-      .sort((a, b) => {
-        if (a.pinned && !b.pinned) return -1
-        if (!a.pinned && b.pinned) return 1
-        return new Date(b.createdAt) - new Date(a.createdAt)
-      })
-      .slice(0, 5)
+    // ── Announcements (from Prisma) ─────────────────────────────────
+    const [announcementsRaw, eventsRaw] = await Promise.all([
+      prisma.announcement.findMany({
+        orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
+        take: 5
+      }).catch(() => []),
+      prisma.event.findMany({
+        where: { date: { gte: todayStr } },
+        orderBy: { date: 'asc' },
+        take: 10
+      }).catch(() => [])
+    ])
+    const announcements = announcementsRaw.map(a => ({ ...a, createdAt: a.createdAt.toISOString() }))
 
-    // ── Events ──
-    const dbEvents = (data.events || [])
-      .filter(ev => {
-        const isFuture = new Date(ev.date) >= today
-        const isTargeted = !ev.targetGroup || ev.targetGroup === 'ALL' || ev.targetGroup === intern.bidang
-        return isFuture && isTargeted
-      })
+    // ── Events (Prisma + holidays) ─────────────────────────────────
+    const dbEvents = eventsRaw.map(ev => ({ ...ev, createdAt: ev.createdAt.toISOString() }))
     const holidayEvents = INDONESIA_HOLIDAYS_2026
       .filter(h => new Date(h) >= today)
       .map(h => ({ id: 'h' + h, title: 'Hari Libur Nasional', date: h, type: 'HOLIDAY', description: 'Libur resmi nasional Indonesia' }))
@@ -173,7 +205,7 @@ export async function GET(request) {
     // ── Mood check (stored in DB) ────────────────────
     const todayMood = (data.moodLogs || []).find(m => m.userId === userId && m.date === todayStr)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       intern: {
         id: intern.id,
         name: intern.name,
@@ -199,9 +231,18 @@ export async function GET(request) {
       onboarding: { total: onboardingTotal, done: onboardingDone },
       todayMood: todayMood?.mood || null,
     })
+
+    // Edge Caching: Serve from cache for 10 seconds, keeping database unburdened during traffic spikes
+    response.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30')
+    return response
+
   } catch (err) {
     console.error('[GET /api/intern-dashboard]', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    const errStr = String(err?.message || '')
+    if (errStr.includes('57014') || errStr.toLowerCase().includes('statement timeout') || errStr.toLowerCase().includes('connection')) {
+      return NextResponse.json({ error: 'Koneksi database lambat. Silakan muat ulang halaman.' }, { status: 503 })
+    }
+    return NextResponse.json({ error: 'Gagal memuat data dashboard.' }, { status: 500 })
   }
 }
 

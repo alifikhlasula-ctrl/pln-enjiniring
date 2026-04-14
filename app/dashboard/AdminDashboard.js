@@ -884,16 +884,17 @@ export default function AdminDashboard() {
   const [dash,  setDash]   = useState(null)
   const [loading,setLoading] = useState(true)
   const [lastRefresh,setLastRefresh] = useState(new Date())
+  const [selectedYear, setSelectedYear] = useState('2026')
 
   const fetchDash = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await fetch('/api/dashboard')
+      const r = await fetch(`/api/dashboard?tahun=${selectedYear}`)
       setDash(await r.json())
       setLastRefresh(new Date())
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
-  }, [])
+  }, [selectedYear])
 
   const { user, switchRole } = useAuth()
 
@@ -901,7 +902,7 @@ export default function AdminDashboard() {
     fetchDash()
     const t = setInterval(fetchDash, 60000) // auto refresh every 60s
     return () => clearInterval(t)
-  }, [fetchDash])
+  }, [fetchDash, selectedYear])
 
   const s = dash?.stats || {}
 
@@ -977,6 +978,16 @@ export default function AdminDashboard() {
           <p className="subtitle">Selamat datang, Admin HR 👋 — Ringkasan program magang real-time</p>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:'0.625rem'}}>
+          <select 
+            className="select" 
+            style={{width:120, fontSize:'0.75rem', height:36}} 
+            value={selectedYear} 
+            onChange={(e) => setSelectedYear(e.target.value)}
+          >
+            <option value="2026">Program 2026</option>
+            <option value="2025">Program 2025</option>
+            <option value="2024">Program 2024</option>
+          </select>
           <span style={{fontSize:'0.72rem',color:'var(--text-muted)'}}>Refresh: {lastRefresh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
           <button className="btn btn-secondary btn-sm" onClick={fetchDash} disabled={loading} title="Refresh data">
             <RefreshCw size={14} strokeWidth={2} style={{animation:loading?'spin 1s linear infinite':'none'}}/>

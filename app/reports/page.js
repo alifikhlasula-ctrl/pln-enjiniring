@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { FileText, Send, CheckCircle2, Clock, Star, MessageSquare, Plus, X, Trash, Trash2, Edit, RefreshCw, AlertCircle, Save, Download, Printer } from 'lucide-react'
+import { FileText, Send, CheckCircle2, Clock, Star, MessageSquare, Plus, X, Trash, Trash2, Edit, RefreshCw, AlertCircle, Save, Download, Printer, Heart } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
 
@@ -347,9 +347,14 @@ export default function ReportsPage() {
           <p className="subtitle">Kegiatan harian, dokumentasi, dan diskusi langsung dengan supervisor.</p>
         </div>
         {user?.role === 'INTERN' && (
-          <button className="btn btn-primary" onClick={() => setModalFor('new')} style={{gap:6}}>
-            <Plus size={16} strokeWidth={2}/> Buat Laporan
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a href={`/portfolio?userId=${user.id}`} target="_blank" className="btn btn-secondary" style={{ gap: 6, textDecoration: 'none' }}>
+              <Printer size={16} strokeWidth={2}/> Portofolio Saya
+            </a>
+            <button className="btn btn-primary" onClick={() => setModalFor('new')} style={{gap:6}}>
+              <Plus size={16} strokeWidth={2}/> Buat Laporan
+            </button>
+          </div>
         )}
       </div>
 
@@ -402,6 +407,11 @@ export default function ReportsPage() {
                       <p style={{fontSize:'0.72rem',color:'var(--text-muted)',marginTop:4}}>Dibuat: {fmtDate(rep.createdAt)} {rep.submittedAt && `· Dikirim: ${fmtDate(rep.submittedAt)}`}</p>
                     </div>
                     <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}}>
+                      {rep.isLiked && (
+                        <span style={{display:'flex',alignItems:'center',gap:4,padding:'4px 10px',borderRadius:999,background:'var(--danger-light)',color:'var(--danger)',fontSize:'0.72rem',fontWeight:800}}>
+                          <Heart size={14} fill="currentColor" /> Diapresiasi Admin
+                        </span>
+                      )}
                       <span style={{display:'flex',alignItems:'center',gap:4,padding:'4px 10px',borderRadius:999,background:'var(--secondary-light)',color:'var(--secondary)',fontSize:'0.72rem',fontWeight:800}}>
                         <CheckCircle2 size={14} /> Tercatat
                       </span>

@@ -64,7 +64,7 @@ export default function LoginPage() {
         const updatedUser = { ...tempUser, email: newEmail, mustChangePassword: false }
         await Swal.fire({
           title: 'Profil Diperbarui!',
-          text: 'Selamat datang di portal InternHub PLNE.',
+          text: 'Selamat datang di portal PLN ENJINIRING.',
           icon: 'success',
           timer: 2000,
           showConfirmButton: false

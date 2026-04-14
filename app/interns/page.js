@@ -299,8 +299,9 @@ export default function InternsPage() {
   // Filter & sort
   const [searchTerm, setSearchTerm]     = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
-  const [advFilters, setAdvFilters]     = useState({tahun:'',jenjang:'',bidang:'',wilayah:''})
+  const [advFilters, setAdvFilters]     = useState({tahun:'2026',jenjang:'',bidang:'',wilayah:''})
   const [showAdv, setShowAdv]           = useState(false)
+  const [programView, setProgramView]   = useState('active') // 'active' = 2026, 'archive' = all others
   const [sortConfig, setSortConfig]     = useState({key:'name',dir:'asc'})
 
   // UI state
@@ -326,16 +327,30 @@ export default function InternsPage() {
     const j = searchParams.get('jenjang')
     const b = searchParams.get('bidang')
     const s = searchParams.get('status')
-    if (j || b || s) {
+    const t = searchParams.get('tahun')
+    if (j || b || s || t) {
       setAdvFilters(p => ({
         ...p,
         ...(j && { jenjang: j }),
-        ...(b && { bidang: b })
+        ...(b && { bidang: b }),
+        ...(t && { tahun: t })
       }))
       if (s) setStatusFilter(s.toUpperCase())
       if (j || b) setShowAdv(true)
+      if (t && t !== '2026') setProgramView('archive')
     }
   }, [searchParams])
+
+  // Handle program view toggle
+  const handleProgramView = (view) => {
+    setProgramView(view)
+    if (view === 'active') {
+      setAdvFilters(p => ({ ...p, tahun: '2026' }))
+    } else {
+      setAdvFilters(p => ({ ...p, tahun: '' }))
+    }
+    setPagination(p => ({ ...p, page: 1 }))
+  }
 
   // Close col toggle on outside click
   useEffect(() => {
@@ -351,6 +366,7 @@ export default function InternsPage() {
         page: pagination.page, limit: pagination.limit,
         search: searchTerm, status: statusFilter,
         sortBy: sortConfig.key, sortDir: sortConfig.dir,
+        view: programView,
         ...(advFilters.tahun   && {tahun: advFilters.tahun}),
         ...(advFilters.jenjang && {jenjang: advFilters.jenjang}),
         ...(advFilters.bidang  && {bidang: advFilters.bidang}),
@@ -462,7 +478,7 @@ export default function InternsPage() {
       
       const a = document.createElement('a')
       a.href = url
-      a.download = `InternHub_Export_${timestamp}.xlsx`
+      a.download = `PLN_ENJINIRING_Export_${timestamp}.xlsx`
       document.body.appendChild(a)
       a.click()
       setTimeout(() => document.body.removeChild(a), 100)
@@ -479,10 +495,43 @@ export default function InternsPage() {
 
   return (
     <div className="container">
+      {/* ── Program View Tab ── */}
+      <div style={{display:'flex',gap:'0.25rem',marginBottom:'1rem',background:'var(--bg-card)',borderRadius:'var(--radius-lg)',padding:'4px',border:'1px solid var(--border)',width:'fit-content'}}>
+        <button onClick={()=>handleProgramView('active')} style={{
+          padding:'0.5rem 1.25rem',borderRadius:'var(--radius-md)',border:'none',cursor:'pointer',
+          fontSize:'0.82rem',fontWeight:700,transition:'all 0.2s',
+          background:programView==='active'?'var(--primary)':'transparent',
+          color:programView==='active'?'#fff':'var(--text-secondary)',
+          boxShadow:programView==='active'?'0 2px 8px rgba(99,102,241,0.3)':'none'
+        }}>
+          🎯 Program 2026
+        </button>
+        <button onClick={()=>handleProgramView('archive')} style={{
+          padding:'0.5rem 1.25rem',borderRadius:'var(--radius-md)',border:'none',cursor:'pointer',
+          fontSize:'0.82rem',fontWeight:700,transition:'all 0.2s',
+          background:programView==='archive'?'var(--text-muted)':'transparent',
+          color:programView==='archive'?'#fff':'var(--text-muted)',
+          boxShadow:programView==='archive'?'0 2px 8px rgba(0,0,0,0.15)':'none'
+        }}>
+          📁 Arsip (2024-2025)
+        </button>
+      </div>
+
+      {/* ── Archive Banner ── */}
+      {programView==='archive'&&(
+        <div style={{background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.25)',borderRadius:'var(--radius-lg)',padding:'0.75rem 1.25rem',marginBottom:'1rem',display:'flex',alignItems:'center',gap:'0.75rem'}}>
+          <span style={{fontSize:18}}>📁</span>
+          <div>
+            <p style={{fontSize:'0.85rem',fontWeight:700,color:'var(--warning)'}}>Mode Arsip — Data Historis (2024 & 2025)</p>
+            <p style={{fontSize:'0.75rem',color:'var(--text-secondary)'}}>Menampilkan peserta dari program sebelumnya. Data ini tetap dapat diedit jika diperlukan.</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div className="flex justify-between items-center mb-4" style={{flexWrap:'wrap',gap:'0.75rem'}}>
         <div>
-          <h1 className="title">Manajemen Peserta Magang</h1>
+          <h1 className="title">Manajemen Peserta Magang {programView==='archive'?'— Arsip':''}</h1>
           <div style={{display:'flex',gap:'0.5rem',marginTop:'0.375rem',flexWrap:'wrap'}}>
             {[
               {label:`${stats.active} Aktif`,  filter:'ACTIVE',   color:'var(--secondary)'},
@@ -599,7 +648,14 @@ export default function InternsPage() {
               </div>
             ))}
             <div style={{display:'flex',alignItems:'flex-end'}}>
-              <button className="btn btn-secondary" style={{width:'100%',fontSize:'0.8rem'}} onClick={()=>setAdvFilters({tahun:'',jenjang:'',bidang:'',wilayah:''})}>
+              <button className="btn btn-secondary" style={{width:'100%',fontSize:'0.8rem'}} 
+                onClick={() => setAdvFilters({
+                  tahun: programView === 'active' ? '2026' : '',
+                  jenjang: '',
+                  bidang: '',
+                  wilayah: ''
+                })}
+              >
                 <X size={13} strokeWidth={2}/> Reset Filter
               </button>
             </div>

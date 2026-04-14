@@ -17,7 +17,7 @@ export default function ExportButton({ data }) {
       const a = document.createElement('a')
       a.href = url
       // Use fallback filename in case headers fail, but headers should take precedence
-      a.download = `InternHub_Analytics_${timestamp}.pdf`
+      a.download = `PLN_ENJINIRING_Analytics_${timestamp}.pdf`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -41,7 +41,7 @@ export default function ExportButton({ data }) {
       // We use a hidden anchor to force download without opening a blank tab
       const a = document.createElement('a')
       a.href = url
-      a.download = `InternHub_Analytics_${timestamp}.xlsx`
+      a.download = `PLN_ENJINIRING_Analytics_${timestamp}.xlsx`
       document.body.appendChild(a)
       a.click()
       setTimeout(() => document.body.removeChild(a), 100)

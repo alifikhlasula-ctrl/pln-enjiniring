@@ -30,11 +30,12 @@ export async function POST(request) {
         }
 
         // --- ACTIVE YEAR RESTRICTION ---
-        if (intern.tahun !== '2026') {
-          console.warn(`[AUTH_LOG] Rejected login for ${email}: Old batch (${intern.tahun}).`)
+        // Allow login if year is 2026 OR if the intern is still ACTIVE (legacy interns)
+        if (intern.tahun !== '2026' && intern.status !== 'ACTIVE') {
+          console.warn(`[AUTH_LOG] Rejected login for ${email}: Batch mismatch (${intern.tahun}) and not ACTIVE.`)
           return NextResponse.json({ 
             success: false, 
-            error: `Akses ditolak. Portal ini hanya untuk program periode 2026 (Akun Anda terdaftar di tahun ${intern.tahun || 'Unknown'}).` 
+            error: `Akses ditolak. Akun Anda terdaftar di tahun ${intern.tahun || 'Unknown'} dan status saat ini adalah ${intern.status}. Hanya intern aktif yang dapat masuk.` 
           }, { status: 403 })
         }
 
@@ -60,9 +61,19 @@ export async function POST(request) {
 
   } catch (err) {
     console.error('[AUTH_LOG] Login Error:', err)
+
+    // Detect specific database errors and return user-friendly messages
+    const errStr = String(err?.message || '')
+    if (errStr.includes('57014') || errStr.toLowerCase().includes('statement timeout') || errStr.toLowerCase().includes('connection')) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Sistem sedang sibuk. Silakan coba lagi dalam beberapa detik.' 
+      }, { status: 503 })
+    }
+
     return NextResponse.json({ 
       success: false, 
-      error: 'Terjadi kesalahan sistem saat login.' 
+      error: 'Terjadi kesalahan sistem saat login. Silakan coba lagi.' 
     }, { status: 500 })
   }
 }

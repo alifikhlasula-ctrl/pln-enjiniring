@@ -125,6 +125,7 @@ model DailyReport {
   commentText String?
   reviewerId  String?
   reviewerName String?
+  isLiked      Boolean  @default(false)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -149,4 +150,113 @@ model Onboarding {
   timestamp   DateTime @default(now())
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// --- Evaluations ------------------------------------------
+model Evaluation {
+  id             String    @id @default(cuid())
+  internId       String
+  supervisorId   String    @default("u1")
+  scores         Json
+  finalScore     Float     @default(0)
+  grade          String    @default("C")
+  overallNote    String?
+  period         String?
+  acknowledgedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([internId])
+}
+
+model EvaluationCriteria {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  weight    Int      @default(15)
+  desc      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// --- Payroll ----------------------------------------------
+model PayrollRecord {
+  id                 String    @id @default(cuid())
+  internId           String
+  period             String
+  status             String    @default("PENDING")
+  presenceCount      Int       @default(0)
+  validPresenceCount Int       @default(0)
+  allowanceRate      Int       @default(25000)
+  totalAllowance     Int       @default(0)
+  paidAt             DateTime?
+  paidBy             String?
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([internId, period])
+  @@index([internId])
+  @@index([status])
+}
+
+// --- Surveys ----------------------------------------------
+model Survey {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  questions   Json
+  targetRole  String    @default("INTERN")
+  deadline    DateTime?
+  active      Boolean   @default(true)
+  createdBy   String    @default("Admin HR")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model SurveyResponse {
+  id             String   @id @default(cuid())
+  surveyId       String
+  respondentId   String   @default("anon")
+  respondentName String   @default("Anonymous")
+  respondentRole String   @default("INTERN")
+  answers        Json
+  submittedAt    DateTime @default(now())
+
+  @@unique([surveyId, respondentId])
+  @@index([surveyId])
+}
+
+// --- Announcements ----------------------------------------
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  priority  String   @default("INFO")
+  pinned    Boolean  @default(false)
+  createdBy String   @default("Admin HR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Events (Calendar) ------------------------------------
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  date        String
+  type        String   @default("GENERAL")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// --- HR Tasks ---------------------------------------------
+model HrTask {
+  id        String   @id @default(cuid())
+  title     String
+  dueDate   String?
+  priority  String   @default("MEDIUM")
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

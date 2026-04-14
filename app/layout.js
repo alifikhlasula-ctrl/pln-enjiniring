@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, FileText, Award, LogOut,
   Clock, History, Menu, X, User as UserIcon, Sun, Moon,
   ChevronRight, Bell, BarChart3, CalendarDays, MessageSquare, FileSpreadsheet, Banknote,
-  Megaphone, BookOpen, Lock
+  Megaphone, BookOpen, Lock, BarChart2, Activity
 } from 'lucide-react'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import '@/app/globals.css'
@@ -114,7 +114,7 @@ function LayoutContent({ children }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const isLandingPage = pathname === '/' || pathname.startsWith('/onboarding') || (!loading && !user && pathname === '/help')
+  const isLandingPage = pathname === '/' || pathname.startsWith('/onboarding') || pathname.startsWith('/portfolio') || (!loading && !user && pathname === '/help')
 
   // Check profile completeness for INTERN
   useEffect(() => {
@@ -124,9 +124,10 @@ function LayoutContent({ children }) {
         .then(r => r.json())
         .then(data => {
           const i = data.intern
-          // Core bio fields required: name, nim_nis, phone, nik, university, major
-          // bankAccount is payroll data — optional for profile gate
-          if (!i || !i.nim_nis || !i.phone || !i.nik || !i.university || !i.major) {
+          // Only lock if the absolute minimum identifiers are missing
+          // (nim_nis and university are always set during onboarding/import)
+          // Phone, NIK, bank data etc. are optional — interns can fill them later
+          if (!i || !i.nim_nis || !i.university) {
             setProfileComplete(false)
           } else {
             setProfileComplete(true)
@@ -179,6 +180,8 @@ function LayoutContent({ children }) {
       items: [
         { name: 'Dashboard',     href: '/dashboard',       icon: LayoutDashboard },
         { name: 'Data Intern',   href: '/interns',         icon: Users },
+        { name: 'Kehadiran',     href: '/admin/attendance',icon: BarChart2 },
+        { name: 'Monitor Absensi',href: '/admin/monitor-attendance',icon: Activity },
         { name: 'Onboarding',   href: '/admin/onboarding',icon: FileText },
         { name: 'Evaluasi',     href: '/evaluations',     icon: Award },
         { name: 'Monitor Laporan', href: '/admin/reports', icon: FileText },
@@ -238,8 +241,8 @@ function LayoutContent({ children }) {
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`} aria-label="Navigation">
         <div className="sidebar-header">
           <div className="logo" style={{ gap: '0.75rem' }}>
-            <img src="/pln-logo.png" alt="PLN Enjiniring" className="nav-logo-img" style={{ height: 32 }} />
-            <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.2px', color: 'var(--text-inverse)' }}>Intern Hub PLNE</span>
+            <img src="/pln-logo.png" alt="PLN ENJINIRING" className="nav-logo-img" style={{ height: 32 }} />
+            <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.2px', color: 'var(--text-inverse)' }}>PLN ENJINIRING</span>
           </div>
           {isMobile && (
             <button

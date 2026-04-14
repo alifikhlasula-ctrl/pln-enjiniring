@@ -136,6 +136,15 @@ export function ProfileDrawer({ intern, onClose, onEdit, onDelete }) {
     })
 
     if (formValues) {
+      // Show loading indicator immediately so there's no blank state
+      Swal.fire({
+        title: 'Memproses...',
+        text: `Mereset akun ${intern.name}`,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      })
+
       try {
         const res = await fetch('/api/interns/reset-account', {
           method: 'POST',
@@ -146,14 +155,37 @@ export function ProfileDrawer({ intern, onClose, onEdit, onDelete }) {
             newPassword: formValues.newPassword
           })
         })
-        const data = await res.json()
+
+        // Safe JSON parse — guard against HTML error pages
+        let data = {}
+        try {
+          data = await res.json()
+        } catch {
+          data = { error: `Server error (HTTP ${res.status}). Silakan coba lagi.` }
+        }
+
         if (data.success) {
-          Swal.fire('Berhasil', data.message || 'Akun berhasil direset', 'success')
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: data.message || 'Akun berhasil direset. Peserta akan diminta mengganti kata sandi saat login berikutnya.',
+            confirmButtonColor: '#f59e0b'
+          })
         } else {
-          Swal.fire('Gagal', data.error || 'Terjadi kesalahan sistem', 'error')
+          Swal.fire({
+            icon: 'error',
+            title: 'Gagal Reset Akun',
+            text: data.error || 'Terjadi kesalahan sistem',
+            confirmButtonColor: '#ef4444'
+          })
         }
       } catch (err) {
-        Swal.fire('Gagal', err.message, 'error')
+        Swal.fire({
+          icon: 'error',
+          title: 'Koneksi Gagal',
+          text: 'Tidak dapat menghubungi server. Periksa koneksi internet Anda.',
+          confirmButtonColor: '#ef4444'
+        })
       }
     }
   }

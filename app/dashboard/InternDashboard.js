@@ -151,16 +151,20 @@ export default function InternDashboard() {
           <div className="stat-label">Status Hari Ini{today.checkInTime ? ` · ${fmtTime(today.checkInTime)}` : ''}</div>
         </div>
 
-        {/* Attendance Total */}
+        {/* Discipline Score */}
         <div className="stat-card" style={{ cursor: 'default' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--sp-3)' }}>
-            <div className="stat-icon-wrap" style={{ background: 'var(--secondary-light)', color: 'var(--secondary)' }}><CheckCircle2 size={20} strokeWidth={2} /></div>
-            <span className="badge badge-success">{stats.onTimeRate || 0}% tepat</span>
+            <div className="stat-icon-wrap" style={{ background: (stats.onTimeRate || 0) >= 90 ? 'var(--success-light)' : (stats.onTimeRate || 0) >= 75 ? 'var(--primary-light)' : 'var(--danger-light)', color: (stats.onTimeRate || 0) >= 90 ? 'var(--success)' : (stats.onTimeRate || 0) >= 75 ? 'var(--primary)' : 'var(--danger)' }}>
+              <Star size={20} strokeWidth={2} />
+            </div>
+            <span className={`badge`} style={{ background: (stats.onTimeRate || 0) >= 90 ? 'var(--success-light)' : (stats.onTimeRate || 0) >= 75 ? 'var(--primary-light)' : 'var(--danger-light)', color: (stats.onTimeRate || 0) >= 90 ? 'var(--success)' : (stats.onTimeRate || 0) >= 75 ? 'var(--primary)' : 'var(--danger)' }}>
+              {(stats.onTimeRate || 0) >= 90 ? 'EXCELLENT' : (stats.onTimeRate || 0) >= 75 ? 'GOOD' : 'NEEDS IMPROVEMENT'}
+            </span>
           </div>
           {loading ? <div style={{ height: 28, width: '60%', background: 'var(--border)', borderRadius: 4, animation: 'pulse 1.4s ease-in-out infinite' }} /> : (
-            <div className="stat-value">{stats.presentDays || 0}</div>
+            <div className="stat-value">{stats.onTimeRate || 0}<span style={{fontSize:'1rem', color:'var(--text-muted)', marginLeft:4}}>Skor</span></div>
           )}
-          <div className="stat-label">Total Hari Hadir · {stats.lateDays || 0} terlambat</div>
+          <div className="stat-label">Total Kehadiran: {stats.presentDays || 0} hari · {stats.lateDays || 0} telat</div>
         </div>
 
         {/* Allowance */}

@@ -1,60 +1,48 @@
 import { NextResponse } from 'next/server'
-import { getDB } from '@/lib/db'
+import { getDB, db } from '@/lib/db'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const data = await getDB()
+    const { searchParams } = new URL(request.url)
+    const targetTahun = searchParams.get('tahun') || '2026'
+    
     const today = new Date(); today.setHours(0,0,0,0)
     const todayStr = today.toISOString().split('T')[0]
     const in14  = new Date(today.getTime() + 14 * 86400000)
-
-    // ── Helper: Hitung status dinamis (Sinkron dengan /api/interns) ──
-    const getEffectiveStatus = (i) => {
-      const s = String(i.status || 'ACTIVE').toUpperCase()
-      if (s === 'TERMINATED') return 'TERMINATED'
-      if (s === 'ACTIVE' && i.periodEnd) {
-        const end = new Date(i.periodEnd); end.setHours(0,0,0,0)
-        if (end < today) return 'COMPLETED'
-      }
-      return s
-    }
-
-    // ── Transform all interns with their effective status ──
-    const allInternsRaw = (data.interns || []).filter(i => !i.deletedAt)
-    const allInterns = allInternsRaw.map(i => ({
-      ...i,
-      status: getEffectiveStatus(i)
-    }))
-
-    const activeInterns    = allInterns.filter(i => i.status === 'ACTIVE')
-    const completedInterns = allInterns.filter(i => i.status === 'COMPLETED')
-    const terminatedInterns= allInterns.filter(i => i.status === 'TERMINATED')
-
-    // ── Real Attendance Stats (SQL) ────────────────────
-    const checkinToday = await prisma.attendanceLog.count({
-      where: { date: todayStr, checkIn: { not: null } }
-    })
-
-    // ── Weekly attendance (last 7 days from SQL) ───────
     const DAYS = ['Min','Sen','Sel','Rab','Kam','Jum','Sab']
-    const weeklyAttendance = await Promise.all(
-      Array.from({length: 7}, async (_, i) => {
-        const d = new Date(today); d.setDate(d.getDate() - (6 - i))
-        const ds = d.toISOString().split('T')[0]
-        const count = await prisma.attendanceLog.count({
-          where: { date: ds, status: 'PRESENT' } 
-        })
-        return { day: DAYS[d.getDay()], date: ds, count }
-      })
-    )
+    const sevenDaysAgo = new Date(today); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0]
+    const todayStr2 = today.toISOString().split('T')[0]
 
-    // ── Recent Attendance Logs (SQL) ───────────────────
-    const recentAttendance = await prisma.attendanceLog.findMany({
-      take: 8,
-      orderBy: { createdAt: 'desc' }
+    // ── Parallel Execution: Fetch all independent data sources at once ──
+    const [data, allInterns, onboarding, auditLogs, checkinToday, weeklyRaw, recentAttendance] = await Promise.all([
+      getDB('ACTIVE', { clone: false }),
+      db.getInterns(false),
+      prisma.onboarding.findMany(),
+      prisma.auditLog.findMany({ take: 50, orderBy: { timestamp: 'desc' } }),
+      prisma.attendanceLog.count({ where: { date: todayStr, checkIn: { not: null } } }),
+      prisma.attendanceLog.groupBy({
+        by: ['date'],
+        where: { date: { gte: sevenDaysAgoStr, lte: todayStr2 }, status: 'PRESENT' },
+        _count: { id: true }
+      }),
+      prisma.attendanceLog.findMany({ take: 8, orderBy: { createdAt: 'desc' } })
+    ])
+
+    // Main KPIs focus on the Target Year (Program Active)
+    const activeInterns    = allInterns.filter(i => i.status === 'ACTIVE' && i.tahun === targetTahun)
+    const completedInterns = allInterns.filter(i => i.status === 'COMPLETED' && i.tahun === targetTahun)
+    const terminatedInterns= allInterns.filter(i => i.status === 'TERMINATED' && i.tahun === targetTahun)
+
+    const weeklyCountMap = Object.fromEntries(weeklyRaw.map(r => [r.date, r._count.id]))
+
+    const weeklyAttendance = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() - (6 - i))
+      const ds = d.toISOString().split('T')[0]
+      return { day: DAYS[d.getDay()], date: ds, count: weeklyCountMap[ds] || 0 }
     })
-    
+
     const recentAttendanceWithNames = recentAttendance.map(log => {
       const intern = allInterns.find(i => i.id === log.internId)
       return {
@@ -70,7 +58,6 @@ export async function GET() {
     const pendingPayroll = (data.payrolls || []).filter(p => p.status === 'PENDING').length
     const totalExpenses  = (data.payrolls || []).filter(p => p.status === 'PAID' && p.period === todayStr.slice(0,7)).reduce((s, p) => s + (p.totalAllowance || 0), 0)
     
-    const onboarding = data.onboarding || []
     const pendingOnboarding = onboarding.filter(o => o.status === 'PENDING').length
 
     // ── Evaluasi Stats ─────────────────────────────────
@@ -94,15 +81,26 @@ export async function GET() {
     })).sort((a,b) => a.sisaHari - b.sisaHari).slice(0, 8)
 
     const recentInterns = [...allInterns]
-      .slice(-5).reverse()
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5)
       .map(i => ({ id: i.id, name: i.name, university: i.university, major: i.major, status: i.status, jenjang: i.jenjang }))
 
-    const activityFeed = [...(data.auditLogs || [])]
-      .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+    // Match audit log users (Admin check)
+    const allUsers = await prisma.user.findMany({
+        where: { id: { in: auditLogs.map(l => l.userId).filter(Boolean) } }
+    });
+
+    const activityFeed = auditLogs
       .slice(0, 12)
       .map(log => {
-        const user = data.users.find(u => u.id === log.userId)
-        return { ...log, userName: user?.name || 'System' }
+        const u = allUsers.find(u => u.id === log.userId)
+        return { 
+            id: log.id,
+            action: log.action,
+            details: log.details,
+            timestamp: log.timestamp.toISOString(),
+            userName: u?.name || 'System' 
+        }
       })
 
     const onboardingStats = {
@@ -149,7 +147,7 @@ export async function GET() {
       return acc
     }, {})
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       stats: {
         activeInterns:    activeInterns.length,
         completedInterns: completedInterns.length,
@@ -178,6 +176,11 @@ export async function GET() {
       byGender,
       byMajor
     })
+
+    // Edge Caching: Cache for 15 seconds, serve stale while revalidating in background
+    response.headers.set('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=60')
+    return response
+
   } catch (err) {
     console.error('[GET /api/dashboard] ERROR:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })

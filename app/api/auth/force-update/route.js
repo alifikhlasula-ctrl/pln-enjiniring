@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getDB, saveDB, db } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 export async function POST(request) {
   try {
@@ -9,33 +10,50 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Data tidak lengkap (Email dan Password dibutuhkan)' }, { status: 400 })
     }
 
-    const data = await getDB()
+    // Cari akun pengguna secara native
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
 
-    // Cari akun pengguna
-    const userIdx = data.users.findIndex(u => u.id === userId)
-    if (userIdx === -1) {
+    if (!user) {
       return NextResponse.json({ error: 'Akun tidak ditemukan' }, { status: 404 })
     }
 
     // Pastikan ini adalah update pertama kali (mustChangePassword === true)
-    if (!data.users[userIdx].mustChangePassword) {
+    if (!user.mustChangePassword) {
       return NextResponse.json({ error: 'Invalid operation. Akun ini tidak meminta update wajib.' }, { status: 400 })
     }
 
-    const oldEmail = data.users[userIdx].email
+    const oldEmail = user.email
 
-    // Perbarui kredensial pengguna
-    data.users[userIdx].email = newEmail
-    data.users[userIdx].password = newPassword
-    data.users[userIdx].mustChangePassword = false
-
-    // Sinkronisasikan ke tabel intern (agar tabel Admin HR terupdate otomatis)
-    const internIdx = (data.interns || []).findIndex(i => i.userId === userId && !i.deletedAt)
-    if (internIdx !== -1) {
-      data.interns[internIdx].email = newEmail
-    }
-
-    await saveDB(data)
+    // Perbarui kredensial pengguna dan sinkronisasikan ke tabel intern secara atomik
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          email: newEmail,
+          password: newPassword,
+          mustChangePassword: false
+        }
+      }),
+      prisma.intern.update({
+        where: { userId: userId },
+        data: {
+          email: newEmail
+        }
+      })
+    ]).catch(err => {
+        // Jika intern record tidak ada (kasus langka), cukup update usernya saja
+        console.warn(`[FORCE_UPDATE] Intern record missing for user ${userId}, continuing with user only update.`);
+        return prisma.user.update({
+            where: { id: userId },
+            data: {
+              email: newEmail,
+              password: newPassword,
+              mustChangePassword: false
+            }
+          });
+    })
 
     // Catat log audit
     await db.addLog(userId, 'FORCE_PROFILE_UPDATE', {

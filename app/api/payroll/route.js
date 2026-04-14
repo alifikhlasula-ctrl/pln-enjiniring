@@ -99,31 +99,62 @@ export async function GET(request) {
     activeInterns = activeInterns.filter(i => i.userId === filterUserId)
   }
 
-  // ── Ambil semua AttendanceLog dari Prisma SQL ──────────────────────
-  // Mengambil semua logs lalu filter di JS (lebih reliable daripada Prisma startsWith di SQLite)
+  // ── Ambil semua AttendanceLog dari Prisma SQL (filtered by intern IDs) ──
   const pKey = month && year ? `${year}-${String(month).padStart(2, '0')}` : null
+  const internIds = activeInterns.map(i => i.id)
+
+  const attendanceWhere = { internId: { in: internIds }, status: { in: ['PRESENT','LATE'] } }
+  if (startDate && endDate) {
+    attendanceWhere.date = { gte: startDate, lte: endDate }
+  } else if (pKey) {
+    attendanceWhere.date = { startsWith: pKey }
+  }
 
   let allSqlLogs = []
   try {
-    allSqlLogs = await prisma.attendanceLog.findMany()
+    allSqlLogs = await prisma.attendanceLog.findMany({ where: attendanceWhere })
   } catch (e) {
     console.error('[payroll] Failed to fetch SQL logs, falling back to JSON:', e.message)
     allSqlLogs = []
   }
 
-  // Modifikasi buildItem menggunakan SQL logs
+  // ── Ambil DailyReport dari Prisma SQL (filtered by userIds) ──────────
+  const userIds = activeInterns.map(i => i.userId).filter(Boolean)
+  let allRelationalReports = []
+  try {
+    allRelationalReports = await prisma.dailyReport.findMany({
+      where: { userId: { in: userIds }, status: { not: 'DRAFT' } },
+      select: { userId: true, date: true }
+    })
+  } catch (e) {
+    console.error('[payroll] Failed to fetch relational reports:', e.message)
+    allRelationalReports = []
+  }
+
+  // ── Ambil PayrollRecord dari Prisma untuk status PAID ─────────────────
+  let existingPayrolls = []
+  try {
+    existingPayrolls = await prisma.payrollRecord.findMany({
+      where: { internId: { in: internIds } }
+    })
+  } catch (e) {
+    // Tabel mungkin belum ada di production lama — fallback ke JSON
+    existingPayrolls = (data.payrolls || [])
+  }
+
+  // Modifikasi buildItem menggunakan SQL logs + relational reports
   const buildItem = (intern) => {
     // Filter SQL logs untuk intern ini yang statusnya valid
     let sqlLogs = allSqlLogs.filter(l => 
       l.internId === intern.id && ['PRESENT', 'LATE'].includes(l.status)
     )
 
-    // Finalisasi attendances setelah filter date (SQL sudah diambil semua, filter di JS)
+    // Gunakan SQL logs jika ada, jika tidak fallback ke JSON legacy
     let attendances = sqlLogs.length > 0
       ? sqlLogs.map(l => ({ date: l.date, checkIn: l.checkIn, status: l.status, internId: l.internId }))
       : (data.attendances || []).filter(a => a.internId === intern.id && ['PRESENT', 'LATE'].includes(a.status))
 
-    // Filter by tanggal (di JS, bukan Prisma query)
+    // Filter by tanggal
     if (startDate && endDate) {
       const s = normalizeDate(startDate)
       const e = normalizeDate(endDate)
@@ -140,21 +171,38 @@ export async function GET(request) {
 
     let validPresenceCount = 0
     let missingReportsCount = 0
+
     attendances.forEach(att => {
       const attNorm = normalizeDate(att.date || att.checkIn)
-      const reportExists = (data.reports || []).some(
+
+      // ── [FIX] Cross-validate laporan di KEDUA lapisan database ──
+      // Layer 1: Tabel relational PostgreSQL (intern baru 2026)
+      const reportInRelational = allRelationalReports.some(
+        r => r.userId === intern.userId && normalizeDate(r.date) === attNorm
+      )
+      // Layer 2: JSON legacy (intern lama 2024-2025)
+      const reportInLegacy = (data.reports || []).some(
         r => r.userId === intern.userId && 
              normalizeDate(r.date || r.reportDate) === attNorm && 
              r.status !== 'DRAFT'
       )
-      if (reportExists) validPresenceCount++
-      else missingReportsCount++
+
+      if (reportInRelational || reportInLegacy) {
+        validPresenceCount++
+      } else {
+        missingReportsCount++
+      }
     })
 
     const allowanceRate = FLAT_RATE
     const totalAllowance = validPresenceCount * allowanceRate
     const periodKey = startDate && endDate ? `${startDate}_${endDate}` : pKey
-    const existingPayroll = periodKey ? (data.payrolls || []).find(p => p.internId === intern.id && p.period === periodKey) : null
+    
+    // Check PayrollRecord first, then fall back to JSON payrolls
+    const existingPayroll = periodKey
+      ? (existingPayrolls.find(p => p.internId === intern.id && p.period === periodKey)
+         || (data.payrolls || []).find(p => p.internId === intern.id && p.period === periodKey))
+      : null
 
     return {
       id: existingPayroll?.id || intern.id,
@@ -294,40 +342,66 @@ export async function POST(request) {
     let processed = 0
 
     for (const internId of internIds) {
-      const intern = data.interns.find(i => i.id === internId && !i.deletedAt)
+      const intern = (data.interns || []).find(i => i.id === internId && !i.deletedAt)
+        || await prisma.intern.findUnique({ where: { id: internId } }).catch(() => null)
       if (!intern) continue
 
-      const existing = data.payrolls.find(p => p.internId === internId && p.period === period)
       const item = buildPayrollItem(intern, data, month, year)
 
-      if (existing) {
-        existing.status = 'PAID'
-        existing.paidAt = new Date().toISOString()
-        existing.paidBy = processedBy
-        existing.notes = notes
-        existing.totalAllowance = item.totalAllowance
-        existing.presenceCount = item.presenceCount
-        existing.validPresenceCount = item.validPresenceCount
-        existing.allowanceRate = FLAT_RATE
-      } else {
-        data.payrolls.push({
-          id: 'pay' + Date.now() + processed,
-          internId,
-          period,
-          status: 'PAID',
-          presenceCount: item.presenceCount,
-          validPresenceCount: item.validPresenceCount,
-          allowanceRate: FLAT_RATE,
-          totalAllowance: item.totalAllowance,
-          paidAt: new Date().toISOString(),
-          paidBy: processedBy,
-          notes
+      try {
+        // Write to PayrollRecord table (new relational)
+        await prisma.payrollRecord.upsert({
+          where: { internId_period: { internId, period } },
+          update: {
+            status: 'PAID',
+            paidAt: new Date(),
+            paidBy: processedBy,
+            notes,
+            totalAllowance: item.totalAllowance,
+            presenceCount: item.presenceCount,
+            validPresenceCount: item.validPresenceCount,
+            allowanceRate: FLAT_RATE
+          },
+          create: {
+            internId,
+            period,
+            status: 'PAID',
+            presenceCount: item.presenceCount,
+            validPresenceCount: item.validPresenceCount,
+            allowanceRate: FLAT_RATE,
+            totalAllowance: item.totalAllowance,
+            paidAt: new Date(),
+            paidBy: processedBy,
+            notes
+          }
         })
+      } catch (dbErr) {
+        // Fallback to JSON if Prisma table isn't available yet
+        console.warn('[PAYROLL] Prisma upsert failed, using JSON fallback:', dbErr.message)
+        const existing = (data.payrolls || []).find(p => p.internId === internId && p.period === period)
+        if (existing) {
+          existing.status = 'PAID'
+          existing.paidAt = new Date().toISOString()
+          existing.paidBy = processedBy
+          existing.notes = notes
+        } else {
+          if (!data.payrolls) data.payrolls = []
+          data.payrolls.push({
+            id: 'pay' + Date.now() + processed,
+            internId, period, status: 'PAID',
+            presenceCount: item.presenceCount,
+            validPresenceCount: item.validPresenceCount,
+            allowanceRate: FLAT_RATE,
+            totalAllowance: item.totalAllowance,
+            paidAt: new Date().toISOString(),
+            paidBy: processedBy, notes
+          })
+          await saveDB(data).catch(() => {})
+        }
       }
       processed++
     }
 
-    await saveDB(data)
     // BUG-06 FIX: Use processedBy as the log user identifier instead of hardcoded 'u1'
     await db.addLog(processedBy || 'admin', 'PAYROLL_PROCESS', { period, internIds, processed })
 
