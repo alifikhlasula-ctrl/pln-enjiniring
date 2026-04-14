@@ -40,17 +40,24 @@ export async function GET(request) {
 
     const payload = allActiveInterns.map(i => {
       const log = logs.find(l => l.internId === i.id)
+      
+      // Resolve face-in photo: prefer Storage URL, then inline Base64 data URI
+      const faceInPhoto  = log?.faceInUrl
+        || (log?.faceInBase64  ? `data:image/jpeg;base64,${log.faceInBase64}`  : null)
+      // Resolve face-out photo: prefer Storage URL, then inline Base64 data URI  
+      const faceOutPhoto = log?.faceOutUrl
+        || (log?.faceOutBase64 ? `data:image/jpeg;base64,${log.faceOutBase64}` : null)
+
       return {
         internId: i.id,
         name: i.name,
         bidang: i.bidang,
         status: log ? log.status : 'ABSENT',
-        checkIn: log?.checkIn || null,
-        checkOut: log?.checkOut || null,
-        checkInLoc: log?.checkInLoc || null,
-        // Return actual face photo URL (Supabase Storage URL preferred, then Base64 flag)
-        faceInUrl: log?.faceInUrl || null,
-        faceInBase64: log?.faceInBase64 ? true : false,
+        checkIn:     log?.checkIn  || null,
+        checkOut:    log?.checkOut || null,
+        checkInLoc:  log?.checkInLoc || null,
+        faceInUrl:   faceInPhoto,   // Actual URL or data URI for photo preview
+        faceOutUrl:  faceOutPhoto,  // Actual URL or data URI for photo preview
       }
     })
 

@@ -101,85 +101,188 @@ function AttendanceChart({data,loading}) {
   )
 }
 
-/* ── Activity Feed ───────────────────────────────── */
-/* ── Attendance Monitor (Real-time) ────────────────── */
-function AttendanceMonitor({data,loading}) {
-  const previewPhoto = (url, name, type) => {
-    if (!url) return
-    import('sweetalert2').then(Swal => {
-      Swal.default.fire({
-        imageUrl: url,
-        imageAlt: `Foto Absensi ${name}`,
-        title: `<span style="font-size:1rem;font-weight:800">${name} (${type})</span>`,
-        showConfirmButton: false,
-        showCloseButton: true,
-        width: 'auto',
-        padding: '0',
-        background: 'var(--bg-card)',
-        backdrop: 'rgba(0,0,0,0.85)'
-      })
-    })
-  }
+/* ── Photo Lightbox (inline, no external lib) ─────── */
+function PhotoLightbox({ src, name, type, onClose }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
 
   return (
-    <div className="card" style={{height:'100%'}}>
-      <h3 style={{fontWeight:700,fontSize:'0.95rem',display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <Camera size={16} strokeWidth={2} style={{color:'var(--primary)'}}/>
-          Monitor Absensi Real-time
-        </div>
-        <span style={{fontSize:'0.65rem',color:'var(--secondary)',fontWeight:700,background:'var(--secondary-light)',padding:'2px 8px',borderRadius:999}}>SQL LIVE</span>
-      </h3>
-      <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:300,overflowY:'auto'}}>
-        {loading
-          ? [...Array(4)].map((_,i)=><div key={i} style={{height:56,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/>)
-          : (data||[]).length===0
-            ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'2rem'}}>Belum ada log kehadiran hari ini.</p>
-            : data.map(log=>{
-                const photoUrl = log.faceOutBase64 || log.faceInBase64
-                return (
-                <div key={log.id} style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.625rem',borderRadius:'var(--radius-md)',background:'var(--bg-main)',border:'1px solid var(--border)',transition:'all 0.2s'}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--primary)';e.currentTarget.style.transform='translateY(-1px)'}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--border)';e.currentTarget.style.transform='translateY(0)'}}>
-                  
-                  {/* Photo Profile Thumbnail (Face Recog) */}
-                  <div 
-                    onClick={() => previewPhoto(photoUrl, log.internName, log.checkOut ? 'Check Out' : 'Check In')}
-                    style={{
-                      position:'relative',width:36,height:36,borderRadius:18,overflow:'hidden',background:'var(--border)',flexShrink:0,
-                      cursor: photoUrl ? 'zoom-in' : 'default'
-                    }}
-                    title={photoUrl ? 'Klik untuk lihat foto full' : ''}
-                  >
-                    {photoUrl ? (
-                      <img src={photoUrl} style={{width:'100%',height:'100%',objectFit:'cover', pointerEvents: 'none'}} alt="face"/>
-                    ) : <Users size={18} style={{position:'absolute',top:9,left:9,color:'var(--text-muted)'}}/>}
-                    <div style={{position:'absolute',bottom:0,right:0,width:10,height:10,background:log.checkOut?'var(--danger)':'var(--secondary)',borderRadius:'50%',border:'2px solid #fff'}} />
-                  </div>
-
-                  <div style={{flex:1,minWidth:0}}>
-                    <p style={{fontSize:'0.8rem',fontWeight:700,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{log.internName}</p>
-                    <div style={{display:'flex',alignItems:'center',gap:4,marginTop:2}}>
-                      <span className={`badge ${log.checkOut?'badge-danger':'badge-secondary'}`} style={{fontSize:'0.55rem',padding:'1px 4px'}}>{log.checkOut?'OUT':'IN'}</span>
-                      <span style={{fontSize:'0.7rem',color:'var(--text-secondary)',fontWeight:600}}>{log.checkOut ? new Date(log.checkOut).toLocaleTimeString('id-US',{hour:'2-digit',minute:'2-digit'}) : new Date(log.checkIn).toLocaleTimeString('id-US',{hour:'2-digit',minute:'2-digit'})}</span>
-                    </div>
-                  </div>
-
-                  <div style={{textAlign:'right',flexShrink:0}}>
-                    <div style={{fontSize:'0.65rem',color:log.status==='LATE'?'var(--danger)':'var(--secondary)',fontWeight:800}}>{log.status}</div>
-                    {log.checkInLoc && (
-                      <div style={{fontSize:'0.6rem',color:'var(--text-muted)',display:'flex',alignItems:'center',gap:2,justifyContent:'flex-end'}}>
-                        <MapPin size={8}/> {log.checkInLoc.substring(0,10)}...
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })
-        }
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 99999,
+        background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: '1rem', cursor: 'zoom-out'
+      }}
+    >
+      <div onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+        <p style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 800, fontSize: '1rem', marginBottom: '0.75rem' }}>
+          {name} <span style={{ opacity: 0.6, fontWeight: 400 }}>· {type}</span>
+        </p>
+        <img
+          src={src} alt={`Foto ${name}`}
+          style={{
+            maxWidth: 'min(90vw, 440px)', maxHeight: '70vh',
+            borderRadius: 16, objectFit: 'contain',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+            border: '3px solid rgba(255,255,255,0.15)'
+          }}
+        />
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', marginTop: '0.75rem' }}>
+          Tekan ESC atau klik di luar untuk menutup
+        </p>
       </div>
-      <a href="/attendance" className="btn btn-secondary btn-sm" style={{width:'100%',textAlign:'center',marginTop:'0.875rem',textDecoration:'none',fontSize:'0.75rem'}}>Lihat Selengkapnya</a>
     </div>
+  )
+}
+
+/* ── Attendance Monitor (Real-time) ────────────────── */
+function AttendanceMonitor({data, loading}) {
+  const [lightbox, setLightbox] = useState(null) // { src, name, type }
+
+  const statusCfg = {
+    PRESENT: { label: 'Hadir',  color: '#22c55e', bg: 'rgba(34,197,94,0.12)'  },
+    LATE:    { label: 'Telat',  color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+    SAKIT:   { label: 'Sakit',  color: '#ef4444', bg: 'rgba(239,68,68,0.12)'  },
+    IZIN:    { label: 'Izin',   color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+    ABSENT:  { label: 'Belum',  color: '#6b7280', bg: 'rgba(107,114,128,0.08)'},
+  }
+
+  const presentData = (data || []).filter(l => l.status !== 'ABSENT')
+
+  return (
+    <>
+      {lightbox && (
+        <PhotoLightbox
+          src={lightbox.src}
+          name={lightbox.name}
+          type={lightbox.type}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+      <div className="card" style={{height:'100%'}}>
+        <h3 style={{fontWeight:700,fontSize:'0.95rem',display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+          <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <Camera size={16} strokeWidth={2} style={{color:'var(--primary)'}}/>
+            Monitor Absensi Real-time
+          </div>
+          <span style={{fontSize:'0.65rem',color:'var(--secondary)',fontWeight:700,background:'var(--secondary-light)',padding:'2px 8px',borderRadius:999}}>SQL LIVE</span>
+        </h3>
+
+        <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:340,overflowY:'auto'}}>
+          {loading
+            ? [...Array(4)].map((_,i)=><div key={i} style={{height:64,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/>)
+            : presentData.length === 0
+              ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'2rem'}}>Belum ada log kehadiran hari ini.</p>
+              : presentData.map((log, idx) => {
+                  const cfg        = statusCfg[log.status] || statusCfg.ABSENT
+                  const hasFaceIn  = !!log.faceInUrl
+                  const hasFaceOut = !!log.faceOutUrl
+                  const hasAnyFace = hasFaceIn || hasFaceOut
+                  
+                  return (
+                    <div
+                      key={log.internId + idx}
+                      style={{
+                        padding: '0.6rem 0.75rem',
+                        borderRadius: 10,
+                        background: 'var(--bg-main)',
+                        border: `1px solid ${cfg.color}22`,
+                        borderLeft: `3px solid ${cfg.color}`,
+                        transition: 'all 0.18s',
+                        display: 'flex', alignItems: 'center', gap: '0.625rem'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = cfg.bg}
+                      onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-main)'}
+                    >
+                      {/* ── Two Face Photo Thumbnails ── */}
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                        {/* Clock-In Photo */}
+                        <div
+                          onClick={() => hasFaceIn && setLightbox({ src: log.faceInUrl, name: log.name, type: 'Clock-In ☀️' })}
+                          title={hasFaceIn ? 'Klik untuk lihat foto Clock-In' : 'Belum ada foto masuk'}
+                          style={{
+                            position: 'relative', width: 40, height: 40,
+                            borderRadius: 8, overflow: 'hidden',
+                            background: 'var(--border)', flexShrink: 0,
+                            cursor: hasFaceIn ? 'zoom-in' : 'default',
+                            border: `2px solid ${hasFaceIn ? '#22c55e' : 'var(--border)'}`,
+                          }}
+                        >
+                          {hasFaceIn
+                            ? <img src={log.faceInUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="IN"/>
+                            : <Users size={16} style={{position:'absolute',top:10,left:10,color:'var(--text-muted)'}}/>
+                          }
+                          <div style={{position:'absolute',bottom:1,left:1,fontSize:'6px',fontWeight:800,color:'#fff',background:'#22c55e',borderRadius:2,padding:'0 2px',lineHeight:'10px'}}>IN</div>
+                        </div>
+
+                        {/* Clock-Out Photo */}
+                        <div
+                          onClick={() => hasFaceOut && setLightbox({ src: log.faceOutUrl, name: log.name, type: 'Clock-Out 🌙' })}
+                          title={hasFaceOut ? 'Klik untuk lihat foto Clock-Out' : 'Belum Clock-Out'}
+                          style={{
+                            position: 'relative', width: 40, height: 40,
+                            borderRadius: 8, overflow: 'hidden',
+                            background: 'var(--border)', flexShrink: 0,
+                            cursor: hasFaceOut ? 'zoom-in' : 'default',
+                            border: `2px solid ${hasFaceOut ? '#6366f1' : 'var(--border)'}`,
+                          }}
+                        >
+                          {hasFaceOut
+                            ? <img src={log.faceOutUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="OUT"/>
+                            : <Clock size={14} style={{position:'absolute',top:11,left:11,color:'var(--text-muted)'}}/>
+                          }
+                          <div style={{position:'absolute',bottom:1,left:1,fontSize:'6px',fontWeight:800,color:'#fff',background:'#6366f1',borderRadius:2,padding:'0 2px',lineHeight:'10px'}}>OUT</div>
+                        </div>
+                      </div>
+
+                      {/* ── Name + bidang ── */}
+                      <div style={{flex:1,minWidth:0}}>
+                        <p style={{fontSize:'0.82rem',fontWeight:800,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',color:'var(--text-primary)'}}>
+                          {log.name}
+                        </p>
+                        <div style={{display:'flex',alignItems:'center',gap:4,marginTop:1}}>
+                          <span style={{fontSize:'0.65rem',color:'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:110}}>
+                            {log.bidang || '-'}
+                          </span>
+                          {log.checkInLoc && (
+                            <span style={{fontSize:'0.6rem',color:'var(--text-muted)',display:'flex',alignItems:'center',gap:1}}>
+                              <MapPin size={8}/> {log.checkInLoc.substring(0,10)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* ── Status + Time ── */}
+                      <div style={{textAlign:'right',flexShrink:0}}>
+                        <span style={{
+                          fontSize:'0.68rem',fontWeight:800,color:cfg.color,
+                          background:cfg.bg,padding:'2px 7px',borderRadius:99
+                        }}>{cfg.label}</span>
+                        <div style={{fontSize:'0.7rem',color:'var(--text-muted)',marginTop:3,fontWeight:600}}>
+                          {log.checkIn ? new Date(log.checkIn).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '--:--'}
+                          {log.checkOut && <> → {new Date(log.checkOut).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</>}
+                        </div>
+                        {hasAnyFace && (
+                          <div style={{fontSize:'0.6rem',color:cfg.color,fontWeight:700,marginTop:1}}>
+                            ✓ Face Verified
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+          }
+        </div>
+        <a href="/admin/attendance" className="btn btn-secondary btn-sm" style={{width:'100%',textAlign:'center',marginTop:'0.875rem',textDecoration:'none',fontSize:'0.75rem'}}>
+          Buka Monitor Penuh →
+        </a>
+      </div>
+    </>
   )
 }
 
