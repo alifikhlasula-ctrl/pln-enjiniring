@@ -84,8 +84,8 @@ export async function GET(request) {
       editedBy:    log.editedBy || null,
       editedAt:    log.editedAt ? log.editedAt.toISOString() : null,
       // Photo: Storage URL preferred (fast), Base64 sendable for small records
-      faceInUrl:   log.faceInUrl  || (log.faceInBase64  ? `data:image/jpeg;base64,${log.faceInBase64}`  : null),
-      faceOutUrl:  log.faceOutUrl || (log.faceOutBase64 ? `data:image/jpeg;base64,${log.faceOutBase64}` : null),
+      faceInUrl:   log.faceInUrl  || (log.faceInBase64  ? (log.faceInBase64.startsWith('data:') ? log.faceInBase64 : `data:image/jpeg;base64,${log.faceInBase64}`)  : null),
+      faceOutUrl:  log.faceOutUrl || (log.faceOutBase64 ? (log.faceOutBase64.startsWith('data:') ? log.faceOutBase64 : `data:image/jpeg;base64,${log.faceOutBase64}`) : null),
       intern: intern || { name: 'Unknown', bidang: '-', university: '-' }
     })
 

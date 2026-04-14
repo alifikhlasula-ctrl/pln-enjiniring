@@ -182,8 +182,10 @@ function AttendanceMonitor({data, loading}) {
               ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'2rem'}}>Belum ada log kehadiran hari ini.</p>
               : presentData.map((log, idx) => {
                   const cfg        = statusCfg[log.status] || statusCfg.ABSENT
-                  const hasFaceIn  = !!log.faceInUrl
-                  const hasFaceOut = !!log.faceOutUrl
+                  const finalFaceIn = log.faceInUrl || (log.faceInBase64 ? (log.faceInBase64.startsWith('data:') ? log.faceInBase64 : `data:image/jpeg;base64,${log.faceInBase64}`) : null)
+                  const finalFaceOut = log.faceOutUrl || (log.faceOutBase64 ? (log.faceOutBase64.startsWith('data:') ? log.faceOutBase64 : `data:image/jpeg;base64,${log.faceOutBase64}`) : null)
+                  const hasFaceIn  = !!finalFaceIn
+                  const hasFaceOut = !!finalFaceOut
                   const hasAnyFace = hasFaceIn || hasFaceOut
                   
                   return (
@@ -205,7 +207,7 @@ function AttendanceMonitor({data, loading}) {
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                         {/* Clock-In Photo */}
                         <div
-                          onClick={() => hasFaceIn && setLightbox({ src: log.faceInUrl, name: log.name, type: 'Clock-In ☀️' })}
+                          onClick={() => hasFaceIn && setLightbox({ src: finalFaceIn, name: log.internName || log.name, type: 'Clock-In ☀️' })}
                           title={hasFaceIn ? 'Klik untuk lihat foto Clock-In' : 'Belum ada foto masuk'}
                           style={{
                             position: 'relative', width: 40, height: 40,
@@ -216,7 +218,7 @@ function AttendanceMonitor({data, loading}) {
                           }}
                         >
                           {hasFaceIn
-                            ? <img src={log.faceInUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="IN"/>
+                            ? <img src={finalFaceIn} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="IN"/>
                             : <Users size={16} style={{position:'absolute',top:10,left:10,color:'var(--text-muted)'}}/>
                           }
                           <div style={{position:'absolute',bottom:1,left:1,fontSize:'6px',fontWeight:800,color:'#fff',background:'#22c55e',borderRadius:2,padding:'0 2px',lineHeight:'10px'}}>IN</div>
@@ -224,7 +226,7 @@ function AttendanceMonitor({data, loading}) {
 
                         {/* Clock-Out Photo */}
                         <div
-                          onClick={() => hasFaceOut && setLightbox({ src: log.faceOutUrl, name: log.name, type: 'Clock-Out 🌙' })}
+                          onClick={() => hasFaceOut && setLightbox({ src: finalFaceOut, name: log.internName || log.name, type: 'Clock-Out 🌙' })}
                           title={hasFaceOut ? 'Klik untuk lihat foto Clock-Out' : 'Belum Clock-Out'}
                           style={{
                             position: 'relative', width: 40, height: 40,
@@ -235,7 +237,7 @@ function AttendanceMonitor({data, loading}) {
                           }}
                         >
                           {hasFaceOut
-                            ? <img src={log.faceOutUrl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="OUT"/>
+                            ? <img src={finalFaceOut} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="OUT"/>
                             : <Clock size={14} style={{position:'absolute',top:11,left:11,color:'var(--text-muted)'}}/>
                           }
                           <div style={{position:'absolute',bottom:1,left:1,fontSize:'6px',fontWeight:800,color:'#fff',background:'#6366f1',borderRadius:2,padding:'0 2px',lineHeight:'10px'}}>OUT</div>
@@ -245,7 +247,7 @@ function AttendanceMonitor({data, loading}) {
                       {/* ── Name + bidang ── */}
                       <div style={{flex:1,minWidth:0}}>
                         <p style={{fontSize:'0.82rem',fontWeight:800,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',color:'var(--text-primary)'}}>
-                          {log.name}
+                          {log.internName || log.name}
                         </p>
                         <div style={{display:'flex',alignItems:'center',gap:4,marginTop:1}}>
                           <span style={{fontSize:'0.65rem',color:'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:110}}>

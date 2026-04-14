@@ -174,8 +174,8 @@ function AttendanceCard({ log, onEdit }) {
   const isEdited  = !!log.editedBy
   const hasIn     = !!log.checkIn
   const hasOut    = !!log.checkOut
-  const faceIn    = log.faceInUrl  || (log.faceInBase64  ? `data:image/jpeg;base64,${log.faceInBase64}`  : null)
-  const faceOut   = log.faceOutUrl || (log.faceOutBase64 ? `data:image/jpeg;base64,${log.faceOutBase64}` : null)
+  const faceIn    = log.faceInUrl  || (log.faceInBase64  ? (log.faceInBase64.startsWith('data:') ? log.faceInBase64 : `data:image/jpeg;base64,${log.faceInBase64}`)  : null)
+  const faceOut   = log.faceOutUrl || (log.faceOutBase64 ? (log.faceOutBase64.startsWith('data:') ? log.faceOutBase64 : `data:image/jpeg;base64,${log.faceOutBase64}`) : null)
 
   return (
     <div style={{

@@ -55,13 +55,13 @@ export async function GET(request) {
       if (log.faceOutUrl) {
         url = log.faceOutUrl; source = 'storage'
       } else if (log.faceOutBase64) {
-        url = `data:image/jpeg;base64,${log.faceOutBase64}`; source = 'base64'
+        url = log.faceOutBase64.startsWith('data:') ? log.faceOutBase64 : `data:image/jpeg;base64,${log.faceOutBase64}`; source = 'base64'
       }
     } else {
       if (log.faceInUrl) {
         url = log.faceInUrl; source = 'storage'
       } else if (log.faceInBase64) {
-        url = `data:image/jpeg;base64,${log.faceInBase64}`; source = 'base64'
+        url = log.faceInBase64.startsWith('data:') ? log.faceInBase64 : `data:image/jpeg;base64,${log.faceInBase64}`; source = 'base64'
       }
     }
 
