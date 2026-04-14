@@ -194,8 +194,15 @@ export async function GET(request) {
       }
     })
 
+    // Hitung missingReportsCount untuk sekedar peringatan (warning), 
+    // NAMUN kembalikan validPresenceCount agar sama dengan jumlah total absensi 
+    // sesuai instruksi user (allowance kembali normal).
+    // Note: missingReportsCount is already populated correctly by the loop.
+    validPresenceCount = attendances.length
+
     const allowanceRate = FLAT_RATE
-    const totalAllowance = validPresenceCount * allowanceRate
+    // Restore normal calculation: Pay based on total attendances, not strictly limited by missing reports
+    const totalAllowance = attendances.length * allowanceRate
     const periodKey = startDate && endDate ? `${startDate}_${endDate}` : pKey
     
     // Check PayrollRecord first, then fall back to JSON payrolls
