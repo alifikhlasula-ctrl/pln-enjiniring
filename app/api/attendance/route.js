@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getDB, saveDB, db } from '@/lib/db'
 import { isWeekend } from '@/lib/dateUtils'
+import { uploadBase64Photo, attendancePath } from '@/lib/supabase-storage'
 
 // Helper to safely serialize Prisma objects (converting Date to string) 
 // to avoid 500 serialization errors in NextResponse
@@ -113,15 +114,29 @@ export async function POST(request) {
       if (existing) return NextResponse.json({ error: 'Anda sudah Check In hari ini' }, { status: 400 })
       
       console.log('[POST /api/attendance] Creating check-in log for', intern.id)
+      // Upload photo to Supabase Storage (preferred) — keeps DB lean
+      // If caller already provides a faceUrl (e.g. pre-uploaded), use it directly.
+      // If only Base64 is present, upload it now and store URL.
+      let resolvedFaceInUrl = faceUrl || null
+      if (!resolvedFaceInUrl && faceBase64) {
+        try {
+          resolvedFaceInUrl = await uploadBase64Photo(
+            attendancePath(intern.id, today, 'in'),
+            faceBase64
+          )
+        } catch (storageErr) {
+          console.error('[POST /api/attendance] Storage upload failed for clock-in, falling back to Base64:', storageErr.message)
+        }
+      }
+
       log = await prisma.attendanceLog.create({
         data: {
           internId: intern.id,
           date: today,
           checkIn: now,
           checkInLoc: location || 'Lokasi tidak tersedia',
-          // Prefer Storage URL over Base64 (keeps DB lean)
-          faceInUrl:    faceUrl    || null,
-          faceInBase64: !faceUrl && faceBase64 ? faceBase64 : null,
+          faceInUrl:    resolvedFaceInUrl,
+          faceInBase64: !resolvedFaceInUrl && faceBase64 ? faceBase64 : null, // only fallback if storage failed
           status
         }
       })
@@ -175,14 +190,26 @@ export async function POST(request) {
       if (existing.checkOut) return NextResponse.json({ error: 'Anda sudah Check Out hari ini' }, { status: 400 })
       
       console.log('[POST /api/attendance] Updating check-out log for', intern.id)
+      // Upload clock-out photo to Supabase Storage
+      let resolvedFaceOutUrl = faceUrl || null
+      if (!resolvedFaceOutUrl && faceBase64) {
+        try {
+          resolvedFaceOutUrl = await uploadBase64Photo(
+            attendancePath(intern.id, today, 'out'),
+            faceBase64
+          )
+        } catch (storageErr) {
+          console.error('[POST /api/attendance] Storage upload failed for clock-out, falling back to Base64:', storageErr.message)
+        }
+      }
+
       log = await prisma.attendanceLog.update({
         where: { id: existing.id },
         data: {
           checkOut: now,
           checkOutLoc: location || 'Lokasi tidak tersedia',
-          // Prefer Storage URL over Base64 (keeps DB lean)
-          faceOutUrl:    faceUrl    || null,
-          faceOutBase64: !faceUrl && faceBase64 ? faceBase64 : null,
+          faceOutUrl:    resolvedFaceOutUrl,
+          faceOutBase64: !resolvedFaceOutUrl && faceBase64 ? faceBase64 : null, // only fallback if storage failed
         }
       })
       try { await db.addLog(userId, 'CLOCK_OUT', { location }) } catch (_) {}
