@@ -23,6 +23,16 @@ function fmtTime(iso) {
   catch { return '--:--' }
 }
 
+function fmtTimeRaw(iso) {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    const h = String(d.getHours()).padStart(2, '0')
+    const m = String(d.getMinutes()).padStart(2, '0')
+    return `${h}:${m}`
+  } catch { return '' }
+}
+
 function fmtDate(dateStr) {
   if (!dateStr) return '-'
   try {
@@ -67,8 +77,8 @@ function FacePhoto({ src, alt, size = 56 }) {
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
 function EditModal({ log, internName, onClose, onSave }) {
-  const [checkIn,  setCheckIn]  = useState(log.checkIn  ? fmtTime(log.checkIn)  : '')
-  const [checkOut, setCheckOut] = useState(log.checkOut ? fmtTime(log.checkOut) : '')
+  const [checkIn,  setCheckIn]  = useState(log.checkIn  ? fmtTimeRaw(log.checkIn)  : '')
+  const [checkOut, setCheckOut] = useState(log.checkOut ? fmtTimeRaw(log.checkOut) : '')
   const [status,   setStatus]   = useState(log.status || 'PRESENT')
   const [note,     setNote]     = useState('')
   const [saving,   setSaving]   = useState(false)
@@ -77,9 +87,15 @@ function EditModal({ log, internName, onClose, onSave }) {
   const handleSave = async () => {
     setSaving(true); setError('')
     try {
-      const body = log.id
-        ? { id: log.id, checkIn: `${log.date}T${checkIn}:00`, checkOut: checkOut ? `${log.date}T${checkOut}:00` : null, status, note }
-        : { internId: log.internId, date: log.date, checkIn, checkOut, status, note }
+      const body = {
+        id: log.id,
+        internId: log.internId,
+        date: log.date,
+        checkIn,
+        checkOut,
+        status,
+        note
+      }
 
       const res  = await fetch('/api/admin/attendance', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()

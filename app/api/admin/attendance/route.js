@@ -121,11 +121,26 @@ export async function GET(request) {
   }
 }
 
-// ── Helper to safely parse Date from separate YYYY-MM-DD and HH:mm strings ──
+// ── Helper to safely parse Date from separate YYYY-MM-DD and (HH:mm or HH.mm) strings ──
 function parseDateTime(dateStr, timeStr) {
-  if (!dateStr || !timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return null
+  if (!dateStr || !timeStr) return null
+  
+  // Strip full date part if it was accidentally sent (e.g. 2026-01-01T07:00)
+  let cleanTime = timeStr
+  if (timeStr.includes('T')) {
+    cleanTime = timeStr.split('T')[1].substring(0, 5)
+  } else {
+    cleanTime = timeStr.substring(0, 5) // ensure only HH:mm part
+  }
+
+  // Regex allows both HH:mm and HH.mm (common in Indonesian locale)
+  if (!/^\d{2}[.:]\d{2}$/.test(cleanTime)) return null
+  
+  // Normalize to colon for Date constructor
+  const normalizedTime = cleanTime.replace('.', ':')
+  
   try {
-    const dt = new Date(`${dateStr}T${timeStr}:00+07:00`)
+    const dt = new Date(`${dateStr}T${normalizedTime}:00+07:00`)
     return isNaN(dt.getTime()) ? null : dt
   } catch (e) {
     return null
