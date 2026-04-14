@@ -105,6 +105,7 @@ function AttendanceChart({data,loading}) {
 
 /* ── Photo Lightbox (inline, no external lib) ─────── */
 function PhotoLightbox({ src, name, type, onClose }) {
+  const [imgError, setImgError] = useState(false)
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -125,15 +126,23 @@ function PhotoLightbox({ src, name, type, onClose }) {
         <p style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 800, fontSize: '1rem', marginBottom: '0.75rem' }}>
           {name} <span style={{ opacity: 0.6, fontWeight: 400 }}>· {type}</span>
         </p>
-        <img
-          src={src} alt={`Foto ${name}`}
-          style={{
-            maxWidth: 'min(90vw, 440px)', maxHeight: '70vh',
-            borderRadius: 16, objectFit: 'contain',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-            border: '3px solid rgba(255,255,255,0.15)'
-          }}
-        />
+        {imgError ? (
+          <div style={{ padding: '2rem', background: 'var(--bg-main)', borderRadius: 16, border: '2px dashed var(--danger)'}}>
+             <p style={{color: 'var(--danger)', fontWeight: 700}}>Gagal memuat foto preview.</p>
+             <p style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>URL/Base64 rusak atau tidak valid.</p>
+          </div>
+        ) : (
+          <img
+            src={src} alt={`Foto ${name}`}
+            onError={() => setImgError(true)}
+            style={{
+              maxWidth: 'min(90vw, 440px)', maxHeight: '70vh',
+              borderRadius: 16, objectFit: 'contain',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+              border: '3px solid rgba(255,255,255,0.15)'
+            }}
+          />
+        )}
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', marginTop: '0.75rem' }}>
           Tekan ESC atau klik di luar untuk menutup
         </p>

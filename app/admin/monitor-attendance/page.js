@@ -8,6 +8,7 @@ import {
 
 /* ── Photo Lightbox ──────────────────────────────────────────── */
 function PhotoLightbox({ src, name, type, onClose }) {
+  const [imgError, setImgError] = useState(false)
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', h)
@@ -33,12 +34,20 @@ function PhotoLightbox({ src, name, type, onClose }) {
             border: `1px solid ${type.includes('In') || type.includes('in') ? '#22c55e44' : '#6366f144'}`
           }}>{type}</span>
         </div>
-        <img src={src} alt={`Foto ${name}`} style={{
-          maxWidth: 'min(92vw, 480px)', maxHeight: '74vh',
-          borderRadius: 20, objectFit: 'contain',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
-          border: '3px solid rgba(255,255,255,0.12)'
-        }} />
+        {imgError ? (
+          <div style={{ padding: '2rem', background: 'var(--bg-main)', borderRadius: 16, border: '2px dashed var(--danger)'}}>
+             <AlertTriangle size={32} style={{color: 'var(--danger)', margin: '0 auto 10px'}}/>
+             <p style={{color: 'var(--text-primary)'}}>Gagal memuat foto preview.</p>
+             <p style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>URL/Base64 rusak atau tidak valid.</p>
+          </div>
+        ) : (
+          <img src={src} alt={`Foto ${name}`} onError={() => setImgError(true)} style={{
+            maxWidth: 'min(92vw, 480px)', maxHeight: '74vh',
+            borderRadius: 20, objectFit: 'contain',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
+            border: '3px solid rgba(255,255,255,0.12)'
+          }} />
+        )}
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.74rem', marginTop: '0.875rem' }}>
           Tekan ESC atau klik area gelap untuk menutup
         </p>
