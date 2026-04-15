@@ -134,7 +134,7 @@ export default function InternDashboard() {
 
   // SWR automatically handles caching, loading state, and deduplication.
   // It pauses fetching when user.id is null (e.g. auth still loading).
-  const { data: dash, error, isLoading: loading, mutate: fetchDash } = useSWR(
+  const { data: dash, error: swrError, isLoading: loading, mutate: fetchDash } = useSWR(
     user?.id ? `/api/intern-dashboard?userId=${user.id}` : null,
     fetcher,
     {
@@ -167,11 +167,55 @@ export default function InternDashboard() {
   const countdown = D.countdown || {}
   const today = D.todayAttendance || {}
 
+  /* ── SWR Error State — show friendly card instead of crashing ── */
+  if (swrError && !loading) {
+    const isNotFound = swrError.status === 404
+    const isTimeout  = swrError.status === 503
+    return (
+      <div style={{ padding: '3rem 1.5rem', maxWidth: 520, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{
+          background: 'var(--bg-card)', border: '1.5px solid var(--border)',
+          borderRadius: 20, padding: '2.5rem 2rem',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.06)'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+            {isNotFound ? '🔍' : isTimeout ? '⏳' : '⚠️'}
+          </div>
+          <h2 style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+            {isNotFound ? 'Profil Tidak Ditemukan' : isTimeout ? 'Server Sedang Sibuk' : 'Gagal Memuat Dashboard'}
+          </h2>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: '1.5rem' }}>
+            {isNotFound
+              ? 'Data profil magang Anda belum terdaftar di sistem. Silakan hubungi Admin HR.'
+              : isTimeout
+              ? 'Koneksi ke database sedang lambat. Halaman akan dimuat ulang otomatis.'
+              : 'Terjadi kesalahan saat memuat data. Coba muat ulang halaman.'}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => fetchDash()}
+            >
+              🔄 Coba Lagi
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => window.location.reload()}
+            >
+              ↺ Muat Ulang Halaman
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   /* ── Today Status Color ─────────────────────────── */
   const todayStatus = today.checkedIn
     ? today.checkedOut ? { label: 'Sudah Pulang', color: 'var(--text-muted)', bg: 'var(--border)', icon: '🏠' }
     : { label: 'Sedang Hadir', color: 'var(--secondary)', bg: 'var(--secondary-light)', icon: '🟢' }
     : { label: 'Belum Absen', color: 'var(--warning)', bg: 'var(--warning-light)', icon: '⏳' }
+
 
   return (
     <div style={{ animation: 'slideUp 0.3s ease' }}>

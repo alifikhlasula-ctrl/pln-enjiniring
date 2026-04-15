@@ -1148,7 +1148,7 @@ export default function AdminDashboard() {
 
   // SWR for main dashboard stats. Will automatically re-validate.
   // We use refreshInterval: 60000 to replicate the setInterval behavior without memory leak risks.
-  const { data: dash, isLoading: loading, mutate: fetchDash } = useSWR(`/api/dashboard?tahun=${selectedYear}`, fetcher, {
+  const { data: dash, error: swrError, isLoading: loading, mutate: fetchDash } = useSWR(`/api/dashboard?tahun=${selectedYear}`, fetcher, {
     refreshInterval: 60000,
     revalidateOnFocus: true, // Refresh instantly when tab is focused
   })
@@ -1249,6 +1249,28 @@ export default function AdminDashboard() {
           </button>
         </div>
       </div>
+
+      {/* ── SWR Error Banner ── */}
+      {swrError && !loading && (
+        <div style={{
+          background: 'var(--warning-light)', border: '1px solid var(--warning)',
+          borderRadius: 12, padding: '0.875rem 1.25rem', marginBottom: '1rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap'
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:'1.1rem'}}>⚠️</span>
+            <div>
+              <p style={{fontWeight:700,fontSize:'0.85rem',color:'var(--warning)'}}>Gagal memuat data dashboard</p>
+              <p style={{fontSize:'0.75rem',color:'var(--text-muted)'}}>
+                {swrError.status === 503 ? 'Koneksi database lambat, coba beberapa saat lagi.' : 'Terjadi kesalahan saat mengambil data dari server.'}
+              </p>
+            </div>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={() => fetchDash()}>
+            🔄 Coba Lagi
+          </button>
+        </div>
+      )}
 
       {/* ── Row 1: Stats ── */}
       <div className="stat-grid" style={{marginBottom:'var(--sp-4)', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))'}}>
