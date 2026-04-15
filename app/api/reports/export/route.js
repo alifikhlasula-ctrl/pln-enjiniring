@@ -19,7 +19,7 @@ export async function GET(request) {
     
     // 1. Fetch Data
     const data = await getDB()
-    const allReports = data.reports || []
+    const allJsonReports = data.reports || []
     
     let targetUserId = userId
     if (internId && !targetUserId) {
@@ -35,6 +35,14 @@ export async function GET(request) {
     const internName = internMeta?.name || 'Unknown'
     const allAttendances = internMeta ? await prisma.attendanceLog.findMany({ where: { internId: internMeta.id } }) : []
     
+    // 1B. Fetch Relational Postgres Reports
+    const sqlReports = await prisma.dailyReport.findMany({
+      where: { userId: targetUserId, status: { not: 'DRAFT' } }
+    }).catch(() => [])
+    
+    // Combine both layers
+    const allReports = [...allJsonReports, ...sqlReports.map(r => ({ ...r, date: r.date, reportDate: r.date, content: r.content || r.activity }))]
+
     // 2. Filter Reports & Attendances for this user/range
     const targetReps = allReports.filter(r => 
       r.userId === targetUserId && 
