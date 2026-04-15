@@ -299,6 +299,167 @@ function AttendanceMonitor({data, loading}) {
   )
 }
 
+/* ── Today Attendance Widget ─────────────────────── */
+function TodayAttendanceWidget({ data, loading, stats }) {
+  const [activeTab, setActiveTab] = useState('hadir')
+
+  const all    = data || []
+  const hadir  = all.filter(x => x.status === 'PRESENT' || x.status === 'LATE')
+  const izinSakit = all.filter(x => x.status === 'IZIN' || x.status === 'SAKIT')
+  const belum  = all.filter(x => x.status === 'ABSENT')
+
+  const tabData = { hadir, izinSakit, belum }
+  const shown   = tabData[activeTab] || []
+
+  const tabs = [
+    {
+      key: 'hadir',
+      label: 'Hadir',
+      emoji: '✅',
+      count: hadir.length,
+      color: '#22c55e',
+      bg: 'rgba(34,197,94,0.12)',
+      activeBg: 'rgba(34,197,94,0.18)',
+      border: '#22c55e',
+    },
+    {
+      key: 'izinSakit',
+      label: 'Izin / Sakit',
+      emoji: '🏥',
+      count: izinSakit.length,
+      color: '#f59e0b',
+      bg: 'rgba(245,158,11,0.10)',
+      activeBg: 'rgba(245,158,11,0.18)',
+      border: '#f59e0b',
+    },
+    {
+      key: 'belum',
+      label: 'Belum Absen',
+      emoji: '⏳',
+      count: belum.length,
+      color: '#6b7280',
+      bg: 'rgba(107,114,128,0.07)',
+      activeBg: 'rgba(107,114,128,0.14)',
+      border: '#6b7280',
+    },
+  ]
+
+  const STATUS_LABEL = {
+    PRESENT: { label: 'Hadir',   color: '#22c55e' },
+    LATE:    { label: 'Telat',   color: '#f59e0b' },
+    IZIN:    { label: 'Izin',    color: '#6366f1' },
+    SAKIT:   { label: 'Sakit',   color: '#ef4444' },
+    ABSENT:  { label: 'Belum',   color: '#6b7280' },
+  }
+
+  return (
+    <div className="card">
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CheckCircle2 size={16} strokeWidth={2} style={{ color: 'var(--secondary)' }} />
+          Laporan Kehadiran Hari Ini
+        </h3>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+          {loading ? '...' : `${all.length} intern aktif`}
+        </span>
+      </div>
+
+      {/* Tabs / Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            style={{
+              padding: '0.75rem 0.5rem',
+              borderRadius: 12,
+              border: `2px solid ${activeTab === t.key ? t.border : 'var(--border)'}`,
+              background: activeTab === t.key ? t.activeBg : t.bg,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: '1.1rem', marginBottom: 2 }}>{t.emoji}</div>
+            {loading
+              ? <div style={{ height: 24, width: '50%', background: 'var(--border)', borderRadius: 4, margin: '4px auto', animation: 'pulse 1.4s ease-in-out infinite' }} />
+              : <div style={{ fontSize: '1.5rem', fontWeight: 900, color: t.color, lineHeight: 1 }}>{t.count}</div>
+            }
+            <div style={{ fontSize: '0.67rem', fontWeight: 700, color: activeTab === t.key ? t.color : 'var(--text-muted)', marginTop: 2 }}>
+              {t.label}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {loading ? (
+          [...Array(4)].map((_,i) => (
+            <div key={i} style={{ height: 36, background: 'var(--border)', borderRadius: 8, animation: 'pulse 1.4s ease-in-out infinite' }} />
+          ))
+        ) : shown.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', padding: '1.5rem' }}>
+            {activeTab === 'hadir' ? 'Belum ada yang hadir hari ini.' :
+             activeTab === 'izinSakit' ? 'Tidak ada yang izin / sakit hari ini.' :
+             'Semua intern sudah absen! 🎉'}
+          </p>
+        ) : shown.map(item => {
+          const s = STATUS_LABEL[item.status] || STATUS_LABEL.ABSENT
+          return (
+            <div
+              key={item.internId}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.625rem',
+                padding: '0.4rem 0.625rem', borderRadius: 8,
+                background: 'var(--bg-main)',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--border)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-main)'}
+            >
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: s.color + '20',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.7rem', fontWeight: 900, color: s.color, flexShrink: 0
+              }}>
+                {item.name.split(' ').map(w => w[0]).slice(0,2).join('')}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {item.name}
+                </p>
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {item.bidang}
+                </p>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <span style={{
+                  fontSize: '0.65rem', fontWeight: 800, color: s.color,
+                  background: s.color + '18', padding: '2px 7px', borderRadius: 99, display: 'block'
+                }}>{s.label}</span>
+                {item.checkIn && (
+                  <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: 2, display: 'block' }}>
+                    {item.checkIn}{item.checkOut ? ` → ${item.checkOut}` : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <a href="/admin/monitor-attendance" className="btn btn-secondary btn-sm"
+        style={{ width: '100%', textAlign: 'center', marginTop: '0.875rem', textDecoration: 'none', fontSize: '0.75rem' }}
+      >
+        Buka Monitor Penuh →
+      </a>
+    </div>
+  )
+}
+
 /* ── Activity Feed ───────────────────────────────── */
 function ActivityFeed({data,loading}) {
   return (
@@ -1097,6 +1258,15 @@ export default function AdminDashboard() {
         <StatCard icon={<Clock size={20} strokeWidth={2}/>}    label="Mendekati Selesai"  value={s.expiringSoon??'—'} badge="<14 hari" badgeOk={s.expiringSoon===0} color="var(--danger)" bg="var(--danger-light)" loading={loading}/>
         <StatCard icon={<Wallet size={20} strokeWidth={2}/>}   label="Budget Payroll"    value={`Rp${idr(s.totalExpenses)}`}  badge={s.pendingPayroll>0?`${s.pendingPayroll} pending`:null} badgeOk={s.pendingPayroll===0} color="var(--warning)"   bg="var(--warning-light)"  loading={loading}/>
         <StatCard icon={<Star size={20} strokeWidth={2}/>}     label="Rata-rata Rating"    value={s.avgEvalScore??'—'} badge={s.pendingEvals>0?`${s.pendingEvals} pending`:null} badgeOk={s.pendingEvals===0} color="#f59e0b"  bg="rgba(245,158,11,0.1)"  loading={loading}/>
+      </div>
+
+      {/* ── Row 1.5: Today Attendance Summary ── */}
+      <div style={{marginBottom:'var(--sp-4)'}}>
+        <TodayAttendanceWidget
+          data={dash?.todayAttendanceSummary}
+          loading={loading}
+          stats={s}
+        />
       </div>
 
       {/* ── Row 2: Chart + Attendance Monitor ── */}

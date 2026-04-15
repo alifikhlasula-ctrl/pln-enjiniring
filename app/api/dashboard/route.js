@@ -16,7 +16,7 @@ export async function GET(request) {
     const todayStr2 = today.toISOString().split('T')[0]
 
     // ── Parallel Execution: Fetch all independent data sources at once ──
-    const [data, allInterns, onboarding, auditLogs, checkinToday, weeklyRaw, recentAttendance] = await Promise.all([
+    const [data, allInterns, onboarding, auditLogs, checkinToday, weeklyRaw, recentAttendance, todayLogs] = await Promise.all([
       getDB('ACTIVE', { clone: false }),
       db.getInterns(false),
       prisma.onboarding.findMany(),
@@ -27,7 +27,11 @@ export async function GET(request) {
         where: { date: { gte: sevenDaysAgoStr, lte: todayStr2 }, status: 'PRESENT' },
         _count: { id: true }
       }),
-      prisma.attendanceLog.findMany({ take: 8, orderBy: { createdAt: 'desc' } })
+      prisma.attendanceLog.findMany({ take: 8, orderBy: { createdAt: 'desc' } }),
+      prisma.attendanceLog.findMany({
+        where: { date: todayStr },
+        select: { internId: true, status: true, checkIn: true, checkOut: true }
+      })
     ])
 
     // Main KPIs focus on the Target Year (Program Active)
@@ -147,6 +151,29 @@ export async function GET(request) {
       return acc
     }, {})
 
+    // ── Today Attendance Summary (Hadir / Izin/Sakit / Belum Absen) ──
+    const todayLogMap = Object.fromEntries(todayLogs.map(l => [l.internId, l]))
+    const todayAttendanceSummary = activeInterns.map(i => {
+      const log = todayLogMap[i.id]
+      return {
+        internId: i.id,
+        name:     i.name,
+        bidang:   i.bidang || '-',
+        status:   log?.status || 'ABSENT',
+        checkIn:  log?.checkIn  ? new Date(log.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : null,
+        checkOut: log?.checkOut ? new Date(log.checkOut).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : null,
+      }
+    }).sort((a, b) => {
+      const ORDER = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 3, ABSENT: 4 }
+      return (ORDER[a.status] ?? 4) - (ORDER[b.status] ?? 4)
+    })
+
+    const todayCounts = {
+      hadir:      todayAttendanceSummary.filter(x => x.status === 'PRESENT' || x.status === 'LATE').length,
+      izinSakit:  todayAttendanceSummary.filter(x => x.status === 'IZIN' || x.status === 'SAKIT').length,
+      belumAbsen: todayAttendanceSummary.filter(x => x.status === 'ABSENT').length,
+    }
+
     const response = NextResponse.json({
       stats: {
         activeInterns:    activeInterns.length,
@@ -162,7 +189,10 @@ export async function GET(request) {
         totalResponses,
         expiringSoon:    expiringInterns.length,
         totalInterns:    allInterns.length,
-        totalUsers:      (data.users || []).length
+        totalUsers:      (data.users || []).length,
+        todayHadir:      todayCounts.hadir,
+        todayIzinSakit:  todayCounts.izinSakit,
+        todayBelumAbsen: todayCounts.belumAbsen,
       },
       weeklyAttendance,
       recentAttendance: recentAttendanceWithNames,
@@ -174,7 +204,8 @@ export async function GET(request) {
       byBidang,
       byUniversity,
       byGender,
-      byMajor
+      byMajor,
+      todayAttendanceSummary,
     })
 
     // Edge Caching: Cache for 15 seconds, serve stale while revalidating in background
