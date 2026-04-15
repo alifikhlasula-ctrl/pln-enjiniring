@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
  * app/error.js — Next.js error boundary (handles runtime/render errors).
@@ -10,16 +10,18 @@ import { useEffect, useState } from 'react'
 export default function Error({ error, reset }) {
   const [countdown, setCountdown] = useState(8)
   const [retrying,  setRetrying]  = useState(false)
+  const resetRef = useRef(reset)
+  useEffect(() => { resetRef.current = reset }, [reset])
 
   useEffect(() => {
     if (countdown <= 0) {
       setRetrying(true)
-      reset()
+      resetRef.current?.()
       return
     }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(t)
-  }, [countdown, reset])
+  }, [countdown])
 
   return (
     <div style={{
