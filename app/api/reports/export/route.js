@@ -216,7 +216,7 @@ export async function GET(request) {
 
     // ── 10. Return PDF ───────────────────────────────────────────
     const pdfBuf = Buffer.from(doc.output('arraybuffer'))
-    const docName = `Daftar_Hadir_${internName.replace(/\s+/g, '_')}_${startDate}.pdf`
+    const docName = `Daftar_Hadir_${internName.replace(/\s+/g, '_')}_${startDate}_sd_${endDate}.pdf`
 
     return new Response(pdfBuf, {
       status: 200,

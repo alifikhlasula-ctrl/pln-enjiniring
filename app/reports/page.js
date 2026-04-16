@@ -322,8 +322,8 @@ export default function ReportsPage() {
       
       const a = document.createElement('a')
       a.href = url
-      // Use the server-provided filename eventually, but set download attribute as well
-      a.download = `Daftar_Hadir_${internName.replace(/\s+/g, '_')}_${start}.pdf`
+      // Use the server-provided filename eventually, but set download attribute properly
+      a.download = `Daftar_Hadir_${internName.replace(/\s+/g, '_')}_${start}_sd_${end}.pdf`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
