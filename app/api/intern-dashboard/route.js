@@ -237,12 +237,22 @@ export async function GET(request) {
     return response
 
   } catch (err) {
-    console.error('[GET /api/intern-dashboard]', err)
+    console.error('[GET /api/intern-dashboard] Fatal Error:', err)
     const errStr = String(err?.message || '')
-    if (errStr.includes('57014') || errStr.toLowerCase().includes('statement timeout') || errStr.toLowerCase().includes('connection')) {
-      return NextResponse.json({ error: 'Koneksi database lambat. Silakan muat ulang halaman.' }, { status: 503 })
+    const isBusy = errStr.includes('57014') || 
+                   errStr.toLowerCase().includes('statement timeout') || 
+                   errStr.toLowerCase().includes('connection') ||
+                   errStr.toLowerCase().includes('pool');
+                   
+    if (isBusy) {
+      return NextResponse.json({ 
+        error: 'Sistem sedang sangat sibuk (Database Queue). Mohon tunggu 5-10 detik lalu muat ulang halaman.' 
+      }, { status: 503 })
     }
-    return NextResponse.json({ error: 'Gagal memuat data dashboard.' }, { status: 500 })
+    
+    return NextResponse.json({ 
+      error: 'Terjadi kesalahan sistem saat memuat data. Mohon coba beberapa saat lagi.' 
+    }, { status: 500 })
   }
 }
 
