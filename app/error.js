@@ -14,6 +14,14 @@ export default function Error({ error, reset }) {
   useEffect(() => { resetRef.current = reset }, [reset])
 
   useEffect(() => {
+    // Detect Next.js "Failed to find Server Action" - which means a deployment mismatch
+    // In this case, we force a silent window reload to sync with the new build.
+    if (error?.message?.includes('Failed to find Server Action')) {
+      console.warn('[NEXTJS_STALE_ACTION] Deployment mismatch detected. Syncing client with server...');
+      window.location.reload(true);
+      return;
+    }
+
     if (countdown <= 0) {
       setRetrying(true)
       resetRef.current?.()
@@ -21,7 +29,7 @@ export default function Error({ error, reset }) {
     }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000)
     return () => clearTimeout(t)
-  }, [countdown])
+  }, [countdown, error])
 
   return (
     <div style={{
