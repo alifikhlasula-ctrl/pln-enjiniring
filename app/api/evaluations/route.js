@@ -78,7 +78,7 @@ export async function POST(request) {
 
     const criteria = await getOrCreateCriteria()
     const totalWeight   = criteria.reduce((s, c) => s + c.weight, 0)
-    const weightedTotal = criteria.reduce((sum, c) => sum + ((scores[c.key] || 0) * c.weight), 0)
+    const weightedTotal = criteria.reduce((sum, c) => sum + ((scores[c.id] || 0) * c.weight), 0)
     const finalScore    = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
     const grade         = finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E'
     
@@ -111,7 +111,7 @@ export async function PUT(request) {
     const body   = await request.json()
     const criteria = await getOrCreateCriteria()
     const totalWeight   = criteria.reduce((s, c) => s + c.weight, 0)
-    const weightedTotal = criteria.reduce((sum, c) => sum + (((body.scores || {})[c.key] || 0) * c.weight), 0)
+    const weightedTotal = criteria.reduce((sum, c) => sum + (((body.scores || {})[c.id] || 0) * c.weight), 0)
     const finalScore    = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
     const grade         = finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E'
 
