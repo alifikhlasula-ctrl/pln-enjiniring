@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable'
 
 const GRADE_STYLE = { A:{color:'#065f46',bg:'#dcfce7'}, B:{color:'#1e40af',bg:'#dbeafe'}, C:{color:'#92400e',bg:'#fef3c7'}, D:{color:'#7c3aed',bg:'#ede9fe'}, E:{color:'#991b1b',bg:'#fee2e2'} }
 const fmtDate = dt => dt ? new Date(dt).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-'
+const idLongDate = dt => dt ? new Date(dt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '-'
 
 const EVAL_CRITERIA = [
   { id:'discipline',   name:'Kedisiplinan dan Kepatuhan',         desc:'Kehadiran tepat waktu, menaati tata tertib',                      weight:15 },
@@ -20,7 +21,7 @@ const EVAL_CRITERIA = [
 ]
 
 /* ── Generate PDF Template Evaluasi (kosong, siap diisi mentor) ─── */
-function generateEvalTemplate(intern) {
+function generateEvalTemplate(intern, criteriaList) {
   const doc = new jsPDF('p','pt','a4')
   const pw = doc.internal.pageSize.width
 
@@ -39,7 +40,7 @@ function generateEvalTemplate(intern) {
     ['Nama Peserta',            intern.name || ''],
     ['NIM',                     intern.nim_nis || ''],
     ['Perguruan Tinggi / Jurusan', `${intern.university || ''} / ${intern.major || ''}`],
-    ['Periode Magang',           `${intern.periodStart || ''} s.d ${intern.periodEnd || ''}`],
+    ['Periode Magang',           `${idLongDate(intern.periodStart)} s.d ${idLongDate(intern.periodEnd)}`],
     ['Bidang',                  intern.bidang || ''],
     ['Nama Pembimbing Lapangan', intern.supervisorName || ''],
     ['Jabatan Pembimbing',       intern.supervisorTitle || ''],
@@ -62,9 +63,10 @@ function generateEvalTemplate(intern) {
 
   const evalData = intern.latestEval || {}
   const scores = evalData.scores || {}
+  const activeCriteria = criteriaList || EVAL_CRITERIA
 
-  const evalRows = EVAL_CRITERIA.map((c,i) => {
-    const score = scores[c.key] || scores[c.id] || ''
+  const evalRows = activeCriteria.map((c,i) => {
+    const score = scores[c.id] || scores[c.key] || ''
     const weight = c.weight / 100
     const weighted = score ? (parseFloat(score) * weight).toFixed(2) : ''
     return [ i+1, c.name, c.desc, `${c.weight},00%`, score, weighted ]
@@ -147,10 +149,10 @@ function generateEvalTemplate(intern) {
   doc.setFont('helvetica','bold'); doc.setFontSize(10)
   doc.text('Mengetahui,', 40, sigY)
   doc.setFont('helvetica','normal')
-  doc.text('Pembimbing / HC', 40, sigY + 14)
-  doc.line(40, sigY + 70, 180, sigY + 70)
+  doc.text('Pembimbing Lapangan', 40, sigY + 14)
+  doc.line(40, sigY + 70, 200, sigY + 70)
   doc.setFont('helvetica','bold')
-  doc.text('( ....................................... )', 40, sigY + 82)
+  doc.text(`( ${intern.supervisorName || '.......................................'} )`, 40, sigY + 82)
 
   doc.output('dataurlnewwindow')
 }
@@ -586,7 +588,7 @@ export default function EvaluationsPage() {
                     <div style={{fontSize:'0.65rem',color:gs?.color,fontWeight:700}}>{last.finalScore}/10</div>
                   </div>:null}
                   <div style={{display:'flex',gap:'0.5rem',flexShrink:0}}>
-                    <button className="btn btn-secondary btn-sm" onClick={e=>{e.stopPropagation();generateEvalTemplate(intern)}} style={{gap:4,fontSize:'0.73rem'}}><FileText size={13} strokeWidth={2}/> Template</button>
+                    <button className="btn btn-secondary btn-sm" onClick={e=>{e.stopPropagation();generateEvalTemplate(intern, data.criteria)}} style={{gap:4,fontSize:'0.73rem'}}><FileText size={13} strokeWidth={2}/> Template</button>
                     {evalTab==='belum'
                       ?<button className="btn btn-primary btn-sm" onClick={e=>{e.stopPropagation();setFormFor({internId:intern.id,internName:intern.name, internPeriod: `${intern.periodStart || ''} s.d ${intern.periodEnd || ''}`})}} style={{gap:4}}><Plus size={13} strokeWidth={2}/> Input Nilai</button>
                       :<button className="btn btn-secondary btn-sm" onClick={e=>{e.stopPropagation();setFormFor({internId:intern.id,internName:intern.name, internPeriod: `${intern.periodStart || ''} s.d ${intern.periodEnd || ''}`})}} style={{gap:4,color:'var(--primary)'}}><Plus size={13} strokeWidth={2}/> Tambah Evaluasi</button>
