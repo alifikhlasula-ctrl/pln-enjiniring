@@ -73,7 +73,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { internId, supervisorId, scores, overallNote, period } = body
+    const { internId, supervisorId, scores, overallNote, period, keunggulan, pengembangan, rekomendasi, tindakLanjut } = body
     if (!internId || !scores) return NextResponse.json({ error: 'internId dan scores diperlukan' }, { status: 400 })
 
     const criteria = await getOrCreateCriteria()
@@ -81,12 +81,15 @@ export async function POST(request) {
     const weightedTotal = criteria.reduce((sum, c) => sum + ((scores[c.key] || 0) * c.weight), 0)
     const finalScore    = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
     const grade         = finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E'
+    
+    // Inject qualitative notes into scores JSON to avoid schema changes
+    const enrichedScores = { ...scores, keunggulan, pengembangan, rekomendasi, tindakLanjut }
 
     const entry = await prisma.evaluation.create({
       data: {
         internId,
         supervisorId: supervisorId || 'u1',
-        scores,
+        scores: enrichedScores,
         finalScore,
         grade,
         overallNote: overallNote || '',
@@ -112,9 +115,12 @@ export async function PUT(request) {
     const finalScore    = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0
     const grade         = finalScore >= 9 ? 'A' : finalScore >= 8 ? 'B' : finalScore >= 7 ? 'C' : finalScore >= 5 ? 'D' : 'E'
 
+    // Inject qualitative notes into scores JSON
+    const enrichedScores = { ...body.scores, keunggulan: body.keunggulan, pengembangan: body.pengembangan, rekomendasi: body.rekomendasi, tindakLanjut: body.tindakLanjut }
+
     const updated = await prisma.evaluation.update({
       where: { id: body.id },
-      data: { scores: body.scores, finalScore, grade, overallNote: body.overallNote, period: body.period }
+      data: { scores: enrichedScores, finalScore, grade, overallNote: body.overallNote, period: body.period }
     })
     return NextResponse.json({ ...updated, createdAt: updated.createdAt.toISOString(), updatedAt: updated.updatedAt.toISOString() })
   } catch (err) {

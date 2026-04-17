@@ -95,17 +95,29 @@ function generateEvalTemplate(intern) {
   })
 
   // Section 3: Catatan
-  const afterTable2 = doc.lastAutoTable.finalY + 15
+  let afterTable2 = doc.lastAutoTable.finalY + 15
+  
+  // Safety check to prevent awkward page breaks for the notes section
+  if (afterTable2 > 650) {
+    doc.addPage()
+    afterTable2 = 40
+  }
+
   doc.setFontSize(11); doc.setFont('helvetica','bold')
   doc.text('Catatan Evaluasi & Saran Pengembangan (diisi Pembimbing / Human Capital)', 40, afterTable2)
 
   autoTable(doc, {
     startY: afterTable2 + 8,
     head: [['Aspek Keunggulan Peserta', 'Area Pengembangan', 'Rekomendasi HC', 'Tindak\nLanjut']],
-    body: [['','','',''],['','','',''],['','','',''],['','','',''],['','','','']],
+    body: [[
+      intern.keunggulan || '',
+      intern.pengembangan || '',
+      intern.rekomendasi || '',
+      intern.tindakLanjut || ''
+    ]],
     theme: 'grid',
     headStyles: { fillColor:[25,60,110], textColor:255, fontStyle:'bold', fontSize:9, halign:'center' },
-    styles: { fontSize:9, minCellHeight:22 }
+    styles: { fontSize:9, minCellHeight:60, cellPadding:5, valign:'top' }
   })
 
   // Rekomendasi checkboxes
@@ -177,6 +189,12 @@ function RadarChart({ scores, criteria, size=200 }) {
 function EvalForm({ internId, internName, criteria, existing, onSave, onClose }) {
   const [scores, setScores] = useState(existing?.scores||{})
   const [note,   setNote]   = useState(existing?.overallNote||'')
+  
+  const [keunggulan, setKeunggulan] = useState(existing?.keunggulan||'')
+  const [pengembangan, setPengembangan] = useState(existing?.pengembangan||'')
+  const [rekomendasi, setRekomendasi] = useState(existing?.rekomendasi||'')
+  const [tindakLanjut, setTindakLanjut] = useState(existing?.tindakLanjut||'')
+  
   const [period, setPeriod] = useState(existing?.period||new Date().toISOString().slice(0,7))
   const [saving, setSaving] = useState(false)
 
@@ -189,7 +207,7 @@ function EvalForm({ internId, internName, criteria, existing, onSave, onClose })
   const handleSave = async () => {
     if (!allFilled) return
     setSaving(true)
-    await onSave({internId,scores,overallNote:note,period,...(existing?{id:existing.id}:{})})
+    await onSave({internId,scores,overallNote:note, keunggulan, pengembangan, rekomendasi, tindakLanjut, period,...(existing?{id:existing.id}:{})})
     setSaving(false)
   }
 
@@ -244,7 +262,28 @@ function EvalForm({ internId, internName, criteria, existing, onSave, onClose })
             <div style={{fontSize:'0.72rem',color:'var(--text-muted)'}}>Skor Akhir Tertimbang</div>
           </div>
         </div>
-        <textarea className="input" rows={3} placeholder="Catatan evaluasi (opsional)..." value={note} onChange={e=>setNote(e.target.value)} style={{resize:'vertical',marginBottom:'1rem'}}/>
+        
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1rem'}}>
+          <div>
+             <label className="label">Aspek Keunggulan Peserta</label>
+             <textarea className="input" rows={2} value={keunggulan} onChange={e=>setKeunggulan(e.target.value)} style={{resize:'vertical'}}/>
+          </div>
+          <div>
+             <label className="label">Area Pengembangan</label>
+             <textarea className="input" rows={2} value={pengembangan} onChange={e=>setPengembangan(e.target.value)} style={{resize:'vertical'}}/>
+          </div>
+          <div>
+             <label className="label">Rekomendasi HC</label>
+             <textarea className="input" rows={2} value={rekomendasi} onChange={e=>setRekomendasi(e.target.value)} style={{resize:'vertical'}}/>
+          </div>
+          <div>
+             <label className="label">Tindak Lanjut</label>
+             <textarea className="input" rows={2} value={tindakLanjut} onChange={e=>setTindakLanjut(e.target.value)} style={{resize:'vertical'}}/>
+          </div>
+        </div>
+        
+        <label className="label">Catatan Umum / Keseluruhan (Opsional)</label>
+        <textarea className="input" rows={2} value={note} onChange={e=>setNote(e.target.value)} style={{resize:'vertical',marginBottom:'1rem'}}/>
         <div style={{display:'flex',gap:'0.5rem',justifyContent:'flex-end'}}>
           <button className="btn btn-secondary" onClick={onClose}>Batal</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={!allFilled||saving}>
@@ -321,12 +360,23 @@ function InternEvaluationView({ evaluations, criteria }) {
       <div className="card">
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1.25rem',flexWrap:'wrap',gap:'1rem'}}>
           <div>
-            <h3 style={{fontWeight:800}}>Hasil Evaluasi Terbaru</h3>
+            <h3 style={{fontWeight:800}}>Hasil Evaluasi Akhir</h3>
             <p style={{fontSize:'0.75rem',color:'var(--text-muted)'}}>Periode: {latest.period} · Dibuat: {fmtDate(latest.createdAt)}</p>
+            <div style={{marginTop:'1rem', display:'flex', gap:'0.75rem', flexWrap:'wrap'}}>
+               <a href={`/portfolio?userId=${latest.internId}`} target="_blank" className="btn btn-primary" style={{textDecoration:'none', gap:6, background:'#0284c7', borderColor:'#0284c7'}}>
+                 <FileText size={16} strokeWidth={2}/> Unduh CV / Portofolio
+               </a>
+               {latest.scores?.certificateUrl && (
+                 <a href={latest.scores.certificateUrl} target="_blank" className="btn btn-secondary" style={{textDecoration:'none', gap:6, background:'#fef08a', color:'#854d0e', borderColor:'#facc15'}}>
+                   <Award size={16} strokeWidth={2}/> Unduh Sertifikat Magang
+                 </a>
+               )}
+            </div>
           </div>
           <div style={{textAlign:'center',padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',background:gs.bg}}>
             <div style={{fontWeight:900,fontSize:'2.5rem',color:gs.color,lineHeight:1}}>{latest.grade}</div>
             <div style={{fontWeight:800,fontSize:'0.9rem',color:gs.color}}>{latest.finalScore}/10</div>
+            <div style={{fontSize:'0.7rem', color:gs.color, fontWeight:700, marginTop:4}}>NILAI AKHIR</div>
           </div>
         </div>
 
@@ -442,7 +492,16 @@ export default function EvaluationsPage() {
   const internHistory = viewIntern ? data.evaluations.filter(e=>e.internId===viewIntern.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)) : []
 
   // Split: belum vs sudah dievaluasi
-  const belumDievaluasi = data.interns.filter(i => !i.evalCount || i.evalCount === 0)
+  const belumDievaluasi = data.interns.filter(i => {
+    if (i.evalCount > 0) return false;
+    // Calculate days active
+    if (!i.periodStart) return true;
+    const start = new Date(i.periodStart);
+    const today = new Date();
+    const diffTime = Math.abs(today - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return diffDays >= 15;
+  })
   const sudahDievaluasi = data.interns.filter(i => i.evalCount > 0)
   const activeList = evalTab === 'belum' ? belumDievaluasi : sudahDievaluasi
 
@@ -559,6 +618,11 @@ export default function EvaluationsPage() {
                        <p style={{fontWeight:700,fontSize:'0.8rem'}}>{ev.period} · {ev.finalScore}/10</p>
                        {ev.acknowledgedAt && <p style={{fontSize:'0.65rem',color:'var(--secondary)'}}>✓ Dibaca intern</p>}
                        {ev.overallNote&&<p style={{fontSize:'0.7rem',color:'var(--text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ev.overallNote}</p>}
+                       {ev.scores?.certificateUrl ? (
+                          <p style={{fontSize:'0.65rem',color:'var(--warning)',fontWeight:700,marginTop:2}}>✓ Sertifikat Diunggah</p>
+                       ) : (
+                          <button onClick={() => Swal.fire('Info', 'Fitur upload ke Supabase Storage (bucket: certificates) akan aktif setelah konfigurasi storage selesai.', 'info')} style={{fontSize:'0.65rem', background:'var(--border)', color:'var(--text-secondary)', border:'none', padding:'2px 8px', borderRadius:4, cursor:'pointer', marginTop:4}}>+ Upload Sertifikat</button>
+                       )}
                      </div>
                      <div style={{display:'flex',gap:4,flexShrink:0}}>
                        <button onClick={()=>setFormFor({internId:viewIntern.id,internName:viewIntern.name,existing:ev})} style={{background:'none',border:'none',cursor:'pointer',color:'var(--primary)'}}><Edit size={13} strokeWidth={2}/></button>

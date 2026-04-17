@@ -111,6 +111,7 @@ function LayoutContent({ children }) {
   const [isMobile, setIsMobile] = useState(false)
   const [profileComplete, setProfileComplete] = useState(true)
   const [isCheckingProfile, setIsCheckingProfile] = useState(true)
+  const [periodEnd, setPeriodEnd] = useState(null)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -131,6 +132,9 @@ function LayoutContent({ children }) {
             setProfileComplete(false)
           } else {
             setProfileComplete(true)
+          }
+          if (i?.periodEnd) {
+             setPeriodEnd(i.periodEnd)
           }
         })
         .catch(console.error)
@@ -207,6 +211,16 @@ function LayoutContent({ children }) {
         { name: 'Survei',       href: '/surveys',     icon: MessageSquare },
         { name: 'Panduan',      href: '/help',        icon: BookOpen },
       ]
+    }
+  }
+
+  // Inject Evaluasi for INTERN conditionally (H-1)
+  if (user?.role === 'INTERN' && periodEnd) {
+    const endDt = new Date(periodEnd);
+    const today = new Date();
+    const diffDays = Math.ceil((endDt - today) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 1) {
+      navConfig.INTERN.items.splice(5, 0, { name: 'Evaluasi', href: '/evaluations', icon: Award });
     }
   }
 
