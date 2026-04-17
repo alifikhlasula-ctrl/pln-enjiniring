@@ -112,6 +112,7 @@ function LayoutContent({ children }) {
   const [profileComplete, setProfileComplete] = useState(true)
   const [isCheckingProfile, setIsCheckingProfile] = useState(true)
   const [periodEnd, setPeriodEnd] = useState(null)
+  const [internStatus, setInternStatus] = useState(null)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -135,6 +136,9 @@ function LayoutContent({ children }) {
           }
           if (i?.periodEnd) {
              setPeriodEnd(i.periodEnd)
+          }
+          if (i?.status) {
+             setInternStatus(i.status)
           }
         })
         .catch(console.error)
@@ -214,14 +218,27 @@ function LayoutContent({ children }) {
     }
   }
 
-  // Inject Evaluasi for INTERN conditionally (H-1)
-  if (user?.role === 'INTERN' && periodEnd) {
-    const endDt = new Date(periodEnd);
-    const today = new Date();
-    const diffDays = Math.ceil((endDt - today) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 1) {
-      navConfig.INTERN.items.splice(5, 0, { name: 'Evaluasi', href: '/evaluations', icon: Award });
+  // Inject Evaluasi for INTERN conditionally (H-1 or COMPLETED)
+  if (user?.role === 'INTERN' && (periodEnd || internStatus === 'COMPLETED')) {
+    let showEvaluasi = internStatus === 'COMPLETED';
+    if (!showEvaluasi && periodEnd) {
+       const endDt = new Date(periodEnd);
+       const today = new Date();
+       const diffDays = Math.ceil((endDt - today) / (1000 * 60 * 60 * 24));
+       showEvaluasi = diffDays <= 1;
     }
+    
+    if (showEvaluasi) {
+      // Find where to insert (before Allowance if possible, or just push)
+      const insertIdx = navConfig.INTERN.items.findIndex(i => i.href === '/payroll');
+      navConfig.INTERN.items.splice(insertIdx !== -1 ? insertIdx : 5, 0, { name: 'Evaluasi', href: '/evaluations', icon: Award });
+    }
+  }
+
+  // Filter if COMPLETED
+  if (user?.role === 'INTERN' && internStatus === 'COMPLETED') {
+    const allowed = ['/dashboard', '/evaluations', '/payroll', '/surveys'];
+    navConfig.INTERN.items = navConfig.INTERN.items.filter(item => allowed.includes(item.href));
   }
 
   const currentConfig = user ? navConfig[user.role] : null
