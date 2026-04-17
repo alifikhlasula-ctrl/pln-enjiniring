@@ -186,7 +186,7 @@ function RadarChart({ scores, criteria, size=200 }) {
 }
 
 /* ── Evaluation Form (Admin HR Only) ────────────── */
-function EvalForm({ internId, internName, criteria, existing, onSave, onClose }) {
+function EvalForm({ internId, internName, internPeriod, criteria, existing, onSave, onClose }) {
   const [scores, setScores] = useState(existing?.scores||{})
   const [note,   setNote]   = useState(existing?.overallNote||'')
   
@@ -195,7 +195,6 @@ function EvalForm({ internId, internName, criteria, existing, onSave, onClose })
   const [rekomendasi, setRekomendasi] = useState(existing?.rekomendasi||'')
   const [tindakLanjut, setTindakLanjut] = useState(existing?.tindakLanjut||'')
   
-  const [period, setPeriod] = useState(existing?.period||new Date().toISOString().slice(0,7))
   const [saving, setSaving] = useState(false)
 
   const totalWeight = criteria.reduce((s,c)=>s+c.weight,0)
@@ -207,7 +206,8 @@ function EvalForm({ internId, internName, criteria, existing, onSave, onClose })
   const handleSave = async () => {
     if (!allFilled) return
     setSaving(true)
-    await onSave({internId,scores,overallNote:note, keunggulan, pengembangan, rekomendasi, tindakLanjut, period,...(existing?{id:existing.id}:{})})
+    const savedPeriod = internPeriod || existing?.period || new Date().toISOString().slice(0,7);
+    await onSave({internId,scores,overallNote:note, keunggulan, pengembangan, rekomendasi, tindakLanjut, period: savedPeriod,...(existing?{id:existing.id}:{})})
     setSaving(false)
   }
 
@@ -223,7 +223,9 @@ function EvalForm({ internId, internName, criteria, existing, onSave, onClose })
         </div>
         <div style={{marginBottom:'1.25rem'}}>
           <label className="label" style={{marginBottom:'0.25rem'}}>Periode Evaluasi</label>
-          <input type="month" className="input" value={period} onChange={e=>setPeriod(e.target.value)} style={{width:'auto'}}/>
+          <div style={{fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-secondary)'}}>
+             {internPeriod || existing?.period || '-'}
+          </div>
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:'1rem',marginBottom:'1.25rem'}}>
           {criteria.map(c=>(
@@ -579,8 +581,8 @@ export default function EvaluationsPage() {
                   <div style={{display:'flex',gap:'0.5rem',flexShrink:0}}>
                     <button className="btn btn-secondary btn-sm" onClick={e=>{e.stopPropagation();generateEvalTemplate(intern)}} style={{gap:4,fontSize:'0.73rem'}}><FileText size={13} strokeWidth={2}/> Template</button>
                     {evalTab==='belum'
-                      ?<button className="btn btn-primary btn-sm" onClick={e=>{e.stopPropagation();setFormFor({internId:intern.id,internName:intern.name})}} style={{gap:4}}><Plus size={13} strokeWidth={2}/> Input Nilai</button>
-                      :<button className="btn btn-secondary btn-sm" onClick={e=>{e.stopPropagation();setFormFor({internId:intern.id,internName:intern.name})}} style={{gap:4,color:'var(--primary)'}}><Plus size={13} strokeWidth={2}/> Tambah Evaluasi</button>
+                      ?<button className="btn btn-primary btn-sm" onClick={e=>{e.stopPropagation();setFormFor({internId:intern.id,internName:intern.name, internPeriod: `${intern.periodStart || ''} s.d ${intern.periodEnd || ''}`})}} style={{gap:4}}><Plus size={13} strokeWidth={2}/> Input Nilai</button>
+                      :<button className="btn btn-secondary btn-sm" onClick={e=>{e.stopPropagation();setFormFor({internId:intern.id,internName:intern.name, internPeriod: `${intern.periodStart || ''} s.d ${intern.periodEnd || ''}`})}} style={{gap:4,color:'var(--primary)'}}><Plus size={13} strokeWidth={2}/> Tambah Evaluasi</button>
                     }
                     <ChevronRight size={16} strokeWidth={2} style={{color:'var(--text-muted)',alignSelf:'center',transform:viewIntern?.id===intern.id?'rotate(90deg)':'none',transition:'transform 0.2s'}}/>
                   </div>
@@ -625,7 +627,7 @@ export default function EvaluationsPage() {
                        )}
                      </div>
                      <div style={{display:'flex',gap:4,flexShrink:0}}>
-                       <button onClick={()=>setFormFor({internId:viewIntern.id,internName:viewIntern.name,existing:ev})} style={{background:'none',border:'none',cursor:'pointer',color:'var(--primary)'}}><Edit size={13} strokeWidth={2}/></button>
+                       <button onClick={()=>setFormFor({internId:viewIntern.id,internName:viewIntern.name, internPeriod: `${viewIntern.periodStart || ''} s.d ${viewIntern.periodEnd || ''}`, existing:ev})} style={{background:'none',border:'none',cursor:'pointer',color:'var(--primary)'}}><Edit size={13} strokeWidth={2}/></button>
                        <button onClick={()=>handleDelete(ev.id)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--danger)'}}><Trash size={13} strokeWidth={2}/></button>
                      </div>
                    </div>
