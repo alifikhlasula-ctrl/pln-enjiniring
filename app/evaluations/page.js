@@ -60,12 +60,19 @@ function generateEvalTemplate(intern) {
   doc.setFontSize(11); doc.setFont('helvetica','bold')
   doc.text('EVALUASI HUMAN CAPITAL – PENILAIAN', 40, afterTable1)
 
-  const evalRows = EVAL_CRITERIA.map((c,i) => [
-    i+1, c.name, c.desc, `${c.weight},00%`, '', ''
-  ])
+  const evalData = intern.latestEval || {}
+  const scores = evalData.scores || {}
+
+  const evalRows = EVAL_CRITERIA.map((c,i) => {
+    const score = scores[c.key] || scores[c.id] || ''
+    const weight = c.weight / 100
+    const weighted = score ? (parseFloat(score) * weight).toFixed(2) : ''
+    return [ i+1, c.name, c.desc, `${c.weight},00%`, score, weighted ]
+  })
+  
   // Add total row
-  evalRows.push(['','','','TOTAL NILAI AKHIR (Skala 5)','','0,00'])
-  evalRows.push(['','','','PREDIKAT','','Sangat Kurang'])
+  evalRows.push(['','','','TOTAL NILAI AKHIR (Skala 10)','', evalData.finalScore ? evalData.finalScore.toFixed(2) : '0,00'])
+  evalRows.push(['','','','PREDIKAT','', evalData.grade || 'Sangat Kurang'])
 
   autoTable(doc, {
     startY: afterTable1 + 8,
@@ -110,10 +117,10 @@ function generateEvalTemplate(intern) {
     startY: afterTable2 + 8,
     head: [['Aspek Keunggulan Peserta', 'Area Pengembangan', 'Rekomendasi HC', 'Tindak\nLanjut']],
     body: [[
-      intern.keunggulan || '',
-      intern.pengembangan || '',
-      intern.rekomendasi || '',
-      intern.tindakLanjut || ''
+      scores.keunggulan || '',
+      scores.pengembangan || '',
+      scores.rekomendasi || '',
+      scores.tindakLanjut || ''
     ]],
     theme: 'grid',
     headStyles: { fillColor:[25,60,110], textColor:255, fontStyle:'bold', fontSize:9, halign:'center' },
