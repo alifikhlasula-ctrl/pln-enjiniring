@@ -10,10 +10,7 @@ export async function POST(request) {
   try {
     console.log('[CERT_UPLOAD] Starting upload process...')
     
-    // Auth: For now, just check if role is present (handled by middleware)
-    // or skip strict check if project pattern doesn't use it in route handlers
-    // const role = request.headers.get('x-user-role')
-    // if (!role) console.warn('[CERT_UPLOAD] No role header found')
+    const userId = request.headers.get('x-user-id') || 'system'
 
     const formData = await request.formData()
     const file = formData.get('file')
