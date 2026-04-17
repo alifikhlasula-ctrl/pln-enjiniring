@@ -143,6 +143,12 @@ export async function POST(request) {
       try { await db.addLog(userId, 'CLOCK_IN', { location, status }) } catch (_) {}
     } 
     else if (type === 'MANUAL_BACKDATE') {
+      // ── Role Authorization (Option 2 Protection) ──
+      const userMatched = (data.users || []).find(u => u.id === userId)
+      if (userMatched?.role === 'INTERN') {
+        return NextResponse.json({ error: 'Akses Ditolak: Intern tidak diizinkan melakukan klaim manual secara mandiri.' }, { status: 403 })
+      }
+
       if (!date || !checkInTime || !checkOutTime) {
          return NextResponse.json({ error: 'Tanggal dan Jam wajib diisi untuk klaim backdate' }, { status: 400 })
       }

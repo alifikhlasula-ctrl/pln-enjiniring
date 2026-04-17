@@ -550,46 +550,48 @@ export default function AttendancePage() {
               </div>
             )}
 
-            {/* Manual Backdate Section */}
-            <div style={{ width: '100%', borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginTop: '0.5rem' }}>
-              {!showManual ? (
-                <button
-                  className="btn btn-secondary"
-                  style={{ width: '100%', fontSize: '0.8rem', padding: '0.6rem' }}
-                  onClick={() => setShowManual(true)}
-                >
-                  <Clock size={14} style={{marginRight: 6}}/> Klaim Absensi Terlewat
-                </button>
-              ) : (
-                <form onSubmit={submitManualBackdate} style={{ background: 'var(--bg-main)', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', animation: 'slideInRight 0.3s' }}>
-                  <p style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.75rem', color: 'var(--primary)' }}>Klaim Susulan (Max H-1)</p>
-                  
-                  <label className="label" style={{fontSize: '0.72rem'}}>Tanggal</label>
-                  <input type="date" required className="input" style={{marginBottom: 10, fontSize: '0.8rem', padding: '6px 10px'}} 
-                         value={manualForm.date} onChange={e => setManualForm({...manualForm, date: e.target.value})} 
-                         min={internProfile?.periodStart || ''}
-                         max={new Date(Date.now() - 86400000).toISOString().split('T')[0]} />
+            {/* Manual Backdate Section (Hidden for Interns - Option 2) */}
+            {user?.role !== 'INTERN' && (
+              <div style={{ width: '100%', borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginTop: '0.5rem' }}>
+                {!showManual ? (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ width: '100%', fontSize: '0.8rem', padding: '0.6rem' }}
+                    onClick={() => setShowManual(true)}
+                  >
+                    <Clock size={14} style={{marginRight: 6}}/> Klaim Absensi Terlewat
+                  </button>
+                ) : (
+                  <form onSubmit={submitManualBackdate} style={{ background: 'var(--bg-main)', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', animation: 'slideInRight 0.3s' }}>
+                    <p style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.75rem', color: 'var(--primary)' }}>Klaim Susulan (Max H-1)</p>
+                    
+                    <label className="label" style={{fontSize: '0.72rem'}}>Tanggal</label>
+                    <input type="date" required className="input" style={{marginBottom: 10, fontSize: '0.8rem', padding: '6px 10px'}} 
+                           value={manualForm.date} onChange={e => setManualForm({...manualForm, date: e.target.value})} 
+                           min={internProfile?.periodStart || ''}
+                           max={new Date(Date.now() - 86400000).toISOString().split('T')[0]} />
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-                    <div>
-                      <label className="label" style={{fontSize: '0.72rem'}}>Jam Masuk</label>
-                      <input type="time" required className="input" style={{fontSize: '0.8rem', padding: '6px 10px'}} 
-                             value={manualForm.in} onChange={e => setManualForm({...manualForm, in: e.target.value})} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                      <div>
+                        <label className="label" style={{fontSize: '0.72rem'}}>Jam Masuk</label>
+                        <input type="time" required className="input" style={{fontSize: '0.8rem', padding: '6px 10px'}} 
+                               value={manualForm.in} onChange={e => setManualForm({...manualForm, in: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="label" style={{fontSize: '0.72rem'}}>Jam Keluar</label>
+                        <input type="time" required className="input" style={{fontSize: '0.8rem', padding: '6px 10px'}} 
+                               value={manualForm.out} onChange={e => setManualForm({...manualForm, out: e.target.value})} />
+                      </div>
                     </div>
-                    <div>
-                      <label className="label" style={{fontSize: '0.72rem'}}>Jam Keluar</label>
-                      <input type="time" required className="input" style={{fontSize: '0.8rem', padding: '6px 10px'}} 
-                             value={manualForm.out} onChange={e => setManualForm({...manualForm, out: e.target.value})} />
-                    </div>
-                  </div>
 
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="btn btn-secondary" style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }} onClick={() => setShowManual(false)}>Batal</button>
-                    <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }} disabled={processing}>Simpan Klaim</button>
-                  </div>
-                </form>
-              )}
-            </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" className="btn btn-secondary" style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }} onClick={() => setShowManual(false)}>Batal</button>
+                      <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '6px', fontSize: '0.75rem' }} disabled={processing}>Simpan Klaim</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
 
           </div>
         </div>
