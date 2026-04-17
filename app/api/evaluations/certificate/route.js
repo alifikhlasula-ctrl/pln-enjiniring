@@ -1,69 +1,81 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { db } from '@/lib/db'
-import { supabase, uploadToStorage } from '@/lib/supabase-storage'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { uploadToStorage } from '@/lib/supabase-storage'
 
-const BUCKET = 'hris_documents' // Use existing or create 'certificates'
+const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
 
 export async function POST(request) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== 'ADMIN_HR') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-  }
-
   try {
+    // Auth via custom header set by middleware/AuthContext
+    const role = request.headers.get('x-user-role')
+    const userId = request.headers.get('x-user-id')
+
+    if (!role || role !== 'ADMIN_HR') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file')
     const evaluationId = formData.get('evaluationId')
 
     if (!file || !evaluationId) {
-      return NextResponse.json({ error: 'File and Evaluation ID required' }, { status: 400 })
+      return NextResponse.json({ error: 'File dan Evaluation ID wajib diisi' }, { status: 400 })
     }
 
-    // 1. Find evaluation
-    const evaluation = await db.evaluation.findUnique({
+    // Validate file
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: 'Ukuran file maksimal 5MB' }, { status: 400 })
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: 'Format file tidak didukung. Gunakan PDF, JPG, atau PNG.' }, { status: 400 })
+    }
+
+    // Find evaluation
+    const evaluation = await prisma.evaluation.findUnique({
       where: { id: evaluationId }
     })
     if (!evaluation) {
-      return NextResponse.json({ error: 'Evaluation not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Evaluasi tidak ditemukan' }, { status: 404 })
     }
 
-    // 2. Upload to Supabase Storage
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${evaluationId}_cert.${fileExt}`
-    const path = `certificates/${fileName}`
-
-    // Convert file to Buffer/Blob for upload
+    // Convert to buffer for Supabase upload
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
+    const fileExt = file.name.split('.').pop() || 'pdf'
+    const path = `certificates/${evaluationId}_cert.${fileExt}`
 
-    // Note: User must create 'certificates' bucket or we use 'hris_documents'
-    // Let's use 'hris_documents' as it's more likely to exist, or try 'certificates'
+    // Upload to Supabase Storage (bucket: hris_documents or certificates)
     let publicUrl = ''
     try {
       publicUrl = await uploadToStorage('hris_documents', path, buffer, file.type)
-    } catch (e) {
-      // Fallback if bucket doesn't exist? No, let's assume 'hris_documents' for now
-      // Or just try 'certificates' as requested in UI
+    } catch {
+      // Fallback to 'certificates' bucket if hris_documents doesn't have that path
       publicUrl = await uploadToStorage('certificates', path, buffer, file.type)
     }
 
-    // 3. Update Evaluation scores JSON
-    const currentScores = evaluation.scores || {}
+    // Update evaluation scores JSON with certificate URL
+    const currentScores = (evaluation.scores && typeof evaluation.scores === 'object') ? evaluation.scores : {}
     const updatedScores = { ...currentScores, certificateUrl: publicUrl }
 
-    await db.evaluation.update({
+    await prisma.evaluation.update({
       where: { id: evaluationId },
       data: { scores: updatedScores }
     })
 
-    await db.addLog(session.user.id, 'UPLOAD_CERTIFICATE', { evaluationId, url: publicUrl })
+    // Log the action
+    if (userId) {
+      await db.addLog(userId, 'UPLOAD_CERTIFICATE', { evaluationId, url: publicUrl })
+    }
 
     return NextResponse.json({ success: true, url: publicUrl })
 
   } catch (error) {
     console.error('[CERTIFICATE_UPLOAD_ERROR]', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Terjadi kesalahan saat mengunggah sertifikat' },
+      { status: 500 }
+    )
   }
 }
