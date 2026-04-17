@@ -476,6 +476,52 @@ export default function EvaluationsPage() {
     fetchAll()
   }
 
+  const handleUploadCertificate = async (evaluationId) => {
+    const { value: file } = await Swal.fire({
+      title: 'Upload Sertifikat Magang',
+      input: 'file',
+      inputAttributes: {
+        'accept': 'application/pdf,image/*',
+        'aria-label': 'Upload sertifikat resmi'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Unggah',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: 'var(--primary)',
+      footer: '<p style="font-size:0.75rem;color:var(--text-muted)">Pilih file PDF atau Gambar (Maks 5MB)</p>'
+    })
+
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      return Swal.fire('Error', 'Ukuran file maksimal 5MB', 'error')
+    }
+
+    Swal.fire({
+      title: 'Mengunggah...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading() }
+    })
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('evaluationId', evaluationId)
+
+    try {
+      const res = await fetch('/api/evaluations/certificate', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Unggah gagal')
+      
+      Swal.fire('Berhasil', 'Sertifikat telah diunggah', 'success')
+      fetchAll()
+    } catch (e) {
+      Swal.fire('Error', e.message, 'error')
+    }
+  }
+
   const handleDelete = async id => {
     const { isConfirmed } = await Swal.fire({title:'Hapus evaluasi ini?',icon:'warning',showCancelButton:true,confirmButtonColor:'var(--danger)',confirmButtonText:'Hapus',cancelButtonText:'Batal'})
     if(isConfirmed){await fetch(`/api/evaluations?id=${id}`,{method:'DELETE'});fetchAll()}
@@ -630,9 +676,13 @@ export default function EvaluationsPage() {
                        {ev.acknowledgedAt && <p style={{fontSize:'0.65rem',color:'var(--secondary)'}}>✓ Dibaca intern</p>}
                        {ev.overallNote&&<p style={{fontSize:'0.7rem',color:'var(--text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ev.overallNote}</p>}
                        {ev.scores?.certificateUrl ? (
-                          <p style={{fontSize:'0.65rem',color:'var(--warning)',fontWeight:700,marginTop:2}}>✓ Sertifikat Diunggah</p>
+                          <a href={ev.scores.certificateUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:'0.65rem', color:'var(--secondary)', fontWeight:700, marginTop:4, display:'inline-block', textDecoration:'none', border:'1px solid var(--secondary)', padding:'1px 6px', borderRadius:4}}>
+                            ✓ Lihat Sertifikat
+                          </a>
                        ) : (
-                          <button onClick={() => Swal.fire('Info', 'Fitur upload ke Supabase Storage (bucket: certificates) akan aktif setelah konfigurasi storage selesai.', 'info')} style={{fontSize:'0.65rem', background:'var(--border)', color:'var(--text-secondary)', border:'none', padding:'2px 8px', borderRadius:4, cursor:'pointer', marginTop:4}}>+ Upload Sertifikat</button>
+                          <button onClick={() => handleUploadCertificate(ev.id)} style={{fontSize:'0.65rem', background:'var(--border)', color:'var(--text-secondary)', border:'none', padding:'2px 8px', borderRadius:4, cursor:'pointer', marginTop:4, fontWeight:700}}>
+                            + Upload Sertifikat
+                          </button>
                        )}
                      </div>
                      <div style={{display:'flex',gap:4,flexShrink:0}}>
