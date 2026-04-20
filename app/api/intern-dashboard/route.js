@@ -174,7 +174,7 @@ export async function GET(request) {
       allowanceRate,
     }
 
-    // ── Announcements (from Prisma) ─────────────────────────────────
+    // ── Announcements (Prisma + JSON Fallback) ──────────────────────
     const [announcementsRaw, eventsRaw] = await Promise.all([
       prisma.announcement.findMany({
         orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
@@ -186,7 +186,23 @@ export async function GET(request) {
         take: 10
       }).catch(() => [])
     ])
-    const announcements = announcementsRaw.map(a => ({ ...a, createdAt: a.createdAt.toISOString() }))
+    
+    // Merge SQL announcements with Legacy JSON announcements
+    const legacyAnnouncements = data.announcements || []
+    const allAnnouncements = [
+      ...announcementsRaw.map(a => ({ ...a, createdAt: a.createdAt.toISOString() })),
+      ...legacyAnnouncements
+    ]
+    // Remove duplicates by ID (just in case)
+    const uniqueAnnouncements = Array.from(new Map(allAnnouncements.map(item => [item.id, item])).values())
+    // Sort: Pinned first, then newest
+    const announcements = uniqueAnnouncements
+      .sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1
+        if (!a.pinned && b.pinned) return 1
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      })
+      .slice(0, 5)
 
     // ── Events (Prisma + holidays) ─────────────────────────────────
     const dbEvents = eventsRaw.map(ev => ({ ...ev, createdAt: ev.createdAt.toISOString() }))
