@@ -23,12 +23,20 @@ export async function GET() {
           deletedAt: null,
           status: { equals: 'ACTIVE', mode: 'insensitive' }
         },
-        select: { id: true, name: true, bidang: true },
+        select: { id: true, name: true, bidang: true, periodEnd: true },
         orderBy: { name: 'asc' }
       })
     ])
 
-    const payload = activeInterns.map(i => {
+    // Filter out interns who have completed their period
+    const activeAndNotCompleted = activeInterns.filter(i => {
+      if (!i.periodEnd) return true;
+      const end = new Date(i.periodEnd);
+      end.setHours(0,0,0,0);
+      return end >= today;
+    })
+
+    const payload = activeAndNotCompleted.map(i => {
       const log = logs.find(l => l.internId === i.id)
 
       // For Supabase Storage URLs: send directly (short string, fast)
