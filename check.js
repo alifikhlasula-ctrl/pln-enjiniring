@@ -1,9 +1,14 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
 
 async function main() {
-  const reports = await prisma.dailyReport.findMany({ select: { id: true, userId: true }, take: 10 });
-  console.log(reports);
+  const mainJson = await prisma.jsonStore.findUnique({ where: { key: 'main' } })
+  const archiveJson = await prisma.jsonStore.findUnique({ where: { key: 'archive' } })
+  const sqlInterns = await prisma.intern.count()
+  
+  console.log('Main JSON Interns:', mainJson?.data?.interns?.length)
+  console.log('Archive JSON Interns:', archiveJson?.data?.interns?.length)
+  console.log('SQL Interns:', sqlInterns)
 }
 
-main().finally(() => prisma.$disconnect());
+main().catch(console.error).finally(() => prisma.$disconnect())
