@@ -10,6 +10,7 @@ import KPICards from './KPICards'
 import Charts from './Charts'
 import CapacityManager from './CapacityManager'
 import ExportButton from './ExportButton'
+import Swal from 'sweetalert2'
 
 export default function AnalyticsPage() {
   const [data, setData] = useState(null)
@@ -33,6 +34,40 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const handleResetData = async () => {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Hapus Seluruh Data Intern?',
+      html: '<p style="font-size:0.9rem">Tindakan ini akan <b>menghapus seluruh</b> 400+ data peserta magang, absensi, dan laporan uji coba dari sistem. Anda yakin?</p>',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: 'var(--text-muted)',
+      confirmButtonText: 'Ya, Reset Bersih!',
+      cancelButtonText: 'Batal',
+      background: 'var(--bg-card)',
+      color: 'var(--text-primary)'
+    })
+
+    if (isConfirmed) {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/admin/reset', { method: 'POST' })
+        if (!res.ok) throw new Error('Gagal mereset data')
+        await Swal.fire({
+          title: 'Berhasil',
+          text: 'Data uji coba telah dibersihkan.',
+          icon: 'success',
+          background: 'var(--bg-card)',
+          color: 'var(--text-primary)'
+        })
+        fetchData()
+      } catch (e) {
+        Swal.fire({ title: 'Gagal', text: e.message, icon: 'error', background: 'var(--bg-card)', color: 'var(--text-primary)' })
+        setLoading(false)
+      }
+    }
+  }
 
   if (loading && !data) {
     return (
@@ -99,7 +134,11 @@ export default function AnalyticsPage() {
           </div>
         </div>
         
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button className="btn btn-danger" onClick={handleResetData} disabled={loading} style={{ fontWeight: 700, background: '#ef4444', color: 'white', border: 'none' }}>
+            <AlertTriangle size={16} />
+            Reset Data Uji Coba
+          </button>
           <button className="btn btn-secondary" onClick={fetchData} disabled={loading} style={{ fontWeight: 700 }}>
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Muat Ulang
