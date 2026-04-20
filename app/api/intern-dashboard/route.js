@@ -232,7 +232,7 @@ export async function GET(request) {
     }).catch(() => [])
 
     const userResponses = await prisma.surveyResponse.findMany({
-      where: { userId: user.id },
+      where: { userId: userId },
       select: { surveyId: true }
     }).catch(() => [])
     
