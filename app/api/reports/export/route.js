@@ -95,11 +95,9 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Format tanggal tidak valid' }, { status: 400 })
     }
 
-    // ── 7. Get metadata from first report with supervisor/field data ─
-    const reportsInRange = [...reportMap.values()].filter(r => r.date >= startDate && r.date <= endDate)
-    const reportWithMeta = reportsInRange.find(r => r.supervisor || r.field)
-    const supervisor = reportWithMeta?.supervisor || internMeta?.supervisorName || '-'
-    const bidang     = reportWithMeta?.field      || internMeta?.bidang         || '-'
+    // ── 7. Get metadata from profile (Always uniform) ───────────
+    const supervisor = internMeta?.supervisorName || '-'
+    const bidang     = internMeta?.bidang         || '-'
 
     // ── 8. Build row data for every calendar day in range ────────
     const rows = []

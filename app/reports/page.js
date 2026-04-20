@@ -19,8 +19,6 @@ function ReportModal({ initial, onSave, onClose }) {
   const [form, setForm] = useState({
     reportDate: initial?.reportDate || new Date().toISOString().split('T')[0],
     content: initial?.content || '',
-    supervisor: initial?.supervisor || '',
-    field: initial?.field || '',
     challenges: initial?.challenges || '',
     nextWeek: initial?.nextWeek || '',
     skills: initial?.skills?.join(', ') || '',
@@ -62,17 +60,6 @@ function ReportModal({ initial, onSave, onClose }) {
           <div>
             <label className="label" style={{marginBottom:'0.25rem'}}>Aktivitas pada hari ini <span style={{color:'var(--danger)'}}>*</span></label>
             <textarea className="input" rows={4} placeholder="Jelaskan detail aktivitas dan pencapaian Anda hari ini..." value={form.content} onChange={e=>setForm(p=>({...p,content:e.target.value}))}/>
-          </div>
-          
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
-            <div>
-              <label className="label" style={{marginBottom:'0.25rem'}}>Pembimbing / Atasan <span style={{color:'var(--danger)'}}>*</span></label>
-              <input className="input" placeholder="Nama Pembimbing Lapangan" value={form.supervisor} onChange={e=>setForm(p=>({...p,supervisor:e.target.value}))}/>
-            </div>
-            <div>
-              <label className="label" style={{marginBottom:'0.25rem'}}>Bidang / Departemen <span style={{color:'var(--danger)'}}>*</span></label>
-              <input className="input" placeholder="Misal: IT Development" value={form.field} onChange={e=>setForm(p=>({...p,field:e.target.value}))}/>
-            </div>
           </div>
           
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
