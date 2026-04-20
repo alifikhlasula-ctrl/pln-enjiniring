@@ -216,6 +216,45 @@ export default function InternDashboard() {
           
           // Trigger re-render to check for next unread if there's multiple
           fetchDash(); 
+          return; // Stop here, don't show survey pop-up simultaneously
+        }
+      }
+      
+      // 3. Pending Surveys Pop-up
+      if (dash.pendingSurveys && dash.pendingSurveys.length > 0) {
+        let ignoredStr = sessionStorage.getItem('ignored_surveys') || '[]';
+        let ignoredArr = [];
+        try { ignoredArr = JSON.parse(ignoredStr) } catch(e) {}
+
+        const pending = dash.pendingSurveys.filter(s => !ignoredArr.includes(s.id));
+        
+        if (pending.length > 0) {
+          const survey = pending[0];
+          
+          const result = await Swal.fire({
+            title: `<span style="font-size: 1rem; padding: 4px 12px; border-radius: 999px; background: var(--primary-light); color: var(--primary)">📝 Survei Baru</span>`,
+            html: `
+              <div style="text-align: left; margin-top: 1rem;">
+                <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 8px;">${survey.title}</h3>
+                <p style="font-size: 0.95rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.5;">${survey.description || 'Admin HR meminta waktu Anda sebentar untuk mengisi survei ini.'}</p>
+              </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Isi Survei Sekarang',
+            cancelButtonText: 'Nanti Saja',
+            confirmButtonColor: 'var(--primary)',
+            background: 'var(--bg-card)',
+            color: 'var(--text-primary)'
+          });
+
+          if (result.isConfirmed) {
+            window.location.href = '/surveys';
+          } else {
+            // If they click "Nanti Saja", ignore it for this session so it doesn't annoy them on every click
+            ignoredArr.push(survey.id);
+            sessionStorage.setItem('ignored_surveys', JSON.stringify(ignoredArr));
+          }
         }
       }
     };

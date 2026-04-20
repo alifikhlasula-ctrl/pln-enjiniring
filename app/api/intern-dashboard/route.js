@@ -226,6 +226,19 @@ export async function GET(request) {
     // ── Mood check (stored in DB) ────────────────────
     const todayMood = (data.moodLogs || []).find(m => m.userId === userId && m.date === todayStr)
 
+    // ── Active Unanswered Surveys ────────────────────
+    const activeSurveys = await prisma.survey.findMany({
+      where: { active: true, targetRole: { in: ['INTERN', 'ALL'] } }
+    }).catch(() => [])
+
+    const userResponses = await prisma.surveyResponse.findMany({
+      where: { userId: user.id },
+      select: { surveyId: true }
+    }).catch(() => [])
+    
+    const respondedSurveyIds = userResponses.map(r => r.surveyId)
+    const pendingSurveys = activeSurveys.filter(s => !respondedSurveyIds.includes(s.id))
+
     const response = NextResponse.json({
       intern: {
         id: intern.id,
@@ -251,6 +264,7 @@ export async function GET(request) {
       events,
       onboarding: { total: onboardingTotal, done: onboardingDone },
       todayMood: todayMood?.mood || null,
+      pendingSurveys,
     })
 
     // Edge Caching: Serve from cache for 10 seconds, keeping database unburdened during traffic spikes
