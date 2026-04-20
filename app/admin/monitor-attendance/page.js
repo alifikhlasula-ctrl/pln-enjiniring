@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Activity, Clock, MapPin, CheckCircle, AlertTriangle,
-  XCircle, Camera, RefreshCw, Eye, EyeOff, Heart, Loader2
+  XCircle, X, Camera, RefreshCw, Eye, EyeOff, Heart, Loader2
 } from 'lucide-react'
 
 /* ── Photo Lightbox ──────────────────────────────────────────── */
