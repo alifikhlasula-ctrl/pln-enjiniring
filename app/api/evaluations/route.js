@@ -52,15 +52,32 @@ export async function GET(request) {
       supervisorName: users.find(u => u.id === e.supervisorId)?.name || 'Admin HR',
     }))
 
-    // Intern list for evaluation page (COMPLETED with periodEnd >= March 2026)
+    // Intern list for evaluation page (ACTIVE/COMPLETED finishing soon)
     const EVAL_START = '2026-03-01'
-    const completedInterns = await prisma.intern.findMany({
-      where: { deletedAt: null, status: 'COMPLETED', periodEnd: { gte: EVAL_START } }
+    
+    // Fetch from both Prisma and Legacy JSON
+    const pRelational = prisma.intern.findMany({
+      where: { 
+        deletedAt: null, 
+        status: { in: ['COMPLETED', 'ACTIVE'] },
+        periodEnd: { gte: EVAL_START }
+      }
     })
-    const internsList = completedInterns.map(i => {
+    const pLegacy = db.getInterns() // This helper already merges relational, but we need raw filters
+    
+    const [relationalInterns, allInternsRaw] = await Promise.all([pRelational, pLegacy])
+    
+    // Filter the merged list to match our criteria
+    const filteredInterns = allInternsRaw.filter(i => 
+      !i.deletedAt && 
+      ['COMPLETED', 'ACTIVE'].includes(i.status) && 
+      i.periodEnd >= EVAL_START
+    )
+
+    const internsList = filteredInterns.map(i => {
       const myEvals = evals.filter(e => e.internId === i.id).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
       return { ...i, latestEval: myEvals[0] || null, evalCount: myEvals.length }
-    })
+    }).sort((a, b) => new Date(a.periodEnd) - new Date(b.periodEnd)) // Show those finishing soonest first
 
     return NextResponse.json({ evaluations: enriched, interns: internsList, criteria })
   } catch (err) {
