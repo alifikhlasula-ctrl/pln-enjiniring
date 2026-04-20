@@ -150,6 +150,16 @@ function generateEvalTemplate(intern, criteriaList) {
   doc.text('Mengetahui,', 40, sigY)
   doc.setFont('helvetica','normal')
   doc.text('Pembimbing Lapangan', 40, sigY + 14)
+  
+  if (scores.signatureBase64) {
+    try {
+      // Add the signature image. Assuming a reasonable aspect ratio (e.g. 100x50)
+      doc.addImage(scores.signatureBase64, 'JPEG', 40, sigY + 20, 100, 50)
+    } catch (e) {
+      console.error('Error adding signature image to PDF:', e)
+    }
+  }
+
   doc.line(40, sigY + 70, 200, sigY + 70)
   doc.setFont('helvetica','bold')
   doc.text(`( ${intern.supervisorName || '.......................................'} )`, 40, sigY + 82)
@@ -204,6 +214,8 @@ function EvalForm({ internId, internName, internPeriod, criteria, existing, onSa
   const [rekomendasi, setRekomendasi] = useState(existing?.rekomendasi||'')
   const [tindakLanjut, setTindakLanjut] = useState(existing?.tindakLanjut||'')
   
+  const [signatureBase64, setSignatureBase64] = useState(existing?.scores?.signatureBase64 || null)
+  
   const [saving, setSaving] = useState(false)
 
   const totalWeight = criteria.reduce((s,c)=>s+c.weight,0)
@@ -216,8 +228,23 @@ function EvalForm({ internId, internName, internPeriod, criteria, existing, onSa
     if (!allFilled) return
     setSaving(true)
     const savedPeriod = internPeriod || existing?.period || new Date().toISOString().slice(0,7);
-    await onSave({internId,scores,overallNote:note, keunggulan, pengembangan, rekomendasi, tindakLanjut, period: savedPeriod,...(existing?{id:existing.id}:{})})
+    const finalScores = { ...scores };
+    if (signatureBase64) finalScores.signatureBase64 = signatureBase64;
+    
+    await onSave({internId,scores:finalScores,overallNote:note, keunggulan, pengembangan, rekomendasi, tindakLanjut, period: savedPeriod,...(existing?{id:existing.id}:{})})
     setSaving(false)
+  }
+
+  const handleSignatureUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 1024 * 1024) {
+      Swal.fire('Error', 'Ukuran gambar tanda tangan maksimal 1MB', 'error')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => setSignatureBase64(event.target.result)
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -291,6 +318,19 @@ function EvalForm({ internId, internName, internPeriod, criteria, existing, onSa
              <label className="label">Tindak Lanjut</label>
              <textarea className="input" rows={2} value={tindakLanjut} onChange={e=>setTindakLanjut(e.target.value)} style={{resize:'vertical'}}/>
           </div>
+        </div>
+        
+        <div style={{marginBottom: '1rem'}}>
+          <label className="label">Upload Tanda Tangan Pembimbing (Opsional, PNG/JPG)</label>
+          <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
+            <input type="file" accept="image/png, image/jpeg" onChange={handleSignatureUpload} style={{fontSize: '0.8rem'}} />
+            {signatureBase64 && (
+              <div style={{background: '#fff', border: '1px solid var(--border)', padding: '4px', borderRadius: '4px'}}>
+                <img src={signatureBase64} alt="Signature Preview" style={{height: '40px', objectFit: 'contain'}} />
+              </div>
+            )}
+          </div>
+          <p style={{fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px'}}>Tanda tangan akan muncul otomatis di softcopy PDF (Template).</p>
         </div>
         
         <label className="label">Catatan Umum / Keseluruhan (Opsional)</label>
@@ -551,13 +591,14 @@ export default function EvaluationsPage() {
   // Split: belum vs sudah dievaluasi
   const belumDievaluasi = data.interns.filter(i => {
     if (i.evalCount > 0) return false;
-    // Calculate days active
-    if (!i.periodStart) return true;
-    const start = new Date(i.periodStart);
+    // Calculate days remaining based on periodEnd
+    if (!i.periodEnd) return true;
+    const end = new Date(i.periodEnd);
     const today = new Date();
-    const diffTime = Math.abs(today - start);
+    const diffTime = end.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-    return diffDays >= 15;
+    // Tampilkan jika sisa hari <= 15 hari (atau sudah lewat)
+    return diffDays <= 15;
   })
   const sudahDievaluasi = data.interns.filter(i => i.evalCount > 0)
   const activeList = evalTab === 'belum' ? belumDievaluasi : sudahDievaluasi
