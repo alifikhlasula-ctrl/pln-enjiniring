@@ -9,6 +9,7 @@ import {
   BarChart3, ArrowRight, RefreshCw, Loader2, Target,
   Plus, Trash2, Edit2, CheckCircle, Pin
 } from 'lucide-react'
+import Swal from 'sweetalert2'
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from '@/lib/constants'
 
 /* ── Helpers ─────────────────────────────────────── */
@@ -148,6 +149,77 @@ export default function InternDashboard() {
   )
 
   const lastRefreshTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+
+  // ── Auto Pop-up Logic (Welcome Summary & New Announcements) ──
+  useEffect(() => {
+    if (loading || !dash) return;
+
+    const checkPopups = async () => {
+      // 1. Welcome Summary Pop-up (Run once forever per device/browser)
+      const welcomeKey = 'welcome_update_popup_v1';
+      if (!localStorage.getItem(welcomeKey)) {
+        await Swal.fire({
+          title: '🚀 Rangkuman Update Sistem!',
+          html: `
+            <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);">
+              <ul style="padding-left: 1.5rem; margin-bottom: 0;">
+                <li style="margin-bottom: 8px;"><strong>⏱ Lupa Absen?</strong> Kini tersedia fitur <b>Pengajuan Perbaikan Absensi</b>.</li>
+                <li style="margin-bottom: 8px;"><strong>📄 PDF Profesional:</strong> Laporan Harian & Evaluasi di-generate otomatis dengan format standar PLN Enjiniring.</li>
+                <li style="margin-bottom: 8px;"><strong>⚡ Laporan Cepat:</strong> Tidak perlu ketik ulang nama Pembimbing & Bidang.</li>
+                <li style="margin-bottom: 8px;"><strong>🎓 Portal Sertifikat:</strong> Unduh sertifikat kelulusan langsung di menu Evaluasi.</li>
+                <li style="margin-bottom: 8px;"><strong>📂 Portofolio CV:</strong> Rangkuman pengalaman magang yang bisa dijadikan CV otomatis.</li>
+                <li><strong>🟢 Status Kehadiran:</strong> Lapor Hadir/Izin/Sakit langsung di halaman depan Dashboard.</li>
+              </ul>
+            </div>
+          `,
+          icon: 'success',
+          confirmButtonText: 'Luar Biasa, Saya Mengerti!',
+          confirmButtonColor: 'var(--primary)',
+          width: '500px'
+        });
+        localStorage.setItem(welcomeKey, 'true');
+        return; // Pause here so announcements don't stack immediately
+      }
+
+      // 2. Regular Announcements Pop-up
+      if (dash.announcements && dash.announcements.length > 0) {
+        let viewedStr = localStorage.getItem('viewed_announcements') || '[]';
+        let viewedArr = [];
+        try { viewedArr = JSON.parse(viewedStr) } catch(e) {}
+
+        const unread = dash.announcements.filter(a => !viewedArr.includes(a.id));
+        
+        if (unread.length > 0) {
+          // Show oldest unread first
+          const ann = unread[unread.length - 1]; 
+          const prio = ANNOUNCEMENT_PRIORITIES[ann.priority] || ANNOUNCEMENT_PRIORITIES.INFO;
+          
+          await Swal.fire({
+            title: `<span style="font-size: 1rem; padding: 4px 12px; border-radius: 999px; background: ${prio.bg}; color: ${prio.color}">${prio.label}</span>`,
+            html: `
+              <div style="text-align: left; margin-top: 1rem;">
+                <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 12px;">${ann.title}</h3>
+                <p style="font-size: 0.95rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6;">${ann.content}</p>
+              </div>
+            `,
+            icon: ann.priority === 'URGENT' ? 'warning' : 'info',
+            confirmButtonText: 'Saya Mengerti',
+            confirmButtonColor: 'var(--primary)'
+          });
+
+          viewedArr.push(ann.id);
+          localStorage.setItem('viewed_announcements', JSON.stringify(viewedArr));
+          
+          // Trigger re-render to check for next unread if there's multiple
+          fetchDash(); 
+        }
+      }
+    };
+
+    // Add slight delay to ensure UI renders first
+    const timer = setTimeout(() => { checkPopups() }, 800);
+    return () => clearTimeout(timer);
+  }, [loading, dash, fetchDash]);
 
   const handleMood = async (val) => {
     if (moodSaving) return
