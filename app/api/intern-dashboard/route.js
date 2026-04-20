@@ -59,8 +59,13 @@ export async function GET(request) {
 
     const presentDays = rawLogs.filter(l => l.status === 'PRESENT').length
     const lateDays = rawLogs.filter(l => l.status === 'LATE').length
+    const excusedDays = rawLogs.filter(l => ['SAKIT', 'IZIN'].includes(l.status)).length
     const totalDays = rawLogs.length
-    const onTimeRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0
+    
+    // Performance Score Calculation: SAKIT and IZIN should not negatively impact the score.
+    // We only calculate the onTimeRate based on days they actually worked.
+    const performanceDays = presentDays + lateDays
+    const onTimeRate = performanceDays > 0 ? Math.round((presentDays / performanceDays) * 100) : (totalDays > 0 && excusedDays === totalDays ? 100 : 0)
 
     // Weekly streak (last 7 days) — compute from already-fetched rawLogs (no extra DB call)
     const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
