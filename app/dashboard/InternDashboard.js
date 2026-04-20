@@ -175,6 +175,8 @@ export default function InternDashboard() {
           icon: 'success',
           confirmButtonText: 'Luar Biasa, Saya Mengerti!',
           confirmButtonColor: 'var(--primary)',
+          background: 'var(--bg-card)',
+          color: 'var(--text-primary)',
           width: '500px'
         });
         localStorage.setItem(welcomeKey, 'true');
@@ -204,7 +206,9 @@ export default function InternDashboard() {
             `,
             icon: ann.priority === 'URGENT' ? 'warning' : 'info',
             confirmButtonText: 'Saya Mengerti',
-            confirmButtonColor: 'var(--primary)'
+            confirmButtonColor: 'var(--primary)',
+            background: 'var(--bg-card)',
+            color: 'var(--text-primary)'
           });
 
           viewedArr.push(ann.id);
