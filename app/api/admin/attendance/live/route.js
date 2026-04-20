@@ -28,12 +28,11 @@ export async function GET() {
       })
     ])
 
-    // Filter out interns who have completed their period
+    // Filter out interns who have completed their period (periodEnd < today)
     const activeAndNotCompleted = activeInterns.filter(i => {
       if (!i.periodEnd) return true;
-      const end = new Date(i.periodEnd);
-      end.setHours(0,0,0,0);
-      return end >= today;
+      // String comparison (YYYY-MM-DD) is safer across timezones
+      return i.periodEnd >= todayStr;
     })
 
     const payload = activeAndNotCompleted.map(i => {
