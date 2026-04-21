@@ -18,8 +18,8 @@ export default function KontrakModal({ intern, onClose }) {
   // Auto-generate suggested nomor surat
   useEffect(() => {
     const now = new Date()
-    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()]
-    setNomorSurat(`___/PLNE/HC/SPM/${bulanRomawi}/${now.getFullYear()}`)
+    const yr = now.getFullYear()
+    setNomorSurat(`____.Pj/S.01.01/PLNE01100/${yr}`)
   }, [])
 
   // Load jsPDF from CDN
@@ -39,8 +39,9 @@ export default function KontrakModal({ intern, onClose }) {
     }
     setGenerating(true)
     try {
-      await new Promise(r => setTimeout(r, 100)) // allow UI update
-      generateKontrakPDF(intern, nomorSurat, window.jspdf)
+      await new Promise(r => setTimeout(r, 100))
+      // generateKontrakPDF is now async (loads logo image)
+      await generateKontrakPDF(intern, nomorSurat, window.jspdf)
     } catch (e) {
       console.error('Gagal generate PDF:', e)
       alert('Gagal membuat PDF: ' + e.message)
@@ -116,7 +117,7 @@ export default function KontrakModal({ intern, onClose }) {
             placeholder="Contoh: 001/PLNE/HC/SPM/IV/2026"
           />
           <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Ganti bagian <code>___</code> dengan nomor urut surat yang sesuai.
+            Contoh: <code>0001.Pj/S.01.01/PLNE01100/2026</code> — ganti <code>____</code> dengan nomor urut.
           </p>
         </div>
 
