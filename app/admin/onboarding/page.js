@@ -371,27 +371,50 @@ export default function AdminOnboardingPage() {
     }
     setLoadingKontrak(true)
     try {
-      const res = await fetch(`/api/intern/profile?userId=${req.internId}`)
+      // req.internId is the Intern model ID (i.e. "i1234567"), not userId
+      // Query Prisma via /api/interns route using the intern id directly
+      const res = await fetch(`/api/interns?all=true&search=${encodeURIComponent(req.applicant?.name || '')}`)
       const data = await res.json()
-      const internData = data?.intern
-      if (!internData) throw new Error('Data intern tidak ditemukan')
-      // Merge with applicant data as fallback for fields not yet in intern model
-      const merged = {
-        ...internData,
-        nik:        internData.nik        || req.applicant?.nik,
-        address:    internData.address    || req.applicant?.address,
-        gender:     internData.gender     || req.applicant?.gender,
-        periodStart:internData.periodStart|| req.applicant?.periodStart,
-        periodEnd:  internData.periodEnd  || req.applicant?.periodEnd,
-        bidang:     internData.bidang     || req.applicant?.bidang,
+      // Find by exact intern ID first
+      let internData = (data.data || []).find(i => i.id === req.internId)
+
+      // Fallback: construct from onboarding applicant data if not found in intern list
+      if (!internData) {
+        const a = req.applicant || {}
+        internData = {
+          id:          req.internId,
+          name:        a.name,
+          nik:         a.nik,
+          address:     a.address,
+          gender:      a.gender,
+          bidang:      a.bidang,
+          major:       a.major,
+          jenjang:     a.jenjang,
+          university:  a.university,
+          periodStart: a.periodStart,
+          periodEnd:   a.periodEnd,
+          supervisorName:  null,
+          supervisorTitle: null,
+        }
+      } else {
+        // Merge: prefer DB data but fill gaps from applicant if empty
+        const a = req.applicant || {}
+        internData = {
+          ...internData,
+          nik:     internData.nik     || a.nik,
+          address: internData.address || a.address,
+          gender:  internData.gender  || a.gender,
+        }
       }
-      setKontrakIntern(merged)
+
+      setKontrakIntern(internData)
     } catch (e) {
       Swal.fire('Gagal', e.message || 'Gagal memuat data intern.', 'error')
     } finally {
       setLoadingKontrak(false)
     }
   }
+
 
   const exportExcel = async () => {
     const timestamp = new Date().toISOString().split('T')[0]
