@@ -117,7 +117,7 @@ function PhotoLightbox({ src, name, type, onClose }) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 99999,
-        background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)',
+        background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column', gap: '1rem', cursor: 'zoom-out'
       }}
@@ -1165,7 +1165,7 @@ export default function AdminDashboard() {
   const RoleSwitcher = () => (
     <div style={{
       position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-      background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(12px)',
+      background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
       padding: '6px', borderRadius: 'var(--radius-full)',
       border: '1px solid rgba(99, 102, 241, 0.2)',
       boxShadow: '0 8px 32px rgba(0,0,0,0.1)',

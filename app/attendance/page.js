@@ -132,7 +132,7 @@ function FaceCaptureModal({ actionName, onClose, onCapture }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 600,
-      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)',
+      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
       display: 'flex', justifyContent: 'center', alignItems: 'center'
     }}>
       <div className="card" style={{ width: '95%', maxWidth: 520, borderRadius: 'var(--radius-xl)' }}>
@@ -155,7 +155,7 @@ function FaceCaptureModal({ actionName, onClose, onCapture }) {
           <>
             <div style={{
               borderRadius: 'var(--radius-lg)', overflow: 'hidden',
-              background: '#111', aspectRatio: '4/3', position: 'relative',
+              background: '#111', aspectRatio: '4/3', height: 0, paddingBottom: '75%', position: 'relative',
               boxShadow: faceDetected ? '0 0 0 4px var(--secondary)' : '0 0 0 4px var(--danger)',
               transition: 'box-shadow 0.3s ease'
             }}>
@@ -690,7 +690,7 @@ export default function AttendancePage() {
 
       {correctionModal.open && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
         }}>
           <div className="card" style={{ width: '100%', maxWidth: 400, padding: '2rem', animation: 'slideInUp 0.3s ease' }}>

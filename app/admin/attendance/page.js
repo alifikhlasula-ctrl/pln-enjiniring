@@ -108,7 +108,7 @@ function EditModal({ log, internName, onClose, onSave }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
     }}>
       <div className="card" style={{ width: '100%', maxWidth: 480, padding: '2rem', animation: 'slideUpFade 0.3s ease' }}>
@@ -511,7 +511,7 @@ export default function MonitorAbsensiPage() {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .attendance-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
         .edit-btn-hover:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
         @keyframes slideUpFade {
