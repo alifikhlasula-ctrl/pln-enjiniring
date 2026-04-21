@@ -4,10 +4,10 @@ import {
   FileCheck, FileX, Eye, Search, Filter, CheckCircle2, AlertCircle, X,
   FileSpreadsheet, Loader2, RefreshCw, Bell, Clock, RotateCcw,
   ChevronDown, ChevronUp, User, GraduationCap, MapPin, CalendarDays,
-  MessageSquare, Trash2, FileText
+  MessageSquare, Trash2, FileText, ScrollText
 } from 'lucide-react'
-// import * as XLSX from 'xlsx/xlsx.mjs' (Dihapus untuk dynamic import)
 import Swal from 'sweetalert2'
+import KontrakModal from '@/components/KontrakModal'
 
 /* ── Helpers ─────────────────────────────────────── */
 const fmtDate = dt => dt ? new Date(dt).toLocaleString('id-ID', { day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit' }) : '-'
@@ -263,7 +263,7 @@ function ReviewDrawer({ req, onClose, onAction }) {
           )}
         </div>
 
-        <style jsx>{`
+        <style>{`
           @keyframes slideInRight { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
           @keyframes spin    { to{transform:rotate(360deg)} }
           @keyframes fadeIn  { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
@@ -282,6 +282,9 @@ export default function AdminOnboardingPage() {
   const [filter,   setFilter]     = useState('ALL')
   const [selected, setSelected]   = useState(null)
   const [newCount, setNewCount]   = useState(0)
+  // Kontrak modal state
+  const [kontrakIntern, setKontrakIntern] = useState(null) // intern object to generate SPM for
+  const [loadingKontrak, setLoadingKontrak] = useState(false)
   const prevPending = useRef(0)
   const pollRef    = useRef()
 
@@ -358,6 +361,36 @@ export default function AdminOnboardingPage() {
     if (!isConfirmed) return
     await fetch(`/api/onboarding/manage?id=${id}`, { method:'DELETE' })
     fetchRequests()
+  }
+
+  // ── Buka modal kontrak: fetch data intern dari internId ──
+  const openKontrak = async (req) => {
+    if (!req.internId) {
+      Swal.fire('Data Tidak Tersedia', 'ID intern belum ditemukan untuk pengajuan ini.', 'warning')
+      return
+    }
+    setLoadingKontrak(true)
+    try {
+      const res = await fetch(`/api/intern/profile?userId=${req.internId}`)
+      const data = await res.json()
+      const internData = data?.intern
+      if (!internData) throw new Error('Data intern tidak ditemukan')
+      // Merge with applicant data as fallback for fields not yet in intern model
+      const merged = {
+        ...internData,
+        nik:        internData.nik        || req.applicant?.nik,
+        address:    internData.address    || req.applicant?.address,
+        gender:     internData.gender     || req.applicant?.gender,
+        periodStart:internData.periodStart|| req.applicant?.periodStart,
+        periodEnd:  internData.periodEnd  || req.applicant?.periodEnd,
+        bidang:     internData.bidang     || req.applicant?.bidang,
+      }
+      setKontrakIntern(merged)
+    } catch (e) {
+      Swal.fire('Gagal', e.message || 'Gagal memuat data intern.', 'error')
+    } finally {
+      setLoadingKontrak(false)
+    }
   }
 
   const exportExcel = async () => {
@@ -508,10 +541,30 @@ export default function AdminOnboardingPage() {
                           )}
                         </td>
                         <td>
-                          <div style={{display:'flex',gap:'0.375rem'}}>
+                          <div style={{display:'flex',gap:'0.375rem',flexWrap:'wrap'}}>
                             <button className="btn btn-primary btn-sm" onClick={()=>setSelected(req)} title="Review Detail">
                               <Eye size={13} strokeWidth={2}/> Review
                             </button>
+                            {req.status === 'APPROVED' && req.internId && (
+                              <button
+                                className="btn btn-sm"
+                                style={{
+                                  background:'#f0fdf4', color:'#065f46',
+                                  border:'1px solid #bbf7d0', fontWeight:700,
+                                  display:'flex', alignItems:'center', gap:4,
+                                  opacity: loadingKontrak ? 0.6 : 1
+                                }}
+                                onClick={() => openKontrak(req)}
+                                disabled={loadingKontrak}
+                                title="Cetak Surat Perjanjian Magang"
+                              >
+                                {loadingKontrak
+                                  ? <Loader2 size={12} style={{animation:'spin 0.8s linear infinite'}}/>
+                                  : <ScrollText size={12} strokeWidth={2}/>
+                                }
+                                SPM
+                              </button>
+                            )}
                             <button className="btn btn-secondary btn-sm btn-icon" style={{color:'var(--danger)'}} onClick={()=>handleDelete(req.id)} title="Hapus">
                               <Trash2 size={13} strokeWidth={2}/>
                             </button>
@@ -534,7 +587,15 @@ export default function AdminOnboardingPage() {
         />
       )}
 
-      <style jsx>{`
+      {/* ── Kontrak Modal ── */}
+      {kontrakIntern && (
+        <KontrakModal
+          intern={kontrakIntern}
+          onClose={() => setKontrakIntern(null)}
+        />
+      )}
+
+      <style>{`
         @keyframes spin  { to{transform:rotate(360deg)} }
         @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
       `}</style>
