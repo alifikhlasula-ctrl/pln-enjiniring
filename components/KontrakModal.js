@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { FileText, Download, X, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { parseTanggal, formatJangkaWaktu, generateKontrakPDF } from '@/lib/kontrakUtils'
+import { parseTanggal, formatJangkaWaktu } from '@/lib/kontrakUtils'
 
 /**
  * KontrakModal — Modal preview + generate PDF Surat Perjanjian Magang
@@ -12,8 +12,6 @@ import { parseTanggal, formatJangkaWaktu, generateKontrakPDF } from '@/lib/kontr
 export default function KontrakModal({ intern, onClose }) {
   const [nomorSurat, setNomorSurat] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [jsPDFReady, setJsPDFReady] = useState(false)
-  const [loadError, setLoadError] = useState(false)
 
   // Auto-generate suggested nomor surat
   useEffect(() => {
@@ -22,26 +20,29 @@ export default function KontrakModal({ intern, onClose }) {
     setNomorSurat(`____.Pj/S.01.01/PLNE01100/${yr}`)
   }, [])
 
-  // Load jsPDF from CDN
-  useEffect(() => {
-    if (window.jspdf) { setJsPDFReady(true); return }
-    const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
-    script.onload = () => setJsPDFReady(true)
-    script.onerror = () => setLoadError(true)
-    document.head.appendChild(script)
-  }, [])
+
 
   const handleDownload = async () => {
-    if (!jsPDFReady || !window.jspdf) {
-      alert('Library PDF belum siap. Silakan coba lagi.')
-      return
-    }
     setGenerating(true)
     try {
-      await new Promise(r => setTimeout(r, 100))
-      // generateKontrakPDF is now async (loads logo image)
-      await generateKontrakPDF(intern, nomorSurat, window.jspdf)
+      const res = await fetch('/api/kontrak/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intern, nomorSurat })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan internal')
+
+      // Trigger download dari URL CloudConvert
+      const link = document.createElement('a')
+      link.href = data.pdfUrl
+      link.download = data.filename || 'SPM_Intern.pdf'
+      // Untuk pastikan download berjalan
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
     } catch (e) {
       console.error('Gagal generate PDF:', e)
       alert('Gagal membuat PDF: ' + e.message)
@@ -166,14 +167,7 @@ export default function KontrakModal({ intern, onClose }) {
           </div>
         )}
 
-        {/* jsPDF loading state */}
-        {loadError && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '0.75rem', marginBottom: '1rem' }}>
-            <p style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600 }}>
-              ❌ Gagal memuat library PDF. Pastikan koneksi internet aktif.
-            </p>
-          </div>
-        )}
+
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -184,12 +178,10 @@ export default function KontrakModal({ intern, onClose }) {
             className="btn btn-primary"
             style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
             onClick={handleDownload}
-            disabled={generating || !jsPDFReady || !nomorSurat.trim()}
+            disabled={generating || !nomorSurat.trim()}
           >
             {generating
-              ? <><Loader2 size={15} style={{ animation: 'spinKontrak 0.8s linear infinite' }} /> Membuat PDF...</>
-              : !jsPDFReady
-              ? <><Loader2 size={15} style={{ animation: 'spinKontrak 0.8s linear infinite' }} /> Memuat Library...</>
+              ? <><Loader2 size={15} style={{ animation: 'spinKontrak 0.8s linear infinite' }} /> Memproses Template...</>
               : <><Download size={15} /> Download PDF Kontrak</>
             }
           </button>
