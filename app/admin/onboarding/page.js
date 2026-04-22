@@ -4,7 +4,7 @@ import {
   FileCheck, FileX, Eye, Search, Filter, CheckCircle2, AlertCircle, X,
   FileSpreadsheet, Loader2, RefreshCw, Bell, Clock, RotateCcw,
   ChevronDown, ChevronUp, User, GraduationCap, MapPin, CalendarDays,
-  MessageSquare, Trash2, FileText, ScrollText
+  MessageSquare, Trash2, FileText, ScrollText, Settings, Upload, FileUp
 } from 'lucide-react'
 import Swal from 'sweetalert2'
 import KontrakModal from '@/components/KontrakModal'
@@ -272,6 +272,108 @@ function ReviewDrawer({ req, onClose, onAction }) {
     </div>
   )
 }
+/* ── Template Modal ──────────────────────────────── */
+function TemplateModal({ onClose }) {
+  const [file, setFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [currentTemplate, setCurrentTemplate] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/interns/template')
+      .then(r => r.json())
+      .then(d => {
+        if (d.exists) setCurrentTemplate(d)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleUpload = async () => {
+    if (!file) return
+    if (!file.name.endsWith('.docx')) {
+      Swal.fire('Format Salah', 'Harap upload file dengan format .docx (Word)', 'error')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1]
+        const res = await fetch('/api/interns/template', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64, filename: file.name })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          Swal.fire('Berhasil!', 'Template kontrak magang telah diperbarui.', 'success')
+          onClose()
+        } else {
+          throw new Error(data.error)
+        }
+      }
+    } catch (e) {
+      Swal.fire('Gagal', e.message || 'Terjadi kesalahan saat upload.', 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+      <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(4px)'}}/>
+      <div className="card" style={{position:'relative',width:'100%',maxWidth:440,padding:'2rem',animation:'fadeIn 0.2s ease'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem'}}>
+          <h3 style={{fontWeight:800,display:'flex',alignItems:'center',gap:8}}>
+            <Settings size={20} /> Pengaturan Template SPM
+          </h3>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)'}}><X size={20}/></button>
+        </div>
+
+        {loading ? (
+          <div style={{textAlign:'center',padding:'2rem'}}><Loader2 className="spin" /></div>
+        ) : (
+          <>
+            <div style={{background:'var(--bg-main)',padding:'1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--border)',marginBottom:'1.5rem'}}>
+              <p style={{fontSize:'0.7rem',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',marginBottom:4}}>Template Saat Ini</p>
+              {currentTemplate ? (
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <FileText size={18} color="var(--primary)" />
+                  <div>
+                    <p style={{fontSize:'0.85rem',fontWeight:700}}>{currentTemplate.filename}</p>
+                    <p style={{fontSize:'0.7rem',color:'var(--text-muted)'}}>Diperbarui: {fmtDate(currentTemplate.updatedAt)}</p>
+                  </div>
+                </div>
+              ) : (
+                <p style={{fontSize:'0.82rem',color:'var(--text-muted)'}}>Menggunakan template bawaan (hardcoded).</p>
+              )}
+            </div>
+
+            <div style={{marginBottom:'1.5rem'}}>
+              <label className="label">Upload Template Baru (.docx)</label>
+              <div style={{border:'2px dashed var(--border)',borderRadius:'var(--radius-lg)',padding:'1.5rem',textAlign:'center',position:'relative'}}>
+                <input type="file" accept=".docx" onChange={e => setFile(e.target.files[0])} style={{position:'absolute',inset:0,opacity:0,cursor:'pointer'}} />
+                <FileUp size={32} color={file?'var(--primary)':'var(--text-muted)'} style={{margin:'0 auto 10px'}} />
+                <p style={{fontSize:'0.85rem',fontWeight:700}}>{file ? file.name : 'Pilih atau Seret File'}</p>
+                <p style={{fontSize:'0.7rem',color:'var(--text-muted)',marginTop:4}}>Hanya format Microsoft Word (.docx)</p>
+              </div>
+            </div>
+
+            <button className="btn btn-primary" style={{width:'100%',padding:'0.875rem',gap:8}} onClick={handleUpload} disabled={!file || uploading}>
+              {uploading ? <Loader2 className="spin" size={16} /> : <Upload size={16} />}
+              Update Template
+            </button>
+            <p style={{fontSize:'0.7rem',textAlign:'center',marginTop:'1rem',color:'var(--text-muted)'}}>
+              Pastikan template menggunakan tag yang sesuai (misal: <code>&#123;nama_intern&#125;</code>)
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 /* ── Main: Admin Onboarding Management Page ──────── */
 export default function AdminOnboardingPage() {
@@ -281,6 +383,7 @@ export default function AdminOnboardingPage() {
   const [search,   setSearch]     = useState('')
   const [filter,   setFilter]     = useState('ALL')
   const [selected, setSelected]   = useState(null)
+  const [showTemplate, setShowTemplate] = useState(false)
   const [newCount, setNewCount]   = useState(0)
   // Kontrak modal state
   const [kontrakIntern, setKontrakIntern] = useState(null) // intern object to generate SPM for
@@ -465,6 +568,9 @@ export default function AdminOnboardingPage() {
           <button className="btn btn-secondary btn-sm" onClick={()=>{fetchRequests();setNewCount(0)}} disabled={loading} title="Refresh">
             <RefreshCw size={14} strokeWidth={2} style={{animation:loading?'spin 1s linear infinite':'none'}}/>
           </button>
+          <button className="btn btn-secondary" onClick={() => setShowTemplate(true)}>
+            <Settings size={16} strokeWidth={2}/> Template
+          </button>
           <button className="btn btn-secondary" onClick={exportExcel}>
             <FileSpreadsheet size={16} strokeWidth={2}/> Export Excel
           </button>
@@ -615,6 +721,13 @@ export default function AdminOnboardingPage() {
         <KontrakModal
           intern={kontrakIntern}
           onClose={() => setKontrakIntern(null)}
+        />
+      )}
+
+      {/* ── Template Modal ── */}
+      {showTemplate && (
+        <TemplateModal
+          onClose={() => setShowTemplate(false)}
         />
       )}
 

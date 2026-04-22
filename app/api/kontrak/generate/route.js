@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import CloudConvert from 'cloudconvert'
 import { parseTanggal, formatJangkaWaktu } from '@/lib/kontrakUtils'
+import prisma from '@/lib/prisma'
 
 const cloudConvert = new CloudConvert(process.env.CLOUDCONVERT_API_KEY)
 
@@ -20,13 +21,24 @@ export async function POST(req) {
       return NextResponse.json({ error: 'CloudConvert API Key belum dikonfigurasi di server (.env)' }, { status: 500 })
     }
 
-    // 1. Baca file template .docx yang sudah di-hardcode
-    const templatePath = path.resolve(process.cwd(), 'public', 'templates', 'template_spm.docx')
-    if (!fs.existsSync(templatePath)) {
-      return NextResponse.json({ error: `Template tidak ditemukan di ${templatePath}. Silakan letakkan file template_spm.docx di folder public/templates.` }, { status: 404 })
+    // 1. Ambil template (Cek JsonStore dulu, baru fallback ke file fisik)
+    let content;
+    let isBase64 = false;
+
+    const dbTemplate = await prisma.jsonStore.findUnique({
+      where: { key: 'spm_template' }
+    });
+
+    if (dbTemplate && dbTemplate.data && dbTemplate.data.base64) {
+      content = Buffer.from(dbTemplate.data.base64, 'base64');
+      isBase64 = true;
+    } else {
+      const templatePath = path.resolve(process.cwd(), 'public', 'templates', 'template_spm.docx')
+      if (!fs.existsSync(templatePath)) {
+        return NextResponse.json({ error: `Template tidak ditemukan. Silakan upload template di menu pengaturan.` }, { status: 404 })
+      }
+      content = fs.readFileSync(templatePath, 'binary')
     }
-    
-    const content = fs.readFileSync(templatePath, 'binary')
 
     // 2. Persiapkan data untuk mengisi template
     const today = parseTanggal(new Date().toISOString().split('T')[0])
