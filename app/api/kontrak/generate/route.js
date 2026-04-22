@@ -37,7 +37,7 @@ export async function POST(req) {
       if (!fs.existsSync(templatePath)) {
         return NextResponse.json({ error: `Template tidak ditemukan. Silakan upload template di menu pengaturan.` }, { status: 404 })
       }
-      content = fs.readFileSync(templatePath, 'binary')
+      content = fs.readFileSync(templatePath)
     }
 
     // 2. Persiapkan data untuk mengisi template
@@ -119,6 +119,18 @@ export async function POST(req) {
 
   } catch (error) {
     console.error('Error generate PDF:', error)
+    
+    // Handle docxtemplater specific errors (Multi error)
+    if (error.properties && error.properties.errors instanceof Array) {
+      const errorMessages = error.properties.errors.map(err => {
+        return err.properties.explanation || err.message;
+      }).join('\n');
+      console.error('Docxtemplater detailed errors:', errorMessages);
+      return NextResponse.json({ 
+        error: `Multi error: ${errorMessages.substring(0, 500)}...` 
+      }, { status: 500 })
+    }
+
     return NextResponse.json({ error: error.message || 'Terjadi kesalahan saat membuat PDF' }, { status: 500 })
   }
 }
