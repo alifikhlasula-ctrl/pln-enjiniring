@@ -5,7 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import CloudConvert from 'cloudconvert'
 import { parseTanggal, formatJangkaWaktu } from '@/lib/kontrakUtils'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 const cloudConvert = new CloudConvert(process.env.CLOUDCONVERT_API_KEY)
 
