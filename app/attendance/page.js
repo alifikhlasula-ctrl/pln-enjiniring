@@ -73,13 +73,36 @@ function FaceCaptureModal({ actionName, onClose, onCapture }) {
     ;(async () => {
       try {
         const str = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: 640, height: 480 }
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
         })
         if (cancelled) { str.getTracks().forEach(t => t.stop()); return }
         streamRef.current = str
         if (videoRef.current) {
           videoRef.current.srcObject = str
-          videoRef.current.onloadedmetadata = () => setReady(true)
+
+          // onloadedmetadata: standar
+          videoRef.current.onloadedmetadata = () => {
+            if (!cancelled) {
+              videoRef.current.play().catch(() => {})
+              setReady(true)
+            }
+          }
+
+          // oncanplay: fallback untuk browser yang tidak trigger loadedmetadata
+          videoRef.current.oncanplay = () => {
+            if (!cancelled && !ready) {
+              videoRef.current.play().catch(() => {})
+              setReady(true)
+            }
+          }
+
+          // Fallback terakhir: paksa play setelah 1 detik
+          setTimeout(() => {
+            if (!cancelled && videoRef.current && !ready) {
+              videoRef.current.play().catch(() => {})
+              setReady(true)
+            }
+          }, 1500)
         }
       } catch (e) {
         if (!cancelled) setError('Akses kamera ditolak atau tidak ditemukan.\nPastikan browser diizinkan mengakses kamera.')
@@ -161,7 +184,13 @@ function FaceCaptureModal({ actionName, onClose, onCapture }) {
             }}>
               <video
                 ref={videoRef} autoPlay playsInline muted
-                style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: 'block' }}
+                style={{
+                  position: 'absolute', inset: 0,
+                  width: '100%', height: '100%',
+                  objectFit: 'cover',
+                  transform: 'scaleX(-1)',
+                  display: 'block'
+                }}
               />
               {/* Face guide overlay */}
               <div style={{
