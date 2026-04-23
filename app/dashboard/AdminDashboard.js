@@ -64,66 +64,121 @@ function StatCard({icon,label,value,badge,badgeOk=true,color,bg,loading}) {
   )
 }
 
-/* ── Bar Chart (interactive hover) ──────────────── */
+/* ── Bar Chart (Premium Redesign) ──────────────── */
 function AttendanceChart({data,loading}) {
-  const [hovered,setHovered] = useState(null)
-  const max = Math.max(...(data||[]).map(d=>d.count), 1)
-  return (
-    <div className="card">
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
-        <h3 style={{fontWeight:700,fontSize:'0.95rem',display:'flex',alignItems:'center',gap:6}}>
-          <BarChart3 size={16} strokeWidth={2} style={{color:'var(--primary)'}}/>
-          Kehadiran 7 Hari Terakhir
-        </h3>
-        {hovered && <span style={{fontSize:'0.75rem',fontWeight:600,color:'var(--text-muted)'}}>{hovered.date}</span>}
-      </div>
-      <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120,position:'relative'}}>
-        {loading
-          ? [...Array(7)].map((_,i)=><div key={i} style={{flex:1,height:`${30+i*10}%`,background:'var(--border)',borderRadius:'4px 4px 0 0',animation:'pulse 1.4s ease-in-out infinite'}}/>)
-          : (data||[]).map((d,i)=>(
-            <div key={i} style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'flex-end',alignItems:'center',position:'relative',height:'100%'}}
-              onMouseEnter={()=>setHovered(d)} onMouseLeave={()=>setHovered(null)}>
-              
-              {/* Tooltip Float */}
-              <div style={{
-                position: 'absolute',
-                bottom: `${d.count===0?4:Math.max(8,(d.count/max)*100)}%`,
-                marginBottom: '8px',
-                background: 'var(--text-main)',
-                color: 'var(--bg-main)',
-                padding: '4px 8px',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                opacity: hovered?.day === d.day ? 1 : 0,
-                transform: hovered?.day === d.day ? 'translateY(0)' : 'translateY(5px)',
-                transition: 'all 0.2s',
-                pointerEvents: 'none',
-                zIndex: 10,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                whiteSpace: 'nowrap'
-              }}>
-                {d.count} Hadir
-                <div style={{
-                  position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%)',
-                  borderWidth: '4px 4px 0', borderStyle: 'solid', borderColor: 'var(--text-main) transparent transparent transparent'
-                }}/>
-              </div>
+  const [hovered, setHovered] = useState(null)
+  const safeData = data || []
+  const max = Math.max(...safeData.map(d => d.count), 1)
+  const total7Days = safeData.reduce((s, d) => s + d.count, 0)
+  const nonZero = safeData.filter(d => d.count > 0)
+  const avgPerDay = nonZero.length ? (total7Days / nonZero.length).toFixed(1) : '0'
+  const peakDay   = safeData.reduce((best, d) => d.count > (best?.count || 0) ? d : best, null)
 
-              <div style={{
-                width:'100%', height:`${d.count===0?4:Math.max(8,(d.count/max)*100)}%`,
-                background:hovered?.day===d.day?'var(--primary)':'var(--primary-light)',
-                borderRadius:'4px 4px 0 0',
-                transition:'all 0.2s', cursor:'pointer',
-                boxShadow:hovered?.day===d.day?'0 -4px 12px rgba(99,102,241,0.3)':''
-              }}/>
+  const getBarGrad = (count, isH) => {
+    if (isH) return 'linear-gradient(180deg, #818cf8, #6366f1, #4f46e5)'
+    const r = count / max
+    if (count === 0)  return 'linear-gradient(180deg, #1e293b, #0f172a)'
+    if (r >= 0.8)     return 'linear-gradient(180deg, #34d399, #10b981)'
+    if (r >= 0.5)     return 'linear-gradient(180deg, #60a5fa, #3b82f6)'
+    if (r >= 0.2)     return 'linear-gradient(180deg, #fbbf24, #f59e0b)'
+    return 'linear-gradient(180deg, #f87171, #ef4444)'
+  }
+
+  return (
+    <div className="card" style={{
+      background: 'linear-gradient(145deg, var(--bg-card) 0%, rgba(99,102,241,0.04) 100%)',
+      border: '1px solid rgba(99,102,241,0.14)',
+      position: 'relative', overflow: 'hidden'
+    }}>
+      <div style={{ position:'absolute', top:-50, right:-50, width:180, height:180, background:'radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)', pointerEvents:'none' }}/>
+
+      {/* Header */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'1.25rem' }}>
+        <div>
+          <h3 style={{ fontWeight:800, fontSize:'1rem', display:'flex', alignItems:'center', gap:10, color:'var(--text-primary)', margin:0 }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 14px rgba(99,102,241,0.35)' }}>
+              <BarChart3 size={17} color="#fff" strokeWidth={2.5}/>
             </div>
-          ))
-        }
+            Kehadiran 7 Hari Terakhir
+          </h3>
+          <p style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginTop:5, marginLeft:44 }}>
+            Total <b style={{ color:'var(--text-primary)' }}>{total7Days}</b> orang &middot; Rata-rata <b style={{ color:'var(--text-primary)' }}>{avgPerDay}</b>/hari aktif
+          </p>
+        </div>
+        {peakDay && peakDay.count > 0 && (
+          <div style={{ textAlign:'center', padding:'7px 14px', background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.18)', borderRadius:12 }}>
+            <div style={{ fontSize:'0.58rem', color:'var(--text-muted)', fontWeight:800, textTransform:'uppercase', letterSpacing:'0.6px' }}>Tertinggi</div>
+            <div style={{ fontSize:'1.1rem', fontWeight:900, color:'#6366f1', lineHeight:1.1 }}>{peakDay.count}</div>
+            <div style={{ fontSize:'0.65rem', color:'var(--text-muted)', fontWeight:700 }}>{peakDay.day}</div>
+          </div>
+        )}
       </div>
-      <div style={{display:'flex',gap:6,marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)'}}>
-        {(data||[]).map(d=>(
-          <span key={d.day} style={{flex:1,textAlign:'center',fontSize:'0.65rem',color:hovered?.day===d.day?'var(--primary)':'var(--text-muted)',fontWeight:hovered?.day===d.day?700:400,transition:'all 0.15s'}}>{d.day}</span>
+
+      {/* Chart */}
+      <div style={{ position:'relative' }}>
+        {!loading && [0.25, 0.5, 0.75, 1].map(frac => (
+          <div key={frac} style={{ position:'absolute', left:0, right:0, bottom:`calc(${frac*100}% + 22px - ${frac*22}px)`, height:1, background:`rgba(99,102,241,${frac===1?'0.22':'0.07'})`, zIndex:0 }}>
+            <span style={{ position:'absolute', left:2, top:-9, fontSize:'0.57rem', color:'rgba(99,102,241,0.55)', fontWeight:700 }}>{Math.round(max*frac)}</span>
+          </div>
+        ))}
+
+        <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:150, paddingLeft:22, position:'relative', zIndex:1 }}>
+          {loading
+            ? [...Array(7)].map((_,i) => (
+                <div key={i} style={{ flex:1, height:`${25+i*10}%`, background:'linear-gradient(180deg,rgba(99,102,241,0.18),rgba(99,102,241,0.04))', borderRadius:'8px 8px 0 0', animation:'pulse 1.4s ease-in-out infinite', animationDelay:`${i*0.08}s` }}/>
+              ))
+            : safeData.map((d, i) => {
+                const isH = hovered?.day === d.day
+                const hPct = d.count === 0 ? 2 : Math.max(5, (d.count/max)*100)
+                return (
+                  <div
+                    key={i}
+                    style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end', alignItems:'center', height:'100%', position:'relative', cursor:'pointer' }}
+                    onMouseEnter={() => setHovered(d)}
+                    onMouseLeave={() => setHovered(null)}
+                  >
+                    {/* Count label */}
+                    <div style={{ fontSize:'0.68rem', fontWeight:900, color: isH ? '#818cf8' : (d.count > 0 ? 'var(--text-primary)' : 'rgba(255,255,255,0.15)'), marginBottom:4, transition:'all 0.18s', transform: isH ? 'scale(1.2)' : 'scale(1)' }}>
+                      {d.count > 0 ? d.count : '–'}
+                    </div>
+                    {/* Bar */}
+                    <div style={{ width:'100%', height:`${hPct}%`, background: getBarGrad(d.count, isH), borderRadius:'6px 6px 0 0', transition:'all 0.22s cubic-bezier(0.34,1.56,0.64,1)', transform: isH ? 'scaleX(1.06)' : 'scaleX(1)', boxShadow: isH ? '0 -8px 22px rgba(99,102,241,0.45)' : '0 -2px 8px rgba(0,0,0,0.12)', position:'relative', overflow:'hidden' }}>
+                      <div style={{ position:'absolute', top:0, left:0, right:0, height:'45%', background:'linear-gradient(180deg,rgba(255,255,255,0.13),transparent)', borderRadius:'6px 6px 0 0' }}/>
+                    </div>
+                    {/* Tooltip */}
+                    <div style={{ position:'absolute', bottom:'calc(100% + 4px)', left:'50%', transform: isH ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(6px)', background:'rgba(10,18,35,0.96)', backdropFilter:'blur(10px)', border:'1px solid rgba(99,102,241,0.35)', color:'#fff', padding:'7px 11px', borderRadius:9, fontSize:'0.72rem', fontWeight:700, opacity: isH ? 1 : 0, transition:'all 0.18s', pointerEvents:'none', zIndex:30, whiteSpace:'nowrap', boxShadow:'0 10px 28px rgba(0,0,0,0.35)' }}>
+                      <span style={{ color:'#a5b4fc' }}>{d.day}</span> &middot; <span style={{ color:'#34d399' }}>{d.count}</span> hadir
+                      {d.date && <div style={{ fontSize:'0.6rem', color:'rgba(255,255,255,0.4)', fontWeight:400, marginTop:1 }}>{d.date}</div>}
+                      <div style={{ position:'absolute', bottom:-5, left:'50%', transform:'translateX(-50%)', borderLeft:'5px solid transparent', borderRight:'5px solid transparent', borderTop:'5px solid rgba(99,102,241,0.4)' }}/>
+                    </div>
+                  </div>
+                )
+              })
+          }
+        </div>
+
+        {/* Day labels */}
+        <div style={{ display:'flex', gap:6, paddingLeft:22, marginTop:6 }}>
+          {safeData.map(d => (
+            <div key={d.day} style={{ flex:1, textAlign:'center', fontSize:'0.7rem', fontWeight: hovered?.day===d.day ? 800 : 600, color: hovered?.day===d.day ? '#6366f1' : 'var(--text-muted)', transition:'all 0.15s', padding:'4px 0', borderTop: hovered?.day===d.day ? '2px solid #6366f1' : '2px solid transparent' }}>
+              {d.day}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display:'flex', gap:14, paddingTop:'0.875rem', borderTop:'1px solid rgba(99,102,241,0.08)', flexWrap:'wrap', marginTop:'0.75rem' }}>
+        {[
+          { g:'linear-gradient(90deg,#34d399,#10b981)', l:'≥80%' },
+          { g:'linear-gradient(90deg,#60a5fa,#3b82f6)', l:'50–79%' },
+          { g:'linear-gradient(90deg,#fbbf24,#f59e0b)', l:'20–49%' },
+          { g:'linear-gradient(90deg,#f87171,#ef4444)',  l:'<20%' },
+        ].map(x => (
+          <div key={x.l} style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <div style={{ width:10, height:10, borderRadius:3, background:x.g, flexShrink:0 }}/>
+            <span style={{ fontSize:'0.62rem', color:'var(--text-muted)' }}>{x.l}</span>
+          </div>
         ))}
       </div>
     </div>
