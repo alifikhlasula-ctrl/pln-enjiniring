@@ -305,7 +305,7 @@ export default function InternsPage() {
   const [sortConfig, setSortConfig]     = useState({key:'name',dir:'asc'})
 
   // UI state
-  const [visibleCols, setVisibleCols] = useState({school:true,major:true,location:true,period:true,sisaHari:true})
+  const [visibleCols, setVisibleCols] = useState({school:true,major:true,location:true,mulai:true,selesai:true,progress:true,sisaHari:true})
   const [showColToggle, setShowColToggle] = useState(false)
   const [selectedIds, setSelectedIds] = useState([])
   const [profileTarget, setProfileTarget] = useState(null)
@@ -567,7 +567,7 @@ export default function InternsPage() {
             {showColToggle&&(
               <div style={{position:'absolute',right:0,top:'calc(100% + 6px)',background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',padding:'0.75rem',zIndex:50,minWidth:180,boxShadow:'var(--shadow-lg)'}}>
                 <p style={{fontSize:'0.72rem',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',marginBottom:'0.5rem'}}>Tampilkan Kolom</p>
-                {Object.entries({school:'Sekolah/Kampus',major:'Jurusan/Jenjang',location:'Wilayah & Bidang',period:'Periode',sisaHari:'Sisa Hari'}).map(([key,label])=>(
+                {Object.entries({school:'Sekolah/Kampus',major:'Jurusan/Jenjang',location:'Wilayah & Bidang',mulai:'Mulai',selesai:'Selesai',progress:'Progress',sisaHari:'Sisa Hari'}).map(([key,label])=>(
                   <label key={key} style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.25rem 0',cursor:'pointer',fontSize:'0.82rem'}}>
                     <input type="checkbox" checked={visibleCols[key]} onChange={()=>setVisibleCols(p=>({...p,[key]:!p[key]}))} style={{cursor:'pointer'}}/>
                     {label}
@@ -677,7 +677,9 @@ export default function InternsPage() {
               {visibleCols.school    && <SortTh label="Sekolah/Kampus"  field="university" sortConfig={sortConfig} onSort={handleSort}/>}
               {visibleCols.major     && <SortTh label="Jurusan/Jenjang" field="major"      sortConfig={sortConfig} onSort={handleSort}/>}
               {visibleCols.location  && <th>Wilayah & Bidang</th>}
-              {visibleCols.period    && <SortTh label="Periode & Progress" field="periodEnd" sortConfig={sortConfig} onSort={handleSort}/>}
+              {visibleCols.mulai     && <SortTh label="Mulai" field="periodStart" sortConfig={sortConfig} onSort={handleSort}/>}
+              {visibleCols.selesai   && <SortTh label="Selesai" field="periodEnd" sortConfig={sortConfig} onSort={handleSort}/>}
+              {visibleCols.progress  && <th>Progress</th>}
               {visibleCols.sisaHari  && <SortTh label="Sisa" field="periodEnd" sortConfig={sortConfig} onSort={handleSort} style={{textAlign:'center'}}/>}
               <SortTh label="Status" field="status" sortConfig={sortConfig} onSort={handleSort}/>
               <th>Aksi</th>
@@ -717,12 +719,13 @@ export default function InternsPage() {
                         {visibleCols.school   && <td style={{color:'var(--text-secondary)',fontSize:'0.85rem'}}>{intern.university}</td>}
                         {visibleCols.major    && <td><p style={{fontSize:'0.85rem'}}>{intern.major}</p><small style={{color:'var(--text-muted)'}}>{intern.jenjang}</small></td>}
                         {visibleCols.location && <td><p style={{fontSize:'0.85rem'}}>{intern.wilayah}</p><small style={{color:'var(--text-muted)'}}>{intern.bidang}</small></td>}
-                        {visibleCols.period   && <td style={{minWidth:160}}>
-                          <p style={{fontSize:'0.8rem',color:'var(--text-secondary)'}}>{intern.periodStart} → {intern.periodEnd}</p>
-                          <div style={{height:4,background:'var(--border)',borderRadius:2,margin:'4px 0 2px',overflow:'hidden'}}>
-                            <div style={{width:`${pct}%`,height:'100%',background:'var(--primary)',borderRadius:2,transition:'width 0.5s'}}/>
+                        {visibleCols.mulai && <td><span style={{fontSize:'0.85rem',whiteSpace:'nowrap'}}>{intern.periodStart || '-'}</span></td>}
+                        {visibleCols.selesai && <td><span style={{fontSize:'0.85rem',whiteSpace:'nowrap'}}>{intern.periodEnd || '-'}</span></td>}
+                        {visibleCols.progress && <td style={{minWidth:120}}>
+                          <div style={{height:5,background:'var(--border)',borderRadius:3,marginBottom:4,overflow:'hidden'}}>
+                            <div style={{width:`${pct}%`,height:'100%',background:'var(--primary)',borderRadius:3,transition:'width 0.5s'}}/>
                           </div>
-                          <small style={{color:'var(--primary)',fontWeight:700}}>{intern.duration} · {pct}%</small>
+                          <span style={{color:'var(--primary)',fontWeight:700,fontSize:'0.75rem',whiteSpace:'nowrap'}}>{intern.duration} · {pct}%</span>
                         </td>}
                         {visibleCols.sisaHari && <td style={{textAlign:'center'}}><SisaBadge end={intern.periodEnd}/></td>}
                         <td>
