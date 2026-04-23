@@ -4,5 +4,15 @@
     "app/api/**/*.js": {
       "memory": 1024
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/reminders/morning",
+      "schedule": "30 0 * * 1-5"
+    },
+    {
+      "path": "/api/cron/reminders/evening",
+      "schedule": "0 9 * * 1-5"
+    }
+  ]
 }

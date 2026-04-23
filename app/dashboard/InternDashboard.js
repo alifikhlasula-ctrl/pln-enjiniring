@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from '@/lib/constants'
+import { messaging, getToken } from '@/lib/firebase'
 
 /* ── Helpers ─────────────────────────────────────── */
 const idr = v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v || 0)
@@ -132,6 +133,59 @@ export default function InternDashboard() {
   const { user } = useAuth()
   const [moodSaving, setMoodSaving] = useState(false)
   const [selectedMood, setSelectedMood] = useState(null)
+  
+  // Notification State
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [showPushPrompt, setShowPushPrompt] = useState(false)
+
+  // Check Notification Permission
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setPushEnabled(true)
+      } else if (Notification.permission === 'default') {
+        // Show prompt if we haven't asked yet and they haven't explicitly denied
+        // Delaying it slightly so it doesn't overwhelm the user on first load
+        const timer = setTimeout(() => setShowPushPrompt(true), 3000)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [])
+
+  const handleEnablePush = async () => {
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission === 'granted') {
+        setPushEnabled(true)
+        setShowPushPrompt(false)
+        
+        // Get FCM Token
+        if (messaging) {
+          const token = await getToken(messaging, { 
+            vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY 
+          })
+          
+          if (token && user?.id) {
+            // Save to DB
+            await fetch('/api/intern/fcm', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id, fcmToken: token })
+            })
+            Swal.fire({
+              toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
+              icon: 'success', title: 'Notifikasi diaktifkan!'
+            })
+          }
+        }
+      } else {
+        setShowPushPrompt(false)
+      }
+    } catch (error) {
+      console.error('Push setup failed:', error)
+      setShowPushPrompt(false)
+    }
+  }
 
   // SWR automatically handles caching, loading state, and deduplication.
   // It pauses fetching when user.id is null (e.g. auth still loading).
@@ -368,6 +422,24 @@ export default function InternDashboard() {
           </button>
         </div>
       </div>
+
+      {/* ── Push Notification Prompt ── */}
+      {showPushPrompt && (
+        <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid var(--primary)', color: 'white', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div style={{ flex: 1, minWidth: 250 }}>
+            <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+              <Megaphone size={18} /> Aktifkan Notifikasi Absensi
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.5 }}>
+              Sistem akan mengirimkan pengingat jam 07:30 (Absen Masuk) dan 16:00 (Absen Keluar) agar Anda tidak pernah lupa absen.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setShowPushPrompt(false)} className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none' }}>Nanti</button>
+            <button onClick={handleEnablePush} className="btn btn-primary btn-sm" style={{ background: '#38bdf8', color: '#0f172a', fontWeight: 800 }}>Aktifkan Sekarang</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Daily Mood Check ── */}
       <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%)', border: '1px solid var(--primary)' }}>

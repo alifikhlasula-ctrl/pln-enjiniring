@@ -163,6 +163,15 @@ function LayoutContent({ children }) {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Register PWA Service Worker
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('PWA Service Worker registered.', reg.scope))
+        .catch(err => console.error('PWA SW registration failed:', err))
+    }
+  }, [])
+
   // ── FIX: Redirection must be inside useEffect to avoid render-phase updates ──
   useEffect(() => {
     if (!loading && !user && !isLandingPage && pathname !== '/help') {
@@ -411,9 +420,12 @@ export default function RootLayout({ children }) {
     <html lang="id" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         <meta name="description" content="HRIS Magang PLN Enjiniring — Platform pengelolaan magang yang modern dan efisien." />
-        <title>HRIS Magang — PLN Enjiniring</title>
+        <meta name="theme-color" content="#00A2E9" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/icon.svg" />
+        <title>InternHub — PLN Enjiniring</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>

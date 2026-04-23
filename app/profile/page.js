@@ -20,6 +20,31 @@ export default function InternProfilePage() {
     bankName: '', bankAccount: '', bankAccountName: ''
   })
   const [internId, setInternId] = useState(null)
+  
+  // PWA Install Prompt State
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [isInstallable, setIsInstallable] = useState(false)
+
+  // Listen for PWA installability
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setIsInstallable(true)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      setIsInstallable(false)
+    }
+    setDeferredPrompt(null)
+  }
 
   useEffect(() => {
     if (user?.id) {
@@ -347,6 +372,21 @@ export default function InternProfilePage() {
                 {saving ? 'Menyimpan...' : 'Simpan Profil Sekarang'}
               </button>
             </div>
+            
+            {/* PWA Install Button */}
+            {isInstallable && (
+              <div className="card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', border: '1px solid rgba(0,162,233,0.3)', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: 'white' }}>
+                <div>
+                  <p style={{ fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, color: '#00A2E9' }}>
+                    📱 Instal Aplikasi
+                  </p>
+                  <p style={{ fontSize: '0.75rem', marginTop: 4, color: 'rgba(255,255,255,0.7)' }}>Pasang InternHub di homescreen HP Anda untuk akses lebih cepat dan notifikasi absensi.</p>
+                </div>
+                <button type="button" onClick={handleInstallPWA} className="btn btn-primary" style={{ padding: '0.75rem', background: '#00A2E9', border: 'none', color: '#fff', fontWeight: 800 }}>
+                  Install App Sekarang
+                </button>
+              </div>
+            )}
           </div>
           
         </div>

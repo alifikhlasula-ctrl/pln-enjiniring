@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { withCache } from '@/lib/cache-headers'
+import { messagingAdmin } from '@/lib/firebaseAdmin'
 
 export async function GET() {
   try {
@@ -28,6 +29,30 @@ export async function POST(request) {
         createdBy: 'Admin HR'
       }
     })
+    
+    // Broadcast Push Notification to Interns
+    try {
+      const users = await prisma.user.findMany({ 
+        where: { role: 'INTERN', fcmToken: { not: null } }, 
+        select: { fcmToken: true } 
+      })
+      const tokens = users.map(u => u.fcmToken).filter(Boolean)
+      
+      if (tokens.length > 0 && messagingAdmin) {
+        await messagingAdmin.sendEachForMulticast({
+          notification: { 
+            title: `📢 Pengumuman: ${body.title}`, 
+            body: body.content.length > 100 ? body.content.substring(0, 97) + '...' : body.content 
+          },
+          data: { url: '/dashboard' },
+          tokens
+        })
+      }
+    } catch (pushErr) {
+      console.error('Broadcast push failed:', pushErr)
+      // We don't fail the API request if push fails
+    }
+
     return NextResponse.json({ ...ann, createdAt: ann.createdAt.toISOString(), updatedAt: ann.updatedAt.toISOString() })
   } catch (err) {
     return NextResponse.json({ error: 'Gagal membuat pengumuman' }, { status: 500 })
