@@ -237,7 +237,11 @@ export async function GET(request) {
     }).catch(() => [])
     
     const respondedSurveyIds = userResponses.map(r => r.surveyId)
-    const pendingSurveys = activeSurveys.filter(s => !respondedSurveyIds.includes(s.id))
+    // Exclude system-generated surveys (e.g. payroll issues) from popup notification
+    // These can only be accessed deliberately via the 'Belum Terima Uang' button
+    const pendingSurveys = activeSurveys.filter(s => 
+      !respondedSurveyIds.includes(s.id) && s.createdBy !== 'Sistem'
+    )
 
     const response = NextResponse.json({
       intern: {
