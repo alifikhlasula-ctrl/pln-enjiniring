@@ -33,11 +33,24 @@ export default function KontrakModal({ intern, onClose }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan internal')
 
-      // Trigger download dari URL CloudConvert
+      if (data.useFallback) {
+        // Template DOCX bermasalah (tag terpecah/corrupt) — gunakan jsPDF client-side
+        console.warn('[KontrakModal] Fallback jsPDF:', data.fallbackReason)
+        const jsPDFLib = await import('jspdf')
+        await import('jspdf-autotable')
+        const { generateKontrakPDF } = await import('@/lib/kontrakUtils')
+        await generateKontrakPDF(
+          data.intern || intern,
+          data.nomorSurat || nomorSurat,
+          jsPDFLib
+        )
+        return
+      }
+
+      // Template DOCX berhasil — download dari URL CloudConvert
       const link = document.createElement('a')
       link.href = data.pdfUrl
       link.download = data.filename || 'SPM_Intern.pdf'
-      // Untuk pastikan download berjalan
       link.target = '_blank'
       document.body.appendChild(link)
       link.click()
