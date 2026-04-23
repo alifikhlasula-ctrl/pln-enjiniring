@@ -257,6 +257,27 @@ export default function InternDashboard() {
           }
         }
       }
+
+      // 4. Allowance Transferred Notification
+      if (dash.allowanceInfo?.status === 'TRANSFERRED') {
+        const allowanceKey = `allowance_popup_${dash.allowanceInfo.period}`;
+        if (!sessionStorage.getItem(allowanceKey)) {
+          await Swal.fire({
+            title: '💸 Cek Rekening Anda!',
+            text: 'Admin HR telah mengajukan/mentransfer uang saku Anda. Mohon cek mutasi rekening dan konfirmasi penerimaan di menu Allowance.',
+            icon: 'info',
+            confirmButtonText: 'Cek Allowance Sekarang',
+            showCancelButton: true,
+            cancelButtonText: 'Nanti Saja'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = '/payroll';
+            } else {
+              sessionStorage.setItem(allowanceKey, 'true');
+            }
+          });
+        }
+      }
     };
 
     // Add slight delay to ensure UI renders first

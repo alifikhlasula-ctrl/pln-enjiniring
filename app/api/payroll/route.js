@@ -369,8 +369,7 @@ export async function POST(request) {
         await prisma.payrollRecord.upsert({
           where: { internId_period: { internId, period } },
           update: {
-            status: 'PAID',
-            paidAt: new Date(),
+            status: 'TRANSFERRED',
             paidBy: processedBy,
             notes,
             totalAllowance: item.totalAllowance,
@@ -381,7 +380,7 @@ export async function POST(request) {
           create: {
             internId,
             period,
-            status: 'PAID',
+            status: 'TRANSFERRED',
             presenceCount: item.presenceCount,
             validPresenceCount: item.validPresenceCount,
             allowanceRate: FLAT_RATE,
@@ -396,20 +395,18 @@ export async function POST(request) {
         console.warn('[PAYROLL] Prisma upsert failed, using JSON fallback:', dbErr.message)
         const existing = (data.payrolls || []).find(p => p.internId === internId && p.period === period)
         if (existing) {
-          existing.status = 'PAID'
-          existing.paidAt = new Date().toISOString()
+          existing.status = 'TRANSFERRED'
           existing.paidBy = processedBy
           existing.notes = notes
         } else {
           if (!data.payrolls) data.payrolls = []
           data.payrolls.push({
             id: 'pay' + Date.now() + processed,
-            internId, period, status: 'PAID',
+            internId, period, status: 'TRANSFERRED',
             presenceCount: item.presenceCount,
             validPresenceCount: item.validPresenceCount,
             allowanceRate: FLAT_RATE,
             totalAllowance: item.totalAllowance,
-            paidAt: new Date().toISOString(),
             paidBy: processedBy, notes
           })
           await saveDB(data).catch(() => {})
@@ -431,19 +428,46 @@ export async function POST(request) {
 /* ── PATCH: Intern mengkonfirmasi penerimaan dana ────────── */
 export async function PATCH(request) {
   try {
-    const { id } = await request.json()
+    const { id, proofBase64 } = await request.json()
     if (!id) return NextResponse.json({ error: 'Payroll ID diperlukan.' }, { status: 400 })
+    if (!proofBase64) return NextResponse.json({ error: 'Bukti transfer wajib diunggah.' }, { status: 400 })
 
     const data = await getDB()
     const existing = (data.payrolls || []).find(p => p.id === id)
-    
-    if (!existing) return NextResponse.json({ error: 'Data payroll tidak ditemukan.' }, { status: 404 })
 
-    existing.status = 'PAID'
-    existing.paidAt = new Date().toISOString()
+    // Update in Prisma if possible
+    try {
+      const dbRecord = await prisma.payrollRecord.findUnique({ where: { id } })
+      if (dbRecord) {
+        const newNotes = dbRecord.notes ? `${dbRecord.notes}\n\n[BUKTI_TRANSFER_INTERN]: ${proofBase64}` : `[BUKTI_TRANSFER_INTERN]: ${proofBase64}`
+        await prisma.payrollRecord.update({
+          where: { id },
+          data: {
+            status: 'PAID',
+            paidAt: new Date(),
+            notes: newNotes
+          }
+        })
+      }
+    } catch (e) {
+      console.warn('Fallback to JSON for PATCH payroll:', e.message)
+    }
     
-    await saveDB(data)
-    await db.addLog(existing.internId, 'PAYROLL_CONFIRMED', { payrollId: id, period: existing.period })
+    if (existing) {
+      existing.status = 'PAID'
+      existing.paidAt = new Date().toISOString()
+      existing.notes = existing.notes ? `${existing.notes}\n\n[BUKTI_TRANSFER_INTERN]: ${proofBase64}` : `[BUKTI_TRANSFER_INTERN]: ${proofBase64}`
+      await saveDB(data)
+      await db.addLog(existing.internId, 'PAYROLL_CONFIRMED', { payrollId: id, period: existing.period })
+    } else {
+      // In case we only updated DB
+      const dbRecord = await prisma.payrollRecord.findUnique({ where: { id } })
+      if (dbRecord) {
+        await db.addLog(dbRecord.internId, 'PAYROLL_CONFIRMED', { payrollId: id, period: dbRecord.period })
+      } else {
+        return NextResponse.json({ error: 'Data payroll tidak ditemukan.' }, { status: 404 })
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {

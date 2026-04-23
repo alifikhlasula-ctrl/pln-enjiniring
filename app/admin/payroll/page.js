@@ -205,7 +205,7 @@ export default function AdminPayrollPage() {
         />
         <StatCard
           icon={<Clock size={19} />}
-          label="Sdg. Ditransfer (Perlu Konfirmasi)"
+          label="Diajukan (Perlu Konfirmasi)"
           value={idr(data.filter(p => p.status === 'TRANSFERRED').reduce((s, p) => s + p.totalAllowance, 0))}
           sub={`${data.filter(p => p.status === 'TRANSFERRED').length} intern`}
           color="var(--warning)" bg="var(--warning-light)"
@@ -271,7 +271,7 @@ export default function AdminPayrollPage() {
                           borderColor: item.status === 'TRANSFERRED' ? '#7dd3fc' : undefined
                         }}
                       >
-                        {item.status === 'PAID' ? 'TERIMA' : item.status === 'TRANSFERRED' ? 'DITRANSFER' : 'PENDING'}
+                        {item.status === 'PAID' ? 'TERIMA' : item.status === 'TRANSFERRED' ? 'DIAJUKAN' : 'PENDING'}
                       </span>
                     </td>
                     <td>
