@@ -130,9 +130,17 @@ export async function GET(request) {
     }
 
     // ── Allowance / Payroll ──
+    // Query Prisma PayrollRecord first (most recent by updatedAt)
+    // This avoids period key mismatch between admin batch (date range) and monthly format
+    const prismaPayroll = await prisma.payrollRecord.findFirst({
+      where: { internId: intern.id },
+      orderBy: { updatedAt: 'desc' }
+    }).catch(() => null)
+
     const nowMonth = new Date()
     const periodKey = `${nowMonth.getFullYear()}-${String(nowMonth.getMonth() + 1).padStart(2, '0')}`
-    const myPayroll = (data.payrolls || []).find(p => p.internId === intern.id && p.period === periodKey)
+    // Fallback to JSON only if Prisma has nothing
+    const myPayroll = prismaPayroll || (data.payrolls || []).find(p => p.internId === intern.id)
     
     const allValidAttendance = rawLogs.filter(l => ['PRESENT', 'LATE'].includes(l.status))
 
@@ -169,9 +177,9 @@ export async function GET(request) {
     const estimatedAllowanceTotal = allVerifiedDays.length * allowanceRate
     
     const allowanceInfo = {
-      period: periodKey,
+      period: myPayroll?.period || periodKey,
       status: myPayroll?.status || 'PENDING',
-      paidAt: myPayroll?.paidAt || null,
+      paidAt: myPayroll?.paidAt ? new Date(myPayroll.paidAt).toISOString() : null,
       totalAllowance: myPayroll?.totalAllowance || estimatedAllowanceTotal,
       presenceCount: allVerifiedDays.length,
       missingReportsCount: missingReportDays.length,

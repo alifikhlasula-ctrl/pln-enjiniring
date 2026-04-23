@@ -215,10 +215,17 @@ export async function GET(request) {
     const periodKey = startDate && endDate ? `${startDate}_${endDate}` : pKey
     
     // Check PayrollRecord first, then fall back to JSON payrolls
-    const existingPayroll = periodKey
+    let existingPayroll = periodKey
       ? (existingPayrolls.find(p => p.internId === intern.id && p.period === periodKey)
          || (data.payrolls || []).find(p => p.internId === intern.id && p.period === periodKey))
       : null
+
+    // Fallback: If no exact period match, find ANY non-PENDING record for this intern.
+    // This happens when intern's date range != admin's batch date range.
+    if (!existingPayroll) {
+      existingPayroll = existingPayrolls.find(p => p.internId === intern.id && ['TRANSFERRED', 'PAID'].includes(p.status))
+        || (data.payrolls || []).find(p => p.internId === intern.id && ['TRANSFERRED', 'PAID'].includes(p.status))
+    }
 
     return {
       id: existingPayroll?.id || intern.id,
@@ -437,17 +444,23 @@ export async function PATCH(request) {
 
     // Update in Prisma if possible
     try {
-      const dbRecord = await prisma.payrollRecord.findUnique({ where: { id } })
+      // Try by PayrollRecord ID first
+      let dbRecord = await prisma.payrollRecord.findUnique({ where: { id } }).catch(() => null)
+      // If not found, the `id` may be the internId — find most recent TRANSFERRED record
+      if (!dbRecord) {
+        dbRecord = await prisma.payrollRecord.findFirst({
+          where: { internId: id, status: 'TRANSFERRED' },
+          orderBy: { updatedAt: 'desc' }
+        }).catch(() => null)
+      }
       if (dbRecord) {
         const newNotes = dbRecord.notes ? `${dbRecord.notes}\n\n[BUKTI_TRANSFER_INTERN]: ${proofBase64}` : `[BUKTI_TRANSFER_INTERN]: ${proofBase64}`
         await prisma.payrollRecord.update({
-          where: { id },
-          data: {
-            status: 'PAID',
-            paidAt: new Date(),
-            notes: newNotes
-          }
+          where: { id: dbRecord.id },
+          data: { status: 'PAID', paidAt: new Date(), notes: newNotes }
         })
+        await db.addLog(dbRecord.internId, 'PAYROLL_CONFIRMED', { payrollId: dbRecord.id, period: dbRecord.period })
+        return NextResponse.json({ success: true })
       }
     } catch (e) {
       console.warn('Fallback to JSON for PATCH payroll:', e.message)
@@ -459,17 +472,10 @@ export async function PATCH(request) {
       existing.notes = existing.notes ? `${existing.notes}\n\n[BUKTI_TRANSFER_INTERN]: ${proofBase64}` : `[BUKTI_TRANSFER_INTERN]: ${proofBase64}`
       await saveDB(data)
       await db.addLog(existing.internId, 'PAYROLL_CONFIRMED', { payrollId: id, period: existing.period })
-    } else {
-      // In case we only updated DB
-      const dbRecord = await prisma.payrollRecord.findUnique({ where: { id } })
-      if (dbRecord) {
-        await db.addLog(dbRecord.internId, 'PAYROLL_CONFIRMED', { payrollId: id, period: dbRecord.period })
-      } else {
-        return NextResponse.json({ error: 'Data payroll tidak ditemukan.' }, { status: 404 })
-      }
+      return NextResponse.json({ success: true })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ error: 'Data payroll tidak ditemukan.' }, { status: 404 })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
