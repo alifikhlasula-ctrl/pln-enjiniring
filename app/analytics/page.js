@@ -1,5 +1,7 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useCallback } from 'react'
+import useSWR from 'swr'
+import { fetcher } from '@/lib/fetcher'
 import {
   BarChart3, RefreshCw, AlertTriangle, Calendar,
   Settings2, ChevronLeft, LayoutDashboard, FileText,
@@ -13,27 +15,10 @@ import ExportButton from './ExportButton'
 import Swal from 'sweetalert2'
 
 export default function AnalyticsPage() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/admin/analytics')
-      if (!res.ok) throw new Error('Gagal mengambil data analytics')
-      const json = await res.json()
-      setData(json)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const { data, error, isLoading: loading, mutate } = useSWR('/api/admin/analytics', fetcher, {
+    refreshInterval: 10000, // Real-time auto-polling every 10s
+    revalidateOnFocus: true
+  })
 
   const handleResetData = async () => {
     const { isConfirmed } = await Swal.fire({
@@ -50,7 +35,6 @@ export default function AnalyticsPage() {
     })
 
     if (isConfirmed) {
-      setLoading(true)
       try {
         const res = await fetch('/api/admin/reset', { method: 'POST' })
         if (!res.ok) throw new Error('Gagal mereset data')
@@ -61,10 +45,9 @@ export default function AnalyticsPage() {
           background: 'var(--bg-card)',
           color: 'var(--text-primary)'
         })
-        fetchData()
+        mutate() // Refresh data
       } catch (e) {
         Swal.fire({ title: 'Gagal', text: e.message, icon: 'error', background: 'var(--bg-card)', color: 'var(--text-primary)' })
-        setLoading(false)
       }
     }
   }
@@ -94,8 +77,8 @@ export default function AnalyticsPage() {
       <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)', margin: '2rem' }}>
         <AlertTriangle size={64} style={{ color: 'var(--danger)', margin: '0 auto 1.5rem' }} />
         <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem' }}>Sistem Sedang Sibuk</h2>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto 2rem' }}>{error}</p>
-        <button className="btn btn-primary" onClick={fetchData}>Mulai Ulang Analitik</button>
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto 2rem' }}>{error.message || error}</p>
+        <button className="btn btn-primary" onClick={() => mutate()}>Mulai Ulang Analitik</button>
       </div>
     )
   }
@@ -139,7 +122,7 @@ export default function AnalyticsPage() {
             <AlertTriangle size={16} />
             Reset Data Uji Coba
           </button>
-          <button className="btn btn-secondary" onClick={fetchData} disabled={loading} style={{ fontWeight: 700 }}>
+          <button className="btn btn-secondary" onClick={() => mutate()} disabled={loading} style={{ fontWeight: 700 }}>
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             Muat Ulang
           </button>
@@ -180,7 +163,7 @@ export default function AnalyticsPage() {
            <Settings2 size={24} style={{ color: 'var(--primary)' }} />
            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Konfigurasi & Target</h2>
         </div>
-        <CapacityManager initialTargets={data.distribution.targets} onUpdate={fetchData} />
+        <CapacityManager initialTargets={data.distribution.targets} onUpdate={() => mutate()} />
       </div>
 
       <style jsx>{`
