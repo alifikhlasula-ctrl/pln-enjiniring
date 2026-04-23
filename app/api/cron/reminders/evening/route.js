@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { messagingAdmin } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
