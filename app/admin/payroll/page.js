@@ -307,10 +307,39 @@ export default function AdminPayrollPage() {
                             <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>TANGGAL BAYAR</p>
                             <p style={{ fontWeight: 700 }}>{item.paidAt ? new Date(item.paidAt).toLocaleDateString('id-ID') : '-'}</p>
                           </div>
-                          <div className="card" style={{ padding: '0.75rem' }}>
-                            <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>CATATAN</p>
-                            <p style={{ fontWeight: 700 }}>{item.notes || '-'}</p>
-                          </div>
+                          {/* ── Catatan + Bukti Transfer ── */}
+                          {(() => {
+                            const raw = item.notes || ''
+                            const marker = '[BUKTI_TRANSFER_INTERN]: '
+                            const markerIdx = raw.indexOf(marker)
+                            const notesText = markerIdx > 0 ? raw.substring(0, markerIdx).replace(/\n+$/, '').trim() : (markerIdx === -1 ? raw : '')
+                            const proofBase64 = markerIdx !== -1 ? raw.substring(markerIdx + marker.length).split('\n')[0].trim() : null
+                            return (
+                              <>
+                                <div className="card" style={{ padding: '0.75rem' }}>
+                                  <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800 }}>CATATAN ADMIN</p>
+                                  <p style={{ fontWeight: 700, fontSize: '0.85rem', wordBreak: 'break-word' }}>{notesText || '-'}</p>
+                                </div>
+                                <div className="card" style={{ padding: '0.75rem', gridColumn: proofBase64 ? 'span 4' : undefined }}>
+                                  <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, marginBottom: 8 }}>BUKTI TRANSFER (DIKIRIM INTERN)</p>
+                                  {proofBase64 ? (
+                                    <div>
+                                      <img 
+                                        src={proofBase64} 
+                                        alt="Bukti Transfer Intern"
+                                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
+                                        onClick={() => window.open(proofBase64, '_blank')}
+                                        title="Klik untuk buka gambar penuh"
+                                      />
+                                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 4 }}>Klik gambar untuk buka ukuran penuh</p>
+                                    </div>
+                                  ) : (
+                                    <p style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.8rem' }}>Belum ada bukti diunggah</p>
+                                  )}
+                                </div>
+                              </>
+                            )
+                          })()}
                         </div>
                       </td>
                     </tr>
