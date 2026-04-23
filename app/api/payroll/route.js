@@ -3,6 +3,8 @@ import { getDB, saveDB, db } from '@/lib/db'
 import { prisma } from '@/lib/prisma'
 import * as XLSX from 'xlsx'
 
+export const dynamic = 'force-dynamic'
+
 /* ── Helpers ───────────────────────────────────────── */
 const FLAT_RATE = 25000
 

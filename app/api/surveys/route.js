@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 /* ── GET: List surveys ── */
 export async function GET(request) {
   try {

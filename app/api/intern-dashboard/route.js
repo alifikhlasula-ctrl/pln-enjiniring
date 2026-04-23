@@ -3,6 +3,8 @@ import { getDB, saveDB } from '@/lib/db'
 import { prisma } from '@/lib/prisma'
 import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/intern-dashboard?userId=u3
 export async function GET(request) {
   try {

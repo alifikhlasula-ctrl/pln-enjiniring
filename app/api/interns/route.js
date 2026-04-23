@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getDB, saveDB, db } from '@/lib/db'
 import { withCache } from '@/lib/cache-headers'
 
+export const dynamic = 'force-dynamic'
 // No force-dynamic: allow SHORT cache (15s) for GET listing
 
 /* ── GET: paginated, filtered, sorted + stats ─────── */
