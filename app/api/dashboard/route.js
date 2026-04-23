@@ -26,7 +26,7 @@ export async function GET(request) {
       prisma.attendanceLog.count({ where: { date: todayStr, checkIn: { not: null } } }),
       prisma.attendanceLog.groupBy({
         by: ['date'],
-        where: { date: { gte: sevenDaysAgoStr, lte: todayStr2 }, status: 'PRESENT' },
+        where: { date: { gte: sevenDaysAgoStr, lte: todayStr2 }, status: { in: ['PRESENT', 'LATE'] } },
         _count: { id: true }
       }),
       prisma.attendanceLog.findMany({ take: 8, orderBy: { createdAt: 'desc' } }),

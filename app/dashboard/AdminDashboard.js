@@ -75,14 +75,41 @@ function AttendanceChart({data,loading}) {
           <BarChart3 size={16} strokeWidth={2} style={{color:'var(--primary)'}}/>
           Kehadiran 7 Hari Terakhir
         </h3>
-        {hovered&&<span style={{fontSize:'0.78rem',fontWeight:700,color:'var(--primary)'}}>{hovered.day}: {hovered.count} hadir</span>}
+        {hovered && <span style={{fontSize:'0.75rem',fontWeight:600,color:'var(--text-muted)'}}>{hovered.date}</span>}
       </div>
-      <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120}}>
+      <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120,position:'relative'}}>
         {loading
           ? [...Array(7)].map((_,i)=><div key={i} style={{flex:1,height:`${30+i*10}%`,background:'var(--border)',borderRadius:'4px 4px 0 0',animation:'pulse 1.4s ease-in-out infinite'}}/>)
           : (data||[]).map((d,i)=>(
-            <div key={i} style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'flex-end',alignItems:'center',position:'relative'}}
+            <div key={i} style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'flex-end',alignItems:'center',position:'relative',height:'100%'}}
               onMouseEnter={()=>setHovered(d)} onMouseLeave={()=>setHovered(null)}>
+              
+              {/* Tooltip Float */}
+              <div style={{
+                position: 'absolute',
+                bottom: `${d.count===0?4:Math.max(8,(d.count/max)*100)}%`,
+                marginBottom: '8px',
+                background: 'var(--text-main)',
+                color: 'var(--bg-main)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                opacity: hovered?.day === d.day ? 1 : 0,
+                transform: hovered?.day === d.day ? 'translateY(0)' : 'translateY(5px)',
+                transition: 'all 0.2s',
+                pointerEvents: 'none',
+                zIndex: 10,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                whiteSpace: 'nowrap'
+              }}>
+                {d.count} Hadir
+                <div style={{
+                  position: 'absolute', bottom: '-4px', left: '50%', transform: 'translateX(-50%)',
+                  borderWidth: '4px 4px 0', borderStyle: 'solid', borderColor: 'var(--text-main) transparent transparent transparent'
+                }}/>
+              </div>
+
               <div style={{
                 width:'100%', height:`${d.count===0?4:Math.max(8,(d.count/max)*100)}%`,
                 background:hovered?.day===d.day?'var(--primary)':'var(--primary-light)',
@@ -891,6 +918,33 @@ function HRTasksWidget() {
 
   const { data: tasks, isLoading: loading, mutate } = useSWR('/api/tasks-hr', fetcher)
   const safeTasks = tasks || []
+
+  // Interactive Popup Reminder (1 hari sebelum)
+  React.useEffect(() => {
+    if (safeTasks.length > 0) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+      const tasksDueTomorrow = safeTasks.filter(t => !t.completed && t.dueDate === tomorrowStr);
+      if (tasksDueTomorrow.length > 0) {
+        const hasShown = sessionStorage.getItem('hr_task_reminder_shown_' + tomorrowStr);
+        if (!hasShown) {
+          import('sweetalert2').then(({ default: Swal }) => {
+            Swal.fire({
+              title: 'Pengingat Tugas!',
+              html: `Terdapat <b>${tasksDueTomorrow.length} tugas</b> yang harus diselesaikan besok:<br/><ul style="text-align:left;margin-top:10px;font-size:0.9rem;">${tasksDueTomorrow.map(t => `<li>${t.title}</li>`).join('')}</ul>`,
+              icon: 'info',
+              confirmButtonText: 'Baik, Mengerti',
+              confirmButtonColor: 'var(--primary)',
+              backdrop: `rgba(0,0,0,0.4)`
+            });
+            sessionStorage.setItem('hr_task_reminder_shown_' + tomorrowStr, 'true');
+          });
+        }
+      }
+    }
+  }, [safeTasks]);
 
   const handleAdd = async () => {
     if (!form.title.trim()) return
