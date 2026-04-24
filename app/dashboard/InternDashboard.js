@@ -193,7 +193,8 @@ export default function InternDashboard() {
     user?.id ? `/api/intern-dashboard?userId=${user.id}` : null,
     fetcher,
     {
-      refreshInterval: 60000, 
+      refreshInterval: 300000, // 5 menit (menghemat egress)
+      dedupingInterval: 60000, // jangan hit API ulang jika cache kurang dari 1 menit
       revalidateOnFocus: true,
       onSuccess: (data) => {
         // Sync local selected mood with DB on initial load

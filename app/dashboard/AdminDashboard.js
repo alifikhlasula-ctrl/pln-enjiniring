@@ -1258,7 +1258,8 @@ export default function AdminDashboard() {
   // SWR for main dashboard stats. Will automatically re-validate.
   // We use refreshInterval: 60000 to replicate the setInterval behavior without memory leak risks.
   const { data: dash, error: swrError, isLoading: loading, mutate: fetchDash } = useSWR(`/api/dashboard?tahun=${selectedYear}`, fetcher, {
-    refreshInterval: 60000,
+    refreshInterval: 300000, // 5 menit (menghemat egress)
+    dedupingInterval: 60000, // jangan hit API ulang jika cache kurang dari 1 menit
     revalidateOnFocus: true, // Refresh instantly when tab is focused
   })
 

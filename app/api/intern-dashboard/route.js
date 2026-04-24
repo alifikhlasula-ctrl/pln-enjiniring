@@ -281,8 +281,8 @@ export async function GET(request) {
       pendingSurveys,
     })
 
-    // Edge Caching: Serve from cache for 10 seconds, keeping database unburdened during traffic spikes
-    response.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30')
+    // Edge Caching: Serve from cache for 30 seconds, keeping database unburdened during traffic spikes
+    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=59')
     return response
 
   } catch (err) {

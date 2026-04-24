@@ -210,8 +210,8 @@ export async function GET(request) {
       todayAttendanceSummary,
     })
 
-    // Edge Caching: Cache for 15 seconds, serve stale while revalidating in background
-    response.headers.set('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=60')
+    // Edge Caching: Cache for 30 seconds, serve stale while revalidating in background
+    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=59')
     return response
 
   } catch (err) {
