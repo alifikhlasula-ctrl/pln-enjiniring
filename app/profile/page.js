@@ -24,9 +24,20 @@ export default function InternProfilePage() {
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstallable, setIsInstallable] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
 
   // Listen for PWA installability
   useEffect(() => {
+    // Detect iOS
+    const userAgent = window.navigator.userAgent.toLowerCase()
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent)
+    setIsIOS(isIosDevice)
+    
+    // Check if already installed
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+    setIsStandalone(isPWA)
+
     const handler = (e) => {
       e.preventDefault()
       setDeferredPrompt(e)
@@ -374,7 +385,7 @@ export default function InternProfilePage() {
             </div>
             
             {/* PWA Install Button */}
-            {isInstallable && (
+            {!isStandalone && (isInstallable || isIOS) && (
               <div className="card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', border: '1px solid rgba(0,162,233,0.3)', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: 'white' }}>
                 <div>
                   <p style={{ fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, color: '#00A2E9' }}>
@@ -382,9 +393,18 @@ export default function InternProfilePage() {
                   </p>
                   <p style={{ fontSize: '0.75rem', marginTop: 4, color: 'rgba(255,255,255,0.7)' }}>Pasang InternHub di homescreen HP Anda untuk akses lebih cepat dan notifikasi absensi.</p>
                 </div>
-                <button type="button" onClick={handleInstallPWA} className="btn btn-primary" style={{ padding: '0.75rem', background: '#00A2E9', border: 'none', color: '#fff', fontWeight: 800 }}>
-                  Install App Sekarang
-                </button>
+                
+                {isIOS ? (
+                  <div style={{ background: 'rgba(255,255,255,0.1)', padding: '1rem', borderRadius: 8, fontSize: '0.8rem', lineHeight: 1.5 }}>
+                    Untuk pengguna <b>iPhone/iPad Safari</b>:<br/>
+                    1. Tekan ikon <b>Share</b> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{margin:'0 2px', verticalAlign:'middle'}}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> di menu bawah layar.<br/>
+                    2. Geser ke bawah dan pilih <b>"Add to Home Screen"</b> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{margin:'0 2px', verticalAlign:'middle'}}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  </div>
+                ) : (
+                  <button type="button" onClick={handleInstallPWA} className="btn btn-primary" style={{ padding: '0.75rem', background: '#00A2E9', border: 'none', color: '#fff', fontWeight: 800 }}>
+                    Install App Sekarang
+                  </button>
+                )}
               </div>
             )}
           </div>
