@@ -411,7 +411,11 @@ function TodayAttendanceWidget({ data, loading, stats }) {
         const respData = await res.json()
         if (!res.ok) throw new Error(respData.error || 'Gagal mengirim')
         
-        Swal.fire('Berhasil!', `Notifikasi terkirim ke ${respData.sentCount} perangkat dari ${respData.targetCount} target.`, 'success')
+        if (respData.sentCount === 0) {
+          Swal.fire('Info', respData.message || 'Tidak ada target yang valid atau belum mengaktifkan notifikasi.', 'info')
+        } else {
+          Swal.fire('Berhasil!', `Notifikasi terkirim ke ${respData.sentCount} perangkat dari ${respData.targetCount} target.`, 'success')
+        }
       } catch (err) {
         Swal.fire('Error', err.message, 'error')
       }

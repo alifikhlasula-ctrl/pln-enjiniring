@@ -82,7 +82,8 @@ export async function POST(request) {
     if (tokens.length === 0) {
       return NextResponse.json({ 
         message: `Ditemukan ${targetInternIds.length} target, tapi tidak ada yang mengaktifkan Push Notification di perangkat mereka.`,
-        sentCount: 0 
+        sentCount: 0,
+        targetCount: targetInternIds.length
       });
     }
 
