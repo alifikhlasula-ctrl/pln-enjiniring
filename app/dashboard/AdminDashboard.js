@@ -11,6 +11,7 @@ import {
   Award, Building, Shield
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import Swal from 'sweetalert2'
 import ExcelImportWidget from './ExcelImportWidget'
 
 /* ── Helpers ─────────────────────────────────────── */

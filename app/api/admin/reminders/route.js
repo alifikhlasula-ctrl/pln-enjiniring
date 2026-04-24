@@ -89,10 +89,7 @@ export async function POST(request) {
     // 4. Kirim Multicast Notification
     const response = await messagingAdmin.sendEachForMulticast({
       notification: notificationPayload,
-      data: { 
-        url: type === 'BELUM_ABSEN' ? '/dashboard' : '/attendance',
-        click_action: 'FLUTTER_NOTIFICATION_CLICK' // Standard for web/PWA
-      },
+      data: { url: type === 'BELUM_ABSEN' ? '/dashboard' : '/attendance' },
       tokens
     });
 
