@@ -143,6 +143,20 @@ export default function InternDashboard() {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
         setPushEnabled(true)
+        // Silently grab token and ensure backend has it
+        if (messaging && user?.id) {
+          getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY })
+            .then(token => {
+              if (token) {
+                fetch('/api/intern/fcm', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: user.id, fcmToken: token })
+                }).catch(() => {})
+              }
+            })
+            .catch(err => console.error('Silent token grab failed:', err))
+        }
       } else if (Notification.permission === 'default') {
         // Show prompt if we haven't asked yet and they haven't explicitly denied
         // Delaying it slightly so it doesn't overwhelm the user on first load
@@ -150,7 +164,7 @@ export default function InternDashboard() {
         return () => clearTimeout(timer)
       }
     }
-  }, [])
+  }, [user?.id])
 
   const handleEnablePush = async () => {
     try {
