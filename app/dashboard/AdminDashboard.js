@@ -385,6 +385,38 @@ function AttendanceMonitor({data, loading}) {
 function TodayAttendanceWidget({ data, loading, stats }) {
   const [activeTab, setActiveTab] = useState('hadir')
 
+  const handleSendReminder = async (type) => {
+    const isPagi = type === 'BELUM_ABSEN'
+    const result = await Swal.fire({
+      title: isPagi ? 'Kirim Reminder Pagi?' : 'Kirim Reminder Pulang?',
+      text: isPagi 
+        ? `Notifikasi akan dikirim ke intern yang belum absen hari ini.`
+        : `Notifikasi akan dikirim ke intern yang sudah check-in tapi belum check-out.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Kirim Sekarang',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: 'var(--primary)'
+    })
+
+    if (result.isConfirmed) {
+      try {
+        Swal.fire({ title: 'Mengirim...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
+        const res = await fetch('/api/admin/reminders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type })
+        })
+        const respData = await res.json()
+        if (!res.ok) throw new Error(respData.error || 'Gagal mengirim')
+        
+        Swal.fire('Berhasil!', `Notifikasi terkirim ke ${respData.sentCount} perangkat dari ${respData.targetCount} target.`, 'success')
+      } catch (err) {
+        Swal.fire('Error', err.message, 'error')
+      }
+    }
+  }
+
   const all    = data || []
   const hadir  = all.filter(x => x.status === 'PRESENT' || x.status === 'LATE')
   const izinSakit = all.filter(x => x.status === 'IZIN' || x.status === 'SAKIT')
@@ -533,11 +565,23 @@ function TodayAttendanceWidget({ data, loading, stats }) {
         })}
       </div>
 
-      <a href="/admin/monitor-attendance" className="btn btn-secondary btn-sm"
-        style={{ width: '100%', textAlign: 'center', marginTop: '0.875rem', textDecoration: 'none', fontSize: '0.75rem' }}
-      >
-        Buka Monitor Penuh →
-      </a>
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.875rem' }}>
+        {activeTab === 'belum' && belum.length > 0 && (
+          <button onClick={() => handleSendReminder('BELUM_ABSEN')} className="btn btn-primary btn-sm" style={{ flex: 1, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <Bell size={14} /> Reminder Pagi
+          </button>
+        )}
+        {activeTab === 'hadir' && hadir.length > 0 && (
+          <button onClick={() => handleSendReminder('BELUM_CLOCKOUT')} className="btn btn-primary btn-sm" style={{ flex: 1, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <Bell size={14} /> Reminder Pulang
+          </button>
+        )}
+        <a href="/admin/monitor-attendance" className="btn btn-secondary btn-sm"
+          style={{ flex: activeTab === 'izinSakit' ? 'none' : 1, width: activeTab === 'izinSakit' ? '100%' : 'auto', textAlign: 'center', textDecoration: 'none', fontSize: '0.75rem' }}
+        >
+          Monitor Penuh →
+        </a>
+      </div>
     </div>
   )
 }
