@@ -138,31 +138,54 @@ export default function InternDashboard() {
   const [pushEnabled, setPushEnabled] = useState(false)
   const [showPushPrompt, setShowPushPrompt] = useState(false)
 
-  // Check Notification Permission
+  // Check Notification Permission & auto-sync FCM token
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'granted') {
-        setPushEnabled(true)
-        // Silently grab token and ensure backend has it
-        if (messaging && user?.id) {
-          getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY })
-            .then(token => {
-              if (token) {
-                fetch('/api/intern/fcm', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: user.id, fcmToken: token })
-                }).catch(() => {})
-              }
-            })
-            .catch(err => console.error('Silent token grab failed:', err))
+    if (typeof window === 'undefined' || !('Notification' in window)) return
+    if (!user?.id) return
+
+    const syncFcmToken = async () => {
+      try {
+        if (!messaging) {
+          console.warn('[FCM] Firebase messaging not initialized')
+          return
         }
-      } else if (Notification.permission === 'default') {
-        // Show prompt if we haven't asked yet and they haven't explicitly denied
-        // Delaying it slightly so it doesn't overwhelm the user on first load
-        const timer = setTimeout(() => setShowPushPrompt(true), 3000)
-        return () => clearTimeout(timer)
+
+        // Register the firebase-messaging-sw.js explicitly
+        const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        console.log('[FCM] Service worker registered:', swReg.scope)
+
+        const token = await getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: swReg
+        })
+
+        if (token) {
+          console.log('[FCM] Token obtained, syncing to backend...')
+          const res = await fetch('/api/intern/fcm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, fcmToken: token })
+          })
+          const data = await res.json()
+          if (data.success) {
+            console.log('[FCM] Token synced to backend successfully.')
+          } else {
+            console.error('[FCM] Backend returned error:', data.error)
+          }
+        } else {
+          console.warn('[FCM] No token returned. Push permission may have been denied.')
+        }
+      } catch (err) {
+        console.error('[FCM] Failed to sync token:', err)
       }
+    }
+
+    if (Notification.permission === 'granted') {
+      setPushEnabled(true)
+      syncFcmToken()
+    } else if (Notification.permission === 'default') {
+      const timer = setTimeout(() => setShowPushPrompt(true), 3000)
+      return () => clearTimeout(timer)
     }
   }, [user?.id])
 
@@ -173,10 +196,12 @@ export default function InternDashboard() {
         setPushEnabled(true)
         setShowPushPrompt(false)
         
-        // Get FCM Token
+        // Get FCM Token using explicit service worker registration
         if (messaging) {
+          const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
           const token = await getToken(messaging, { 
-            vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY 
+            vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+            serviceWorkerRegistration: swReg
           })
           
           if (token && user?.id) {
