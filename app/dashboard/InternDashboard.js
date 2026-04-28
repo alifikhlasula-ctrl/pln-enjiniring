@@ -24,6 +24,20 @@ const timeAgo = ts => {
   if (s < 86400) return `${Math.floor(s / 3600)}j lalu`
   return fmtDate(ts)
 }
+// Format payroll period: "2026-03-13_2026-04-16" → "13 Mar – 16 Apr 2026"
+const fmtPeriod = p => {
+  if (!p) return '-'
+  const parts = p.split('_')
+  if (parts.length === 2) {
+    const a = new Date(parts[0]), b = new Date(parts[1])
+    if (!isNaN(a) && !isNaN(b)) {
+      const optShort = { day: 'numeric', month: 'short' }
+      const optFull  = { day: 'numeric', month: 'short', year: 'numeric' }
+      return `${a.toLocaleDateString('id-ID', optShort)} – ${b.toLocaleDateString('id-ID', optFull)}`
+    }
+  }
+  return p
+}
 const MOODS = [{ emoji: '😄', label: 'Semangat', val: 'GREAT' }, { emoji: '😊', label: 'Baik', val: 'GOOD' }, { emoji: '😐', label: 'Biasa', val: 'OKAY' }, { emoji: '😞', label: 'Kurang', val: 'BAD' }, { emoji: '😫', label: 'Lelah', val: 'TIRED' }]
 
 
@@ -450,15 +464,20 @@ export default function InternDashboard() {
   return (
     <div style={{ animation: 'slideUp 0.3s ease' }}>
       {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <h1 className="title">Portal Saya 👋</h1>
-          <p className="subtitle">Selamat datang, <strong>{loading ? '...' : intern.name}</strong> — {intern.bidang || 'Peserta Magang'}</p>
+          <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.4rem)', fontWeight: 800, margin: 0 }}>Portal Saya 👋</h1>
+          <p style={{ fontSize: 'clamp(0.75rem, 3vw, 0.875rem)', color: 'var(--text-muted)', marginTop: 2 }}>
+            Selamat datang, <strong style={{ color: 'var(--text-primary)' }}>{loading ? '...' : intern.name}</strong>
+            {intern.bidang ? <> — <span style={{ color: 'var(--primary)' }}>{intern.bidang}</span></> : ''}
+          </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Status: {loading ? 'Memperbarui...' : `Live (${lastRefreshTime})`}</span>
-          <button className="btn btn-secondary btn-sm" onClick={() => fetchDash()} disabled={loading}>
-            <RefreshCw size={14} strokeWidth={2} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            {loading ? '⏳ Memperbarui...' : `🕐 ${lastRefreshTime}`}
+          </span>
+          <button className="btn btn-secondary btn-sm" onClick={() => fetchDash()} disabled={loading} title="Perbarui Data">
+            <RefreshCw size={13} strokeWidth={2} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
           </button>
         </div>
       </div>
@@ -483,30 +502,28 @@ export default function InternDashboard() {
 
       {/* ── Daily Mood Check ── */}
       <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%)', border: '1px solid var(--primary)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div>
-            <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>🌤 Bagaimana perasaan Anda hari ini?</p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>Mood check dilaporkan secara anonim ke HR</p>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {MOODS.map(m => (
-              <button key={m.val} onClick={() => handleMood(m.val)} title={m.label}
-                style={{
-                  background: selectedMood === m.val ? 'var(--primary)' : 'white',
-                  border: `2px solid ${selectedMood === m.val ? 'var(--primary)' : 'var(--border)'}`,
-                  borderRadius: 10, padding: '6px 10px', cursor: 'pointer', fontSize: 20,
-                  transition: 'all 0.18s', transform: selectedMood === m.val ? 'scale(1.15)' : 'scale(1)',
-                  boxShadow: selectedMood === m.val ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
-                }}>
-                {m.emoji}
-              </button>
-            ))}
-          </div>
+        <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 4 }}>🌤 Bagaimana perasaan Anda hari ini?</p>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Mood check dilaporkan secara anonim ke HR</p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
+          {MOODS.map(m => (
+            <button key={m.val} onClick={() => handleMood(m.val)} title={m.label}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                background: selectedMood === m.val ? 'var(--primary)' : 'rgba(255,255,255,0.7)',
+                border: `2px solid ${selectedMood === m.val ? 'var(--primary)' : 'transparent'}`,
+                borderRadius: 12, padding: '8px 4px', cursor: 'pointer', fontSize: 20,
+                transition: 'all 0.18s', transform: selectedMood === m.val ? 'scale(1.12)' : 'scale(1)',
+                boxShadow: selectedMood === m.val ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
+              }}>
+              {m.emoji}
+              <span style={{ fontSize: '0.55rem', fontWeight: 700, color: selectedMood === m.val ? 'white' : 'var(--text-muted)' }}>{m.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
       {/* ── Row 1: Stat Cards ── */}
-      <div className="stat-grid" style={{ marginBottom: 'var(--sp-4)' }}>
+      <div className="stat-grid intern-stat-grid" style={{ marginBottom: 'var(--sp-4)' }}>
         {/* Today Status */}
         <div className="stat-card" style={{ cursor: 'default' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--sp-3)' }}>
@@ -546,7 +563,7 @@ export default function InternDashboard() {
           {loading ? <div style={{ height: 28, width: '70%', background: 'var(--border)', borderRadius: 4, animation: 'pulse 1.4s ease-in-out infinite' }} /> : (
             <div className="stat-value" style={{ fontSize: '1.1rem' }}>{idr(D.allowanceInfo?.totalAllowance)}</div>
           )}
-          <div className="stat-label">Allowance {D.allowanceInfo?.period || '-'}</div>
+          <div className="stat-label">Allowance {fmtPeriod(D.allowanceInfo?.period)}</div>
         </div>
 
         {/* Countdown */}
@@ -563,7 +580,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 2: Absen Hari Ini + Streak Mingguan ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="intern-row-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
         {/* Today Card — REVAMPED with Hadir/Sakit/Izin */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
@@ -636,7 +653,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 3: Progress Magang + Allowance Detail ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="intern-row-3" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
         {/* Countdown bar */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
@@ -676,14 +693,14 @@ export default function InternDashboard() {
           {loading ? <div style={{ height: 80, background: 'var(--border)', borderRadius: 8, animation: 'pulse 1.4s ease-in-out infinite' }} /> : (
             <>
               {[
-                { label: 'Periode', value: D.allowanceInfo?.period || '-' },
-                { label: 'Jumlah Hadir', value: `${D.allowanceInfo?.presenceCount || 0} hari` },
-                { label: 'Tarif Harian', value: idr(D.allowanceInfo?.allowanceRate) },
+                { label: 'Periode', value: fmtPeriod(D.allowanceInfo?.period) },
+                { label: 'Jml Hadir', value: `${D.allowanceInfo?.presenceCount || 0} hari` },
+                { label: 'Tarif/Hari', value: idr(D.allowanceInfo?.allowanceRate) },
                 { label: 'Total', value: idr(D.allowanceInfo?.totalAllowance), bold: true },
               ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{item.label}</span>
-                  <span style={{ fontSize: '0.82rem', fontWeight: item.bold ? 800 : 600, color: item.bold ? 'var(--primary)' : 'var(--text-primary)' }}>{item.value}</span>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none', gap: 8 }}>
+                  <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', flexShrink: 0 }}>{item.label}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: item.bold ? 800 : 600, color: item.bold ? 'var(--primary)' : 'var(--text-primary)', textAlign: 'right', wordBreak: 'break-word' }}>{item.value}</span>
                 </div>
               ))}
               <div style={{ marginTop: '0.75rem', textAlign: 'center' }}>
@@ -710,7 +727,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 5: Pengumuman + Jadwal Event ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="intern-row-5" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
         {/* Announcements feed */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
@@ -795,7 +812,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 6: Quick Actions + Onboarding ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="intern-row-6" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
         {/* Quick Actions */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
@@ -804,8 +821,8 @@ export default function InternDashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
             {[
               { icon: '📸', label: 'Absensi', href: '/attendance', color: 'var(--secondary)' },
-              { icon: '📝', label: 'Laporan Harian', href: '/reports', color: 'var(--primary)' },
-              { icon: '📊', label: 'Evaluasi Saya', href: '/reports', color: '#f59e0b' },
+              { icon: '📝', label: 'Laporan', href: '/reports', color: 'var(--primary)' },
+              { icon: '📊', label: 'Evaluasi', href: '/evaluations', color: '#f59e0b' },
               { icon: '📂', label: 'Onboarding', href: '/onboarding', color: 'var(--warning)' },
             ].map(a => (
               <a key={a.label} href={a.href} style={{
@@ -814,10 +831,10 @@ export default function InternDashboard() {
                 border: '1px solid var(--border)', textDecoration: 'none',
                 transition: 'all 0.18s', color: 'var(--text-primary)', background: 'var(--bg-main)'
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = a.color + '15' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-main)' }}>
-                <span style={{ fontSize: 22 }}>{a.icon}</span>
-                <span style={{ fontSize: '0.68rem', fontWeight: 600, textAlign: 'center', color: 'var(--text-secondary)' }}>{a.label}</span>
+                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = a.color + '15'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-main)'; e.currentTarget.style.transform = 'translateY(0)' }}>
+                <span style={{ fontSize: 24 }}>{a.icon}</span>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, textAlign: 'center', color: 'var(--text-secondary)', lineHeight: 1.2 }}>{a.label}</span>
               </a>
             ))}
           </div>
@@ -854,8 +871,28 @@ export default function InternDashboard() {
         @keyframes slideUp { from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1} }
         @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
         @keyframes spin { to{transform:rotate(360deg)} }
-        @media(max-width:900px){
-          .stat-grid{grid-template-columns:repeat(2,1fr)!important}
+
+        /* ─── Mobile Responsive Breakpoints ─── */
+        @media(max-width: 640px) {
+          /* Stat cards: 2 cols on mobile */
+          .intern-stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+          /* Attendance + Streak: stack vertically */
+          .intern-row-2 { grid-template-columns: 1fr !important; }
+
+          /* Progress + Allowance: stack vertically */
+          .intern-row-3 { grid-template-columns: 1fr !important; }
+
+          /* Pengumuman + Jadwal: stack vertically */
+          .intern-row-5 { grid-template-columns: 1fr !important; }
+
+          /* Quick Actions + Onboarding: stack vertically */
+          .intern-row-6 { grid-template-columns: 1fr !important; }
+        }
+
+        @media(max-width: 900px) {
+          /* Tablet: stat grid 2 cols */
+          .intern-stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </div>
