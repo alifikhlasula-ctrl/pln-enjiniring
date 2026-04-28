@@ -1317,10 +1317,15 @@ function BirthdayWidget() {
   const [saving,       setSaving]       = useState({})
   const [savedOk,      setSavedOk]      = useState({})
 
-  const fetchData = React.useCallback(async () => {
+  // Use a ref to always hold the latest month so fetchData never captures a stale value
+  const monthRef = React.useRef(month)
+  React.useEffect(() => { monthRef.current = month }, [month])
+
+  const fetchData = React.useCallback(async (targetMonth) => {
+    const m = targetMonth ?? monthRef.current
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/birthday?month=${month}`)
+      const res = await fetch(`/api/admin/birthday?month=${m}`)
       const json = await res.json()
       setData(json)
       // H-1 popup (once per session)
@@ -1344,9 +1349,10 @@ function BirthdayWidget() {
       }
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
-  }, [month])
+  }, []) // no dependencies — always reads monthRef.current
 
-  React.useEffect(() => { fetchData() }, [fetchData])
+  // Trigger fetch whenever month changes (and on mount)
+  React.useEffect(() => { fetchData(month) }, [month]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTemplate = (internId, internName, tplKey) => {
     setMessages(prev => ({ ...prev, [internId]: BIRTHDAY_TEMPLATES[tplKey](internName) }))
@@ -1364,7 +1370,7 @@ function BirthdayWidget() {
       })
       setSavedOk(prev => ({ ...prev, [internId]: true }))
       setTimeout(() => setSavedOk(prev => ({ ...prev, [internId]: false })), 2000)
-      await fetchData()
+      await fetchData(month)
     } catch (e) { console.error(e) }
     finally { setSaving(prev => ({ ...prev, [internId]: false })) }
   }
@@ -1401,7 +1407,7 @@ function BirthdayWidget() {
               <option key={i} value={String(i+1).padStart(2,'0')}>{m}</option>
             ))}
           </select>
-          <button onClick={fetchData} style={{ background:'none', border:'1px solid var(--border)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:'0.78rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
+          <button onClick={() => fetchData(month)} style={{ background:'none', border:'1px solid var(--border)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:'0.78rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
             <RefreshCw size={12}/> Refresh
           </button>
         </div>
