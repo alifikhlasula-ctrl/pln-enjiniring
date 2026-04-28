@@ -9,10 +9,7 @@ export async function GET() {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
 
-    // ── Single source of truth: Prisma (same data as Manajemen Peserta Magang) ──
-    // This guarantees Monitor Absensi is always in sync.
-    // When Admin changes intern status to COMPLETED/DISMISSED in Manajemen Peserta,
-    // they will automatically disappear from Monitor Absensi on the next refresh.
+    // ── Primary query: active interns + today's logs ──
     const [logs, activeInterns] = await Promise.all([
       prisma.attendanceLog.findMany({
         where: { date: todayStr },
@@ -23,45 +20,98 @@ export async function GET() {
           deletedAt: null,
           status: { equals: 'ACTIVE', mode: 'insensitive' }
         },
-        select: { id: true, name: true, bidang: true, periodEnd: true },
+        select: { id: true, name: true, bidang: true, periodEnd: true, status: true },
         orderBy: { name: 'asc' }
       })
     ])
 
-    // Filter out interns who have completed their period (periodEnd < today)
+    // Filter out interns who have completed their period
     const activeAndNotCompleted = activeInterns.filter(i => {
-      if (!i.periodEnd) return true;
-      // String comparison (YYYY-MM-DD) is safer across timezones
-      return i.periodEnd >= todayStr;
+      if (!i.periodEnd) return true
+      return i.periodEnd >= todayStr
     })
 
-    const payload = activeAndNotCompleted.map(i => {
-      const log = logs.find(l => l.internId === i.id)
+    // ── BUG FIX: Resolve orphaned log internIds that don't match active interns ──
+    // These are interns who absen but may be COMPLETED, soft-deleted, or created via
+    // legacy JSON system. We look them up separately so they never show as "Unknown".
+    const activeInternIds = new Set(activeAndNotCompleted.map(i => i.id))
+    const orphanedInternIds = [...new Set(
+      logs
+        .map(l => l.internId)
+        .filter(id => !activeInternIds.has(id))
+    )]
 
-      // For Supabase Storage URLs: send directly (short string, fast)
-      // For Base64: DON'T embed in response (too large) — send logId for lazy-load
+    let orphanInterns = []
+    if (orphanedInternIds.length > 0) {
+      orphanInterns = await prisma.intern.findMany({
+        where: { id: { in: orphanedInternIds } },
+        select: { id: true, name: true, bidang: true, periodEnd: true, deletedAt: true, status: true }
+      })
+    }
+
+    // Last resort: try User table (legacy records where internId === userId)
+    const resolvedOrphanIds = new Set(orphanInterns.map(i => i.id))
+    const stillUnknownIds = orphanedInternIds.filter(id => !resolvedOrphanIds.has(id))
+    let userFallbacks = []
+    if (stillUnknownIds.length > 0) {
+      const users = await prisma.user.findMany({
+        where: { id: { in: stillUnknownIds } },
+        select: { id: true, name: true }
+      })
+      userFallbacks = users.map(u => ({ id: u.id, name: u.name, bidang: '-', periodEnd: null, status: 'UNKNOWN' }))
+    }
+
+    // Build a unified lookup map: internId → intern data
+    const internMap = new Map()
+    for (const i of [...activeAndNotCompleted, ...orphanInterns, ...userFallbacks]) {
+      internMap.set(i.id, i)
+    }
+
+    const buildEntry = (intern, log) => {
       const faceInUrl    = log?.faceInUrl  || null
       const faceOutUrl   = log?.faceOutUrl || null
       const hasBase64In  = !faceInUrl  && !!log?.faceInBase64
       const hasBase64Out = !faceOutUrl && !!log?.faceOutBase64
 
       return {
-        internId:     i.id,
-        name:         i.name,
-        bidang:       i.bidang || '-',
+        internId:     intern.id,
+        name:         intern.name || 'Intern Tidak Dikenal',
+        bidang:       intern.bidang || '-',
         status:       log ? log.status : 'ABSENT',
-        checkIn:      log?.checkIn  || null,
-        checkOut:     log?.checkOut || null,
+        checkIn:      log?.checkIn  ? log.checkIn.toISOString()  : null,
+        checkOut:     log?.checkOut ? log.checkOut.toISOString() : null,
         checkInLoc:   log?.checkInLoc || null,
         logId:        log?.id || null,
         faceInUrl,
         faceOutUrl,
         hasBase64In,
         hasBase64Out,
+        isOrphaned:   !activeInternIds.has(intern.id),
+        internStatus: intern.status || null,
       }
+    }
+
+    // Active interns (with or without a log today)
+    const activePayload = activeAndNotCompleted.map(i => {
+      const log = logs.find(l => l.internId === i.id)
+      return buildEntry(i, log)
     })
 
-    // Sort: PRESENT → LATE → SAKIT → IZIN → ABSENT; within same status sort by checkIn desc
+    // Orphaned logs: interns not in active list but have attendance today
+    const orphanedPayload = logs
+      .filter(l => !activeInternIds.has(l.internId))
+      .map(l => {
+        const intern = internMap.get(l.internId) || {
+          id: l.internId, name: 'Intern Tidak Dikenal', bidang: '-', periodEnd: null, status: null
+        }
+        return buildEntry(intern, l)
+      })
+      // Deduplicate
+      .filter((v, i, arr) => arr.findIndex(x => x.internId === v.internId) === i)
+
+    const payload = [...activePayload, ...orphanedPayload]
+
+    // Sort: PRESENT → LATE → SAKIT → IZIN → ABSENT
     const ORDER = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 3, ABSENT: 4 }
     const sorted = payload.sort((a, b) => {
       const diff = (ORDER[a.status] ?? 4) - (ORDER[b.status] ?? 4)

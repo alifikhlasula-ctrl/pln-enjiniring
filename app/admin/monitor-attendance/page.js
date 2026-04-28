@@ -412,9 +412,18 @@ export default function MonitorAbsensiPage() {
 
                     {/* ── Col 2: Name ── */}
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ fontWeight: 800, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {item.name}
-                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <p style={{ fontWeight: 800, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
+                          {item.name}
+                        </p>
+                        {item.isOrphaned && (
+                          <span title={`Status intern: ${item.internStatus || 'Non-aktif'}`} style={{
+                            fontSize: '0.58rem', fontWeight: 800, padding: '1px 5px',
+                            borderRadius: 99, background: '#f59e0b22', color: '#f59e0b',
+                            border: '1px solid #f59e0b44', flexShrink: 0, whiteSpace: 'nowrap'
+                          }}>{item.internStatus || 'NON-AKTIF'}</span>
+                        )}
+                      </div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 2, flexWrap: 'wrap' }}>
                         {(item.faceInUrl  || item.hasBase64In)  && <span style={{ fontSize: '0.62rem', color: '#22c55e', fontWeight: 800 }}>📸 IN</span>}
                         {(item.faceOutUrl || item.hasBase64Out) && <span style={{ fontSize: '0.62rem', color: '#6366f1', fontWeight: 800 }}>📸 OUT</span>}
