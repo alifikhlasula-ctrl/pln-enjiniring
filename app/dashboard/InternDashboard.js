@@ -203,6 +203,38 @@ export default function InternDashboard() {
     }
   }, [user?.id])
 
+  // 🎂 Birthday Greeting Pop-up
+  useEffect(() => {
+    if (!user?.id) return
+    const bdKey = `bday_shown_${new Date().toISOString().split('T')[0]}_${user.id}`
+    if (sessionStorage.getItem(bdKey)) return
+    fetch(`/api/birthday-greeting?internId=${user.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.isBirthday) return
+        sessionStorage.setItem(bdKey, '1')
+        import('sweetalert2').then(({ default: S }) => {
+          S.fire({
+            title: `🎂 Selamat Ulang Tahun, ${data.name}!`,
+            html: `<div style="text-align:left;white-space:pre-wrap;font-size:0.92rem;line-height:1.7;color:inherit">${data.message}</div>`,
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #1a1035 100%)',
+            color: '#fff',
+            confirmButtonText: '🎉 Terima Kasih!',
+            confirmButtonColor: '#f43f5e',
+            showClass: { popup: 'animate__animated animate__bounceIn' },
+            customClass: { popup: 'birthday-popup' },
+            backdrop: `
+              rgba(244,63,94,0.25)
+              url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎂%3C/text%3E%3C/svg%3E")
+              left top
+              no-repeat
+            `
+          })
+        })
+      })
+      .catch(() => {})
+  }, [user?.id])
+
   const handleEnablePush = async () => {
     try {
       const permission = await Notification.requestPermission()

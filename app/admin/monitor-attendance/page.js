@@ -416,7 +416,15 @@ export default function MonitorAbsensiPage() {
                         <p style={{ fontWeight: 800, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
                           {item.name}
                         </p>
-                        {item.isOrphaned && (
+                        {item.isBirthday && (
+                          <span title="Hari Ulang Tahun! 🎂" style={{
+                            fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px',
+                            borderRadius: 99, background: 'linear-gradient(135deg,#f43f5e,#ec4899)',
+                            color: '#fff', flexShrink: 0, whiteSpace: 'nowrap',
+                            boxShadow: '0 2px 8px rgba(244,63,94,0.4)', animation: 'birthdayPulse 2s infinite'
+                          }}>🎂 HUT</span>
+                        )}
+                        {item.isOrphaned && !item.isBirthday && (
                           <span title={`Status intern: ${item.internStatus || 'Non-aktif'}`} style={{
                             fontSize: '0.58rem', fontWeight: 800, padding: '1px 5px',
                             borderRadius: 99, background: '#f59e0b22', color: '#f59e0b',
@@ -429,6 +437,7 @@ export default function MonitorAbsensiPage() {
                         {(item.faceOutUrl || item.hasBase64Out) && <span style={{ fontSize: '0.62rem', color: '#6366f1', fontWeight: 800 }}>📸 OUT</span>}
                       </div>
                     </div>
+
 
                     {/* ── Col 3: Bidang ── */}
                     <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -532,9 +541,14 @@ export default function MonitorAbsensiPage() {
           70%  { box-shadow: 0 0 0 7px rgba(239,68,68,0); }
           100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
         }
+        @keyframes birthdayPulse {
+          0%,100% { box-shadow: 0 2px 8px rgba(244,63,94,0.4); transform: scale(1); }
+          50%     { box-shadow: 0 4px 16px rgba(244,63,94,0.7); transform: scale(1.08); }
+        }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin   { to   { transform: rotate(360deg); } }
       `}</style>
+
     </>
   )
 }

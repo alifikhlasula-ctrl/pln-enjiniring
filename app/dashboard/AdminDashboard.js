@@ -1300,6 +1300,252 @@ function JenjangChart({data,loading}) {
   )
 }
 
+/* ── Birthday Widget ──────────────────────────── */
+const BIRTHDAY_TEMPLATES = {
+  FORMAL: (name) => `Yth. ${name},\n\nDengan hormat, kami mengucapkan Selamat Ulang Tahun yang ke-spesial ini. Semoga hari yang indah ini menjadi awal dari pencapaian-pencapaian besar dalam hidup Anda. Kami mendoakan kesehatan, kebahagiaan, dan kesuksesan selalu menyertai langkah Anda.\n\nHormat kami,\nAdmin HR PLN Enjiniring`,
+  AKRAB:  (name) => `Happy Birthday, ${name}! 🎉🎂\n\nSemoga di hari spesialmu ini, semua impian dan cita-citamu semakin dekat untuk diraih! Tetap semangat dan jaga kesehatan ya. Senang bisa mengenal kamu di program magang ini! 🌟\n\nSalam hangat,\nAdmin HR`,
+  SINGKAT: (name) => `Selamat Ulang Tahun, ${name}! 🎂 Semoga selalu sehat, bahagia, dan sukses. — Admin HR PLN Enjiniring`,
+}
+
+function BirthdayWidget() {
+  const [activeTab,    setActiveTab]    = useState('bulan')
+  const [month,        setMonth]        = useState(() => String(new Date().getMonth() + 1).padStart(2, '0'))
+  const [data,         setData]         = useState(null)
+  const [loading,      setLoading]      = useState(true)
+  const [expandedId,   setExpandedId]   = useState(null)
+  const [messages,     setMessages]     = useState({}) // internId → draft message
+  const [saving,       setSaving]       = useState({})
+  const [savedOk,      setSavedOk]      = useState({})
+
+  const fetchData = React.useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/birthday?month=${month}`)
+      const json = await res.json()
+      setData(json)
+      // H-1 popup (once per session)
+      if (json.tomorrowBirthdays?.length > 0) {
+        const key = `bday_reminder_${new Date().toISOString().split('T')[0]}`
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1')
+          import('sweetalert2').then(({ default: Swal }) => {
+            const names = json.tomorrowBirthdays.map(e => `<li><b>${e.name}</b> (${e.bidang})</li>`).join('')
+            Swal.fire({
+              title: '🎂 Pengingat Ulang Tahun Besok!',
+              html: `<p style="margin-bottom:10px">Intern berikut berulang tahun <b>besok</b>. Jangan lupa siapkan ucapan!</p><ul style="text-align:left">${names}</ul>`,
+              icon: 'info',
+              confirmButtonText: 'Siapkan Ucapan',
+              confirmButtonColor: '#6366f1',
+              showCancelButton: true,
+              cancelButtonText: 'Nanti saja'
+            })
+          })
+        }
+      }
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
+  }, [month])
+
+  React.useEffect(() => { fetchData() }, [fetchData])
+
+  const handleTemplate = (internId, internName, tplKey) => {
+    setMessages(prev => ({ ...prev, [internId]: BIRTHDAY_TEMPLATES[tplKey](internName) }))
+  }
+
+  const handleSave = async (internId) => {
+    const message = messages[internId]
+    if (!message?.trim()) return
+    setSaving(prev => ({ ...prev, [internId]: true }))
+    try {
+      await fetch('/api/admin/birthday', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ internId, message, template: 'CUSTOM' })
+      })
+      setSavedOk(prev => ({ ...prev, [internId]: true }))
+      setTimeout(() => setSavedOk(prev => ({ ...prev, [internId]: false })), 2000)
+      await fetchData()
+    } catch (e) { console.error(e) }
+    finally { setSaving(prev => ({ ...prev, [internId]: false })) }
+  }
+
+  const MONTHS_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
+  const entries  = data?.entries || []
+  const history  = data?.history  || []
+  const todayBD  = data?.todayBirthdays || []
+  const tmrBD    = data?.tomorrowBirthdays || []
+
+  const getDaysBadge = (e) => {
+    if (e.isToday)    return { label: 'HARI INI 🎂', color: '#f43f5e', bg: 'rgba(244,63,94,0.12)' }
+    if (e.isTomorrow) return { label: 'BESOK ⏰',    color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' }
+    return { label: `${e.daysUntil} hari lagi`,      color: '#6366f1', bg: 'rgba(99,102,241,0.08)' }
+  }
+
+  const TABS = [
+    { key: 'bulan',   label: `📅 Bulan ${MONTHS_ID[parseInt(month)-1]}`, count: entries.length },
+    { key: 'besok',   label: '⏰ H-1 Besok',  count: tmrBD.length, alert: tmrBD.length > 0 },
+    { key: 'history', label: '📜 Riwayat Ucapan', count: history.length },
+  ]
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--sp-4)' }}>
+      {/* Header */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem', flexWrap:'wrap', gap:8 }}>
+        <h3 style={{ fontWeight:800, fontSize:'0.95rem', display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:20 }}>🎂</span> Ulang Tahun Intern
+        </h3>
+        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+          <select value={month} onChange={e => setMonth(e.target.value)}
+            style={{ padding:'5px 10px', borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-main)', color:'var(--text-primary)', fontSize:'0.78rem' }}>
+            {MONTHS_ID.map((m, i) => (
+              <option key={i} value={String(i+1).padStart(2,'0')}>{m}</option>
+            ))}
+          </select>
+          <button onClick={fetchData} style={{ background:'none', border:'1px solid var(--border)', borderRadius:8, padding:'5px 10px', cursor:'pointer', fontSize:'0.78rem', color:'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
+            <RefreshCw size={12}/> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Today banner */}
+      {todayBD.length > 0 && (
+        <div style={{ background:'linear-gradient(135deg,#f43f5e,#ec4899)', borderRadius:12, padding:'0.875rem 1.25rem', marginBottom:'1rem', color:'#fff', display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontSize:28 }}>🎂</span>
+          <div>
+            <p style={{ fontWeight:800, fontSize:'0.95rem' }}>Hari Ulang Tahun hari ini!</p>
+            <p style={{ fontSize:'0.8rem', opacity:0.9 }}>{todayBD.map(e => e.name).join(', ')} — jangan lupa ucapkan selamat!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:6, marginBottom:'1rem', flexWrap:'wrap' }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
+            padding:'5px 12px', borderRadius:99, fontSize:'0.75rem', fontWeight:700,
+            border:`1px solid ${activeTab===t.key ? 'var(--primary)' : 'var(--border)'}`,
+            background: activeTab===t.key ? 'var(--primary)' : 'transparent',
+            color: activeTab===t.key ? '#fff' : 'var(--text-secondary)',
+            cursor:'pointer', transition:'all 0.15s', display:'flex', alignItems:'center', gap:4,
+            position:'relative'
+          }}>
+            {t.label}
+            {t.count > 0 && <span style={{ background: activeTab===t.key ? 'rgba(255,255,255,0.25)' : 'var(--primary)', color:'#fff', borderRadius:99, padding:'0 5px', fontSize:'0.65rem', fontWeight:800 }}>{t.count}</span>}
+            {t.alert && <span style={{ width:7, height:7, background:'#f43f5e', borderRadius:'50%', position:'absolute', top:2, right:2 }}/>}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {[1,2,3].map(i => <div key={i} style={{ height:56, background:'var(--border)', borderRadius:8, animation:'pulse 1.4s ease-in-out infinite' }}/>)}
+        </div>
+      ) : activeTab === 'history' ? (
+        /* ── History Tab ── */
+        <div style={{ maxHeight:400, overflowY:'auto' }}>
+          {history.length === 0
+            ? <p style={{ color:'var(--text-muted)', fontSize:'0.82rem', textAlign:'center', padding:'2rem' }}>Belum ada ucapan yang disimpan.</p>
+            : history.map(h => (
+              <div key={h.key} style={{ padding:'0.75rem', borderRadius:10, background:'var(--bg-main)', border:'1px solid var(--border)', marginBottom:6 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                  <span style={{ fontWeight:800, fontSize:'0.82rem' }}>{h.internName}</span>
+                  <span style={{ fontSize:'0.65rem', color:'var(--text-muted)' }}>Tahun {h.year} · {h.savedAt ? new Date(h.savedAt).toLocaleDateString('id-ID') : '-'}</span>
+                </div>
+                <p style={{ fontSize:'0.78rem', color:'var(--text-secondary)', whiteSpace:'pre-wrap', lineHeight:1.5 }}>{h.message}</p>
+              </div>
+            ))
+          }
+        </div>
+      ) : (
+        /* ── Bulan / Besok Tab ── */
+        <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:500, overflowY:'auto' }}>
+          {(activeTab === 'besok' ? tmrBD : entries).length === 0
+            ? <p style={{ color:'var(--text-muted)', fontSize:'0.82rem', textAlign:'center', padding:'2rem' }}>
+                {activeTab==='besok' ? 'Tidak ada intern yang berulang tahun besok 🎉' : 'Tidak ada data ulang tahun untuk bulan ini.'}
+              </p>
+            : (activeTab === 'besok' ? tmrBD : entries).map(e => {
+                const badge = getDaysBadge(e)
+                const isExpanded = expandedId === e.internId
+                return (
+                  <div key={e.internId} style={{
+                    borderRadius:12, border:`1px solid ${e.isToday ? '#f43f5e44' : e.isTomorrow ? '#f59e0b44' : 'var(--border)'}`,
+                    background: e.isToday ? 'rgba(244,63,94,0.04)' : 'var(--bg-main)',
+                    overflow:'hidden', transition:'all 0.18s'
+                  }}>
+                    {/* Row */}
+                    <div style={{ display:'flex', alignItems:'center', gap:12, padding:'0.75rem 1rem' }}>
+                      {/* Avatar */}
+                      <div style={{ width:38, height:38, borderRadius:'50%', background: e.isToday ? 'linear-gradient(135deg,#f43f5e,#ec4899)' : 'var(--primary-light)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.82rem', fontWeight:900, color: e.isToday ? '#fff' : 'var(--primary)', flexShrink:0 }}>
+                        {e.name.split(' ').map(w=>w[0]).slice(0,2).join('')}
+                      </div>
+                      {/* Info */}
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <p style={{ fontWeight:800, fontSize:'0.85rem', margin:0 }}>{e.name}</p>
+                          {e.isToday && <span style={{ fontSize:16 }}>🎂</span>}
+                        </div>
+                        <p style={{ fontSize:'0.7rem', color:'var(--text-muted)', margin:0 }}>{e.bidang} · {e.day} {['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][parseInt(e.month)-1]}</p>
+                      </div>
+                      {/* Badge */}
+                      <span style={{ fontSize:'0.68rem', fontWeight:800, padding:'3px 10px', borderRadius:99, background:badge.bg, color:badge.color, flexShrink:0 }}>{badge.label}</span>
+                      {/* Greeting status */}
+                      {e.hasGreeting && <span title="Ucapan sudah disimpan" style={{ fontSize:14 }}>✅</span>}
+                      {/* Toggle btn */}
+                      <button onClick={() => setExpandedId(isExpanded ? null : e.internId)}
+                        style={{ background:isExpanded?'var(--primary)':'var(--bg-main)', border:'1px solid var(--border)', borderRadius:8, padding:'4px 10px', cursor:'pointer', fontSize:'0.72rem', fontWeight:700, color:isExpanded?'#fff':'var(--text-secondary)', transition:'all 0.15s', flexShrink:0, display:'flex', alignItems:'center', gap:4 }}>
+                        <Edit size={11}/> {isExpanded ? 'Tutup' : 'Ucapan'}
+                      </button>
+                    </div>
+
+                    {/* Expanded Greeting Editor */}
+                    {isExpanded && (
+                      <div style={{ padding:'0 1rem 1rem', borderTop:'1px solid var(--border)', animation:'scaleUp 0.18s ease' }}>
+                        {/* Template Buttons */}
+                        <div style={{ display:'flex', gap:6, margin:'0.75rem 0 0.5rem' }}>
+                          <span style={{ fontSize:'0.72rem', color:'var(--text-muted)', alignSelf:'center', marginRight:4 }}>Template:</span>
+                          {['FORMAL','AKRAB','SINGKAT'].map(tpl => (
+                            <button key={tpl} onClick={() => handleTemplate(e.internId, e.name, tpl)} style={{
+                              padding:'4px 10px', borderRadius:99, fontSize:'0.7rem', fontWeight:700,
+                              border:'1px solid var(--border)', background:'var(--bg-main)',
+                              color:'var(--text-secondary)', cursor:'pointer', transition:'all 0.15s'
+                            }}
+                              onMouseEnter={ev => { ev.currentTarget.style.borderColor='var(--primary)'; ev.currentTarget.style.color='var(--primary)' }}
+                              onMouseLeave={ev => { ev.currentTarget.style.borderColor='var(--border)'; ev.currentTarget.style.color='var(--text-secondary)' }}>
+                              {tpl === 'FORMAL' ? '🎩 Formal' : tpl === 'AKRAB' ? '😊 Akrab' : '⚡ Singkat'}
+                            </button>
+                          ))}
+                        </div>
+                        {/* Textarea */}
+                        <textarea
+                          rows={5}
+                          placeholder={`Tulis ucapan personal untuk ${e.name}...`}
+                          value={messages[e.internId] ?? (e.greeting?.message || '')}
+                          onChange={ev => setMessages(prev => ({ ...prev, [e.internId]: ev.target.value }))}
+                          style={{ width:'100%', padding:'0.75rem', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-main)', color:'var(--text-primary)', fontSize:'0.82rem', resize:'vertical', lineHeight:1.6, fontFamily:'inherit', boxSizing:'border-box' }}
+                        />
+                        {/* Save */}
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:8 }}>
+                          <span style={{ fontSize:'0.68rem', color:'var(--text-muted)' }}>
+                            {e.greeting?.savedAt ? `Terakhir disimpan: ${new Date(e.greeting.savedAt).toLocaleDateString('id-ID')}` : 'Belum ada ucapan tersimpan'}
+                          </span>
+                          <button onClick={() => handleSave(e.internId)} disabled={saving[e.internId]}
+                            className="btn btn-primary btn-sm" style={{ fontSize:'0.75rem', gap:4, display:'flex', alignItems:'center' }}>
+                            {saving[e.internId] ? <Loader2 size={13} style={{ animation:'spin 0.8s linear infinite' }}/> : savedOk[e.internId] ? '✅ Tersimpan!' : <><CheckCircle2 size={13}/> Simpan Ucapan</>}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })
+          }
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Main Admin Dashboard ────────────────────────── */
 export default function AdminDashboard() {
   const [selectedYear, setSelectedYear] = useState('2026')
@@ -1462,6 +1708,9 @@ export default function AdminDashboard() {
         <SurveyWidget data={{active:s.activeSurveys, responses:s.totalResponses}} loading={loading}/>
         <HRTasksWidget/>
       </div>
+
+      {/* ── Row 3.5: Birthday Widget ── */}
+      <BirthdayWidget/>
 
       {/* ── Row 4: Program Distributions (Jenjang & Bidang) ── */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(2, 1fr)',gap:'var(--sp-4)',marginBottom:'var(--sp-4)'}}>

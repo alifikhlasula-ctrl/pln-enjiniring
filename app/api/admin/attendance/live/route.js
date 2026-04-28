@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic' // No caching
+export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET() {
   try {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
+    const todayMMDD = `${todayStr.split('-')[1]}-${todayStr.split('-')[2]}`
 
     // ── Primary query: active interns + today's logs ──
     const [logs, activeInterns] = await Promise.all([
@@ -20,7 +21,7 @@ export async function GET() {
           deletedAt: null,
           status: { equals: 'ACTIVE', mode: 'insensitive' }
         },
-        select: { id: true, name: true, bidang: true, periodEnd: true, status: true },
+        select: { id: true, name: true, bidang: true, periodEnd: true, status: true, birthDate: true },
         orderBy: { name: 'asc' }
       })
     ])
@@ -32,20 +33,16 @@ export async function GET() {
     })
 
     // ── BUG FIX: Resolve orphaned log internIds that don't match active interns ──
-    // These are interns who absen but may be COMPLETED, soft-deleted, or created via
-    // legacy JSON system. We look them up separately so they never show as "Unknown".
     const activeInternIds = new Set(activeAndNotCompleted.map(i => i.id))
     const orphanedInternIds = [...new Set(
-      logs
-        .map(l => l.internId)
-        .filter(id => !activeInternIds.has(id))
+      logs.map(l => l.internId).filter(id => !activeInternIds.has(id))
     )]
 
     let orphanInterns = []
     if (orphanedInternIds.length > 0) {
       orphanInterns = await prisma.intern.findMany({
         where: { id: { in: orphanedInternIds } },
-        select: { id: true, name: true, bidang: true, periodEnd: true, deletedAt: true, status: true }
+        select: { id: true, name: true, bidang: true, periodEnd: true, deletedAt: true, status: true, birthDate: true }
       })
     }
 
@@ -58,7 +55,7 @@ export async function GET() {
         where: { id: { in: stillUnknownIds } },
         select: { id: true, name: true }
       })
-      userFallbacks = users.map(u => ({ id: u.id, name: u.name, bidang: '-', periodEnd: null, status: 'UNKNOWN' }))
+      userFallbacks = users.map(u => ({ id: u.id, name: u.name, bidang: '-', periodEnd: null, status: 'UNKNOWN', birthDate: null }))
     }
 
     // Build a unified lookup map: internId → intern data
@@ -72,6 +69,11 @@ export async function GET() {
       const faceOutUrl   = log?.faceOutUrl || null
       const hasBase64In  = !faceInUrl  && !!log?.faceInBase64
       const hasBase64Out = !faceOutUrl && !!log?.faceOutBase64
+
+      // 🎂 Birthday check (MM-DD, WIB-safe)
+      const bParts     = intern.birthDate ? intern.birthDate.split('T')[0].split('-') : null
+      const internMMDD = bParts && bParts.length >= 3 ? `${bParts[1]}-${bParts[2]}` : null
+      const isBirthday = !!internMMDD && internMMDD === todayMMDD
 
       return {
         internId:     intern.id,
@@ -88,6 +90,8 @@ export async function GET() {
         hasBase64Out,
         isOrphaned:   !activeInternIds.has(intern.id),
         internStatus: intern.status || null,
+        birthDate:    intern.birthDate || null,
+        isBirthday,
       }
     }
 
@@ -97,16 +101,15 @@ export async function GET() {
       return buildEntry(i, log)
     })
 
-    // Orphaned logs: interns not in active list but have attendance today
+    // Orphaned logs (interns not in active list but have attendance today)
     const orphanedPayload = logs
       .filter(l => !activeInternIds.has(l.internId))
       .map(l => {
         const intern = internMap.get(l.internId) || {
-          id: l.internId, name: 'Intern Tidak Dikenal', bidang: '-', periodEnd: null, status: null
+          id: l.internId, name: 'Intern Tidak Dikenal', bidang: '-', periodEnd: null, status: null, birthDate: null
         }
         return buildEntry(intern, l)
       })
-      // Deduplicate
       .filter((v, i, arr) => arr.findIndex(x => x.internId === v.internId) === i)
 
     const payload = [...activePayload, ...orphanedPayload]
