@@ -150,8 +150,8 @@ export default function InternDashboard() {
           return
         }
 
-        // Register the firebase-messaging-sw.js explicitly
-        const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        // Register the UNIFIED service worker (sw.js handles both FCM + PWA caching)
+        const swReg = await navigator.serviceWorker.register('/sw.js')
         console.log('[FCM] Service worker registered:', swReg.scope)
 
         const token = await getToken(messaging, {
@@ -198,7 +198,7 @@ export default function InternDashboard() {
         
         // Get FCM Token using explicit service worker registration
         if (messaging) {
-          const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+          const swReg = await navigator.serviceWorker.register('/sw.js')
           const token = await getToken(messaging, { 
             vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
             serviceWorkerRegistration: swReg

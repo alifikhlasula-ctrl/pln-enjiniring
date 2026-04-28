@@ -1,114 +1,119 @@
-const CACHE_NAME = 'internhub-cache-v1';
+// ═══════════════════════════════════════════════════════════════════════
+// InternHub PWA Service Worker — Unified (Caching + FCM)
+// This single file handles BOTH PWA offline caching AND Firebase Cloud Messaging.
+// Firebase requires the messaging SW to be importScripted here at scope /.
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Firebase Messaging (MUST be at top before any self.addEventListener) ──
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "AIzaSyD3jThuR0fGtm2OAyAqlmS_X3owP1JPXIY",
+  authDomain: "internhub-plne.firebaseapp.com",
+  projectId: "internhub-plne",
+  storageBucket: "internhub-plne.firebasestorage.app",
+  messagingSenderId: "365936458573",
+  appId: "1:365936458573:web:35d1d33bf286de2955d504"
+});
+
+const messaging = firebase.messaging();
+
+// Handle background push messages (when tab is hidden or app is closed)
+messaging.onBackgroundMessage((payload) => {
+  console.log('[sw.js] Background push received:', payload);
+  const title = payload.notification?.title || 'InternHub PLN Enjiniring';
+  const options = {
+    body: payload.notification?.body || '',
+    icon: '/icons/icon.svg',
+    badge: '/icons/icon.svg',
+    data: payload.data || {},
+    vibrate: [200, 100, 200],
+    requireInteraction: false,
+  };
+  self.registration.showNotification(title, options);
+});
+
+// ── PWA Caching ─────────────────────────────────────────────────────────
+const CACHE_NAME = 'internhub-cache-v2';
 const OFFLINE_URLS = [
   '/',
   '/manifest.json',
   '/icons/icon.svg',
 ];
 
-// Install Event: Cache essential URLs
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(OFFLINE_URLS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
   );
 });
 
-// Activate Event: Cleanup old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) return caches.delete(name);
         })
-      );
-    })
+      )
+    )
   );
   self.clients.claim();
 });
 
-// Fetch Event: Network first, fallback to cache for specific API routes (Attendance, Reports)
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Cache specific API routes for offline viewing (Intern Dashboard, Attendance Logs, Reports)
-  if (url.pathname.startsWith('/api/intern-dashboard') || url.pathname.startsWith('/api/attendance') || url.pathname.startsWith('/api/reports')) {
+  // Cache specific API routes for offline viewing
+  if (
+    url.pathname.startsWith('/api/intern-dashboard') ||
+    url.pathname.startsWith('/api/attendance') ||
+    url.pathname.startsWith('/api/reports')
+  ) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // If response is OK, cache a copy
           if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => {
-          // If network fails, serve from cache
-          return caches.match(event.request);
-        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // Default behavior for other requests: Stale-While-Revalidate for static assets, Network-First for HTML
+  // Stale-while-revalidate for static assets, network-first for HTML
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (event.request.method === 'GET' && networkResponse.status === 200) {
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
-        }
-        return networkResponse;
-      }).catch(() => {
-        // If offline and not in cache, let it fail or return a custom offline page
-      });
-      return cachedResponse || fetchPromise;
+    caches.match(event.request).then((cached) => {
+      const fetched = fetch(event.request)
+        .then((network) => {
+          if (event.request.method === 'GET' && network.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, network.clone()));
+          }
+          return network;
+        })
+        .catch(() => {});
+      return cached || fetched;
     })
   );
 });
 
-// Push Notification Event Listener (To be implemented fully later with Firebase)
-self.addEventListener('push', function(event) {
-  if (event.data) {
-    try {
-      const payload = event.data.json();
-      const title = payload.notification?.title || 'Notifikasi InternHub';
-      const options = {
-        body: payload.notification?.body || '',
-        icon: '/icons/icon.svg',
-        badge: '/icons/icon.svg',
-        data: payload.data,
-      };
-      event.waitUntil(self.registration.showNotification(title, options));
-    } catch (e) {
-      // Fallback for plain text push
-      event.waitUntil(self.registration.showNotification('InternHub PLNE', { body: event.data.text(), icon: '/icons/icon.svg' }));
-    }
-  }
-});
-
-// Notification Click Event Listener
-self.addEventListener('notificationclick', function(event) {
+// ── Notification Click Handler ──────────────────────────────────────────
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = event.notification.data?.url || '/';
-  
+  const urlToOpen = event.notification.data?.url || '/dashboard';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Check if there is already a window/tab open with the target URL
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url === urlToOpen && 'focus' in client) {
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          client.navigate(urlToOpen);
           return client.focus();
         }
       }
-      // If not, open a new window
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
+      if (clients.openWindow) return clients.openWindow(urlToOpen);
     })
   );
 });

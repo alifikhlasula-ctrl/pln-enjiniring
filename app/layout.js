@@ -9,6 +9,7 @@ import {
   Megaphone, BookOpen, Lock, BarChart2, Activity
 } from 'lucide-react'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
+import { messaging, getToken } from '@/lib/firebase'
 import '@/app/globals.css'
 
 const ThemeContext = createContext()
@@ -163,7 +164,7 @@ function LayoutContent({ children }) {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Register PWA Service Worker
+  // Register PWA Service Worker (Unified: handles both caching AND Firebase FCM)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
@@ -171,6 +172,37 @@ function LayoutContent({ children }) {
         .catch(err => console.error('PWA SW registration failed:', err))
     }
   }, [])
+
+  // Auto-sync FCM token for INTERN role on ANY page load
+  // This ensures the token is always up-to-date in the database.
+  useEffect(() => {
+    if (!user?.id || user?.role !== 'INTERN') return
+    if (typeof window === 'undefined' || !('Notification' in window)) return
+    if (Notification.permission !== 'granted') return
+
+    const syncToken = async () => {
+      try {
+        if (!messaging) return
+        const swReg = await navigator.serviceWorker.ready
+        const token = await getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: swReg
+        })
+        if (token) {
+          await fetch('/api/intern/fcm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, fcmToken: token })
+          })
+          console.log('[FCM Layout] Token synced for user:', user.id)
+        }
+      } catch (err) {
+        console.warn('[FCM Layout] Token sync failed:', err.message)
+      }
+    }
+
+    syncToken()
+  }, [user?.id, user?.role])
 
   // ── FIX: Redirection must be inside useEffect to avoid render-phase updates ──
   useEffect(() => {
