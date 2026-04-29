@@ -276,10 +276,10 @@ export default function AttendancePage() {
     setTimeout(() => setToast(null), 3500)
   }
 
-  const fetchLogs = useCallback(async () => {
+  const fetchLogs = useCallback(async (silent = false) => {
     if (!user) return
-    setLoading(true)
-    const { data } = await safeFetch(`/api/attendance?userId=${user.id}`)
+    if (!silent) setLoading(true)
+    const { data } = await safeFetch(`/api/attendance?userId=${user.id}&_t=${Date.now()}`)
     const list = Array.isArray(data) ? data : []
     setAttendances(list)
     const today = new Date().toISOString().split('T')[0]
@@ -288,10 +288,15 @@ export default function AttendancePage() {
     const pRes = await safeFetch(`/api/intern/profile?userId=${user.id}`)
     if (pRes.ok) setInternProfile(pRes.data?.intern || null)
 
-    setLoading(false)
+    if (!silent) setLoading(false)
   }, [user])
 
-  useEffect(() => { fetchLogs() }, [fetchLogs])
+  // Initial fetch + auto-refresh every 30s (picks up admin-approved corrections)
+  useEffect(() => {
+    fetchLogs()
+    const iv = setInterval(() => fetchLogs(true), 30000)
+    return () => clearInterval(iv)
+  }, [fetchLogs])
 
   const openCamera = (type) => { setPendingType(type); setShowFace(true) }
   const closeCamera = () => { setShowFace(false); setPendingType(null) }
@@ -373,7 +378,7 @@ export default function AttendancePage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        internId: user.id, 
+        internId: internProfile?.id || user.id,
         internName: internProfile?.name || user.name || 'Intern',
         date: correctionModal.log.date,
         type: correctionModal.type,
@@ -629,8 +634,13 @@ export default function AttendancePage() {
         <div className="card" style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <h3 style={{ fontWeight: 800 }}>Riwayat Kehadiran</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', color: 'var(--secondary)', fontWeight: 700 }}>
-              <Wifi size={12} /> SQLite Database
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={() => fetchLogs()} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <RefreshCw size={11} /> Refresh
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', color: 'var(--secondary)', fontWeight: 700 }}>
+                <Wifi size={12} /> Live Database
+              </div>
             </div>
           </div>
 
@@ -661,10 +671,12 @@ export default function AttendancePage() {
                           )}
                           <span style={{ fontWeight: 600 }}>{fmtTime(log.checkIn)}</span>
                           {!log.checkIn && log.checkOut && (
-                            <button onClick={() => setCorrectionModal({ open: true, log, type: 'IN', time: '07:30', reason: '' })} 
-                                    className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.65rem' }}>
-                              Ajukan Perbaikan
-                            </button>
+                            log.pendingCorrIN
+                              ? <span style={{ fontSize: '0.62rem', fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', whiteSpace: 'nowrap' }}>⏳ Menunggu</span>
+                              : <button onClick={() => setCorrectionModal({ open: true, log, type: 'IN', time: '07:30', reason: '' })} 
+                                        className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.65rem' }}>
+                                  Ajukan Perbaikan
+                                </button>
                           )}
                         </div>
                       </td>
@@ -675,10 +687,12 @@ export default function AttendancePage() {
                           )}
                           <span style={{ fontWeight: 600 }}>{fmtTime(log.checkOut)}</span>
                           {log.checkIn && !log.checkOut && (
-                             <button onClick={() => setCorrectionModal({ open: true, log, type: 'OUT', time: '16:00', reason: '' })} 
-                                     className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.65rem' }}>
-                               Ajukan Perbaikan
-                             </button>
+                            log.pendingCorrOUT
+                              ? <span style={{ fontSize: '0.62rem', fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d', whiteSpace: 'nowrap' }}>⏳ Menunggu</span>
+                              : <button onClick={() => setCorrectionModal({ open: true, log, type: 'OUT', time: '16:00', reason: '' })} 
+                                        className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.65rem' }}>
+                                  Ajukan Perbaikan
+                                </button>
                           )}
                         </div>
                       </td>

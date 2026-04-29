@@ -30,27 +30,51 @@ async function findIntern(userId) {
   return intern
 }
 
+export const dynamic = 'force-dynamic'
+
 /* ── GET: Riwayat Absensi ─────────────────────────────── */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+
     if (!userId) return NextResponse.json([])
 
     const intern = await findIntern(userId)
     if (!intern) return NextResponse.json([])
 
-    const logs = await prisma.attendanceLog.findMany({
-      where: { internId: intern.id },
-      orderBy: { date: 'desc' }
-    })
+    // Fetch logs + pending corrections in parallel
+    const [logs, corrections] = await Promise.all([
+      prisma.attendanceLog.findMany({
+        where: { internId: intern.id },
+        orderBy: { date: 'desc' }
+      }),
+      prisma.attendanceCorrection.findMany({
+        where: { internId: intern.id, status: 'PENDING' },
+        select: { date: true, type: true, status: true }
+      })
+    ])
 
-    return NextResponse.json(logs.map(serializeLog))
+    // Build a map: "date|type" → correction status (PENDING)
+    const corrMap = {}
+    for (const c of corrections) {
+      corrMap[`${c.date}|${c.type}`] = c.status
+    }
+
+    // Attach pendingCorrIN / pendingCorrOUT to each log
+    const enriched = logs.map(log => ({
+      ...serializeLog(log),
+      pendingCorrIN:  corrMap[`${log.date}|IN`]  === 'PENDING',
+      pendingCorrOUT: corrMap[`${log.date}|OUT`] === 'PENDING',
+    }))
+
+    return NextResponse.json(enriched)
   } catch (err) {
     console.error('[GET /api/attendance] CRASH:', err)
     return NextResponse.json({ error: 'Gagal mengambil riwayat: ' + err.message }, { status: 500 })
   }
 }
+
 
 /* ── POST: Check In / Check Out ───────────────────────── */
 export async function POST(request) {
