@@ -53,7 +53,7 @@ export async function GET(request) {
         // No deletedAt filter here: we need their names even if deleted later
         select: {
           id: true, name: true, bidang: true, university: true,
-          userId: true, facePhotoUrl: true, email: true, status: true,
+          userId: true, email: true, status: true,
           periodStart: true, periodEnd: true, deletedAt: true
         }
       })
