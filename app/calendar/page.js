@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight, X, Clock, Users, Star, Wallet, RefreshCw } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, X, Clock, Users, Star, Wallet, RefreshCw, Palmtree } from 'lucide-react'
+import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
 
 const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 const DAYS_ID   = ['Min','Sen','Sel','Rab','Kam','Jum','Sab']
@@ -11,6 +12,7 @@ const EVT_TYPES = {
   PAYROLL:    { color:'#10b981', bg:'#dcfce7', label:'Payroll',           icon:'💰' },
   EVENT:      { color:'#8b5cf6', bg:'#ede9fe', label:'Event',             icon:'📅' },
   ONBOARDING: { color:'#ef4444', bg:'#fee2e2', label:'Onboarding Review', icon:'📋' },
+  HOLIDAY:    { color:'#dc2626', bg:'#fef2f2', label:'Hari Libur',        icon:'🌴' },
 }
 
 function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate() }
@@ -24,7 +26,7 @@ export default function CalendarPage() {
   const [loading,    setLoading] = useState(true)
   const [selected,   setSelected]= useState(null) // selected date string
   const [dayEvents,  setDayEvts] = useState([])
-  const [filters,    setFilters] = useState({ INTERN:true, EVALUATION:true, PAYROLL:true, EVENT:true, ONBOARDING:true })
+  const [filters,    setFilters] = useState({ INTERN:true, EVALUATION:true, PAYROLL:true, EVENT:true, ONBOARDING:true, HOLIDAY:true })
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -67,6 +69,11 @@ export default function CalendarPage() {
       // Onboarding pending
       ;((obR.list||obR)||[]).filter(o => o.status === 'PENDING').forEach(o => {
         if (o.submittedAt) evts.push({ date: o.submittedAt.slice(0,10), type: 'ONBOARDING', title: `Review: ${o.applicant?.name}`, detail: 'Menunggu persetujuan', id: 'ob_' + o.id })
+      })
+
+      // National Holidays
+      INDONESIA_HOLIDAYS_2026.forEach(h => {
+        evts.push({ date: h, type: 'HOLIDAY', title: 'Hari Libur Nasional', detail: 'Kantor Libur / Off Day', id: 'h_' + h })
       })
 
       setEvts(evts)

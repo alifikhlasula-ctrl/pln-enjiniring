@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getDB, saveDB, db } from '@/lib/db'
-import { isWeekend } from '@/lib/dateUtils'
+import { isWeekend, isOffDay } from '@/lib/dateUtils'
 import { uploadBase64Photo, attendancePath } from '@/lib/supabase-storage'
 
 // Helper to safely serialize Prisma objects (converting Date to string) 
@@ -118,12 +118,12 @@ export async function POST(request) {
 
     // ── Gembok Akhir Pekan ─────────────────────────────────────────────
     if (type === 'IN' || type === 'OUT') {
-      if (isWeekend(today)) {
-        return NextResponse.json({ error: 'Absensi terkunci pada hari Sabtu dan Minggu.' }, { status: 400 })
+      if (isOffDay(today)) {
+        return NextResponse.json({ error: 'Absensi terkunci pada hari Libur atau Akhir Pekan.' }, { status: 400 })
       }
     }
-    if (type === 'MANUAL_BACKDATE' && date && isWeekend(date)) {
-      return NextResponse.json({ error: `Tanggal ${date} adalah akhir pekan. Absensi tidak diperbolehkan.` }, { status: 400 })
+    if (type === 'MANUAL_BACKDATE' && date && isOffDay(date)) {
+      return NextResponse.json({ error: `Tanggal ${date} adalah hari libur/akhir pekan. Absensi tidak diperbolehkan.` }, { status: 400 })
     }
 
     const limit = new Date(`${today}T07:30:00+07:00`)

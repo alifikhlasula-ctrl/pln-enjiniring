@@ -269,7 +269,7 @@ export default function AttendancePage() {
   const [showManual, setShowManual] = useState(false)
   const [manualForm, setManualForm] = useState({ date: '', in: '07:30', out: '16:00' })
 
-  const isTodayWeekend = [0, 6].includes(new Date().getDay())
+  const isTodayOff = isOffDay(new Date().toISOString().split('T')[0])
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type })
@@ -342,9 +342,8 @@ export default function AttendancePage() {
     }
 
     // Weekend Validation for Manual Claim
-    const d = new Date(manualForm.date + 'T12:00:00')
-    if ([0, 6].includes(d.getDay())) {
-      return showToast('Klaim tidak diperbolehkan pada hari Sabtu atau Minggu.', 'error')
+    if (isOffDay(manualForm.date)) {
+      return showToast('Klaim tidak diperbolehkan pada hari Libur, Sabtu, atau Minggu.', 'error')
     }
 
     setProcessing(true)
@@ -433,13 +432,13 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {/* Banner Akhir Pekan */}
-      {isTodayWeekend && (
+      {/* Banner Libur / Akhir Pekan */}
+      {isTodayOff && (
         <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '1rem 1.5rem', borderRadius: 12, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: 12 }}>
           <CalendarOff size={20} style={{ color: '#dc2626', flexShrink: 0 }} />
           <div>
-            <p style={{ fontWeight: 800, color: '#991b1b' }}>Absensi Terkunci — Akhir Pekan</p>
-            <p style={{ fontSize: '0.82rem', color: '#b91c1c' }}>Pengisian absensi (Check In/Out) dan klaim susulan tidak diperbolehkan pada hari Sabtu dan Minggu.</p>
+            <p style={{ fontWeight: 800, color: '#991b1b' }}>Absensi Terkunci — Hari Libur / Akhir Pekan</p>
+            <p style={{ fontSize: '0.82rem', color: '#b91c1c' }}>Pengisian absensi (Check In/Out) dan klaim susulan tidak diperbolehkan pada hari Libur Nasional, Sabtu, dan Minggu.</p>
           </div>
         </div>
       )}
@@ -520,7 +519,7 @@ export default function AttendancePage() {
                   onClick={() => openCamera('IN')}
                   disabled={processing || isTodayWeekend}
                 >
-                  <Camera size={16} /> {isTodayWeekend ? 'Locked' : 'Check In'}
+                  <Camera size={16} /> {isTodayOff ? 'Locked' : 'Check In'}
                 </button>
               ) : (
                 <div style={{
@@ -536,11 +535,11 @@ export default function AttendancePage() {
               {!todayLog?.checkOut ? (
                 <button
                   className="btn btn-secondary"
-                  style={{ flex: 1, padding: '0.875rem', gap: 8, opacity: isTodayWeekend ? 0.5 : 1 }}
+                  style={{ flex: 1, padding: '0.875rem', gap: 8, opacity: isTodayOff ? 0.5 : 1 }}
                   onClick={() => openCamera('OUT')}
-                  disabled={processing || !todayLog?.checkIn || isTodayWeekend}
+                  disabled={processing || !todayLog?.checkIn || isTodayOff}
                 >
-                  <Camera size={16} /> {isTodayWeekend ? 'Locked' : 'Check Out'}
+                  <Camera size={16} /> {isTodayOff ? 'Locked' : 'Check Out'}
                 </button>
               ) : (
                 <div style={{

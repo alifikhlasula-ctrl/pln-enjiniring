@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext'
 import { FileText, Send, CheckCircle2, Clock, Star, MessageSquare, Plus, X, Trash, Trash2, Edit, RefreshCw, AlertCircle, Save, Download, Printer, Heart } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
+import { isOffDay } from '@/lib/dateUtils'
 
 const STATUS_STYLE = {
   DRAFT: { label: 'Draft', color: 'var(--text-muted)', bg: 'var(--border)', icon: <Save size={13} strokeWidth={2}/> },
@@ -98,11 +99,6 @@ function ReportModal({ initial, onSave, onClose }) {
 }
 
 
-function isOffDay(dateString) {
-  const dt = new Date(dateString)
-  if (dt.getDay() === 0 || dt.getDay() === 6) return true // Sabtu, Minggu
-  return INDONESIA_HOLIDAYS_2026.includes(dateString)
-}
 
 function CalendarTimesheet({ reports, periodStart, onDayClick }) {
   const [currentDate, setCurrentDate] = useState(new Date())
