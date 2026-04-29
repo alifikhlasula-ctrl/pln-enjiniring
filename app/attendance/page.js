@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import Script from 'next/script'
 import { Clock, MapPin, CheckCircle2, Camera, X, RefreshCw, AlertCircle, Wifi, UserCheck, UserX, Lock, CalendarOff } from 'lucide-react'
+import { isOffDay } from '@/lib/dateUtils'
 
 /* ─── Safe JSON fetch helper ─────────────────────────── */
 async function safeFetch(url, opts = {}) {
@@ -515,9 +516,9 @@ export default function AttendancePage() {
               {!todayLog?.checkIn ? (
                 <button
                   className="btn btn-primary"
-                  style={{ flex: 1, padding: '0.875rem', gap: 8, opacity: isTodayWeekend ? 0.5 : 1 }}
+                  style={{ flex: 1, padding: '0.875rem', gap: 8, opacity: isTodayOff ? 0.5 : 1 }}
                   onClick={() => openCamera('IN')}
-                  disabled={processing || isTodayWeekend}
+                  disabled={processing || isTodayOff}
                 >
                   <Camera size={16} /> {isTodayOff ? 'Locked' : 'Check In'}
                 </button>
