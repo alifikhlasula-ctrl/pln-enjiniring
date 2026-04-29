@@ -111,8 +111,8 @@ function EditModal({ log, internName, onClose, onSave }) {
       background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
     }}>
-      <div className="card" style={{ width: '100%', maxWidth: 480, padding: '2rem', animation: 'slideUpFade 0.3s ease' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="card" style={{ width: '100%', maxWidth: 440, padding: '1.5rem', animation: 'slideUpFade 0.3s ease', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Edit Absensi Manual</h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{internName} · {fmtDate(log.date)}</p>
@@ -122,29 +122,29 @@ function EditModal({ log, internName, onClose, onSave }) {
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '0.85rem' }}>
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="label">Jam Masuk (Clock-In)</label>
-            <input type="time" className="input" value={checkIn} onChange={e => setCheckIn(e.target.value)} />
+            <label className="label" style={{ fontSize: '0.72rem', marginBottom: 6 }}>Jam Masuk (Clock-In)</label>
+            <input type="time" className="input" style={{ padding: '0.55rem 0.75rem' }} value={checkIn} onChange={e => setCheckIn(e.target.value)} />
           </div>
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="label">Jam Pulang (Clock-Out)</label>
-            <input type="time" className="input" value={checkOut} onChange={e => setCheckOut(e.target.value)} />
+            <label className="label" style={{ fontSize: '0.72rem', marginBottom: 6 }}>Jam Pulang (Clock-Out)</label>
+            <input type="time" className="input" style={{ padding: '0.55rem 0.75rem' }} value={checkOut} onChange={e => setCheckOut(e.target.value)} />
           </div>
         </div>
 
-        <div className="form-group" style={{ marginBottom: '1rem' }}>
-          <label className="label">Status Kehadiran</label>
-          <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
+        <div className="form-group" style={{ marginBottom: '0.85rem' }}>
+          <label className="label" style={{ fontSize: '0.72rem', marginBottom: 6 }}>Status Kehadiran</label>
+          <select className="input" style={{ padding: '0.55rem 0.75rem' }} value={status} onChange={e => setStatus(e.target.value)}>
             <option value="PRESENT">Hadir</option>
             <option value="LATE">Terlambat</option>
             <option value="ABSENT">Alpa</option>
           </select>
         </div>
 
-        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-          <label className="label">Catatan / Alasan Edit</label>
-          <input type="text" className="input" placeholder="Contoh: Intern lupa clock-out" value={note} onChange={e => setNote(e.target.value)} />
+        <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+          <label className="label" style={{ fontSize: '0.72rem', marginBottom: 6 }}>Catatan / Alasan Edit</label>
+          <input type="text" className="input" style={{ padding: '0.55rem 0.75rem' }} placeholder="Contoh: Intern lupa clock-out" value={note} onChange={e => setNote(e.target.value)} />
         </div>
 
         {log.editedBy && (
@@ -181,11 +181,11 @@ function AttendanceCard({ log, onEdit }) {
     <div style={{
       background: 'var(--bg-card)',
       border: `1px solid ${cfg.color}33`,
-      borderRadius: 16,
-      padding: '1.25rem',
+      borderRadius: 12,
+      padding: '1rem',
       display: 'flex',
       flexDirection: 'column',
-      gap: '1rem',
+      gap: '0.85rem',
       position: 'relative',
       transition: 'box-shadow 0.2s',
     }}
@@ -194,41 +194,41 @@ function AttendanceCard({ log, onEdit }) {
       {/* Header: Name + Status Badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {intern.name || 'Unknown'}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {intern.university || '-'} · {intern.bidang || '-'}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {isEdited && (
-            <span title={`Diedit oleh ${log.editedBy}`} style={{ fontSize: '0.68rem', fontWeight: 700, color: '#b45309', background: 'rgba(245,158,11,0.15)', padding: '2px 7px', borderRadius: 99 }}>
+            <span title={`Diedit oleh ${log.editedBy}`} style={{ fontSize: '0.62rem', fontWeight: 700, color: '#b45309', background: 'rgba(245,158,11,0.15)', padding: '2px 6px', borderRadius: 99 }}>
               EDITED
             </span>
           )}
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: cfg.color, background: cfg.bg, padding: '4px 10px', borderRadius: 99 }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: cfg.color, background: cfg.bg, padding: '3px 9px', borderRadius: 99 }}>
             {cfg.label}
           </span>
         </div>
       </div>
 
       {/* Clock In / Clock Out row with face photos */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
         {/* Clock In */}
-        <div style={{ background: 'var(--bg-main)', borderRadius: 10, padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Clock size={11} /> Start Time
+        <div style={{ background: 'var(--bg-main)', borderRadius: 10, padding: '0.7rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={10} /> Start Time
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <FacePhoto src={faceIn} alt="Foto masuk" size={48} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FacePhoto src={faceIn} alt="Foto masuk" size={42} />
             <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: hasIn ? '#22c55e' : 'var(--text-muted)', letterSpacing: '-0.02em' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: hasIn ? '#22c55e' : 'var(--text-muted)', letterSpacing: '-0.02em' }}>
                 {hasIn ? fmtTime(log.checkIn) : '--:--'}
               </div>
               {log.checkInLoc && (
-                <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2, marginTop: 2 }}>
-                  <MapPin size={9} /> {log.checkInLoc.length > 20 ? log.checkInLoc.slice(0, 20) + '…' : log.checkInLoc}
+                <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2, marginTop: 1 }}>
+                  <MapPin size={8} /> {log.checkInLoc.length > 18 ? log.checkInLoc.slice(0, 18) + '…' : log.checkInLoc}
                 </div>
               )}
             </div>
@@ -236,19 +236,19 @@ function AttendanceCard({ log, onEdit }) {
         </div>
 
         {/* Clock Out */}
-        <div style={{ background: 'var(--bg-main)', borderRadius: 10, padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Clock size={11} /> End Time
+        <div style={{ background: 'var(--bg-main)', borderRadius: 10, padding: '0.7rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={10} /> End Time
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <FacePhoto src={faceOut} alt="Foto pulang" size={48} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FacePhoto src={faceOut} alt="Foto pulang" size={42} />
             <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: hasOut ? '#6366f1' : '#ef4444', letterSpacing: '-0.02em' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: hasOut ? '#6366f1' : '#ef4444', letterSpacing: '-0.02em' }}>
                 {hasOut ? fmtTime(log.checkOut) : '--:--'}
               </div>
               {log.checkOutLoc && (
-                <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2, marginTop: 2 }}>
-                  <MapPin size={9} /> {log.checkOutLoc.length > 20 ? log.checkOutLoc.slice(0, 20) + '…' : log.checkOutLoc}
+                <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2, marginTop: 1 }}>
+                  <MapPin size={8} /> {log.checkOutLoc.length > 18 ? log.checkOutLoc.slice(0, 18) + '…' : log.checkOutLoc}
                 </div>
               )}
             </div>
