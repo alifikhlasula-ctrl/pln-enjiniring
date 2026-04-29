@@ -85,8 +85,37 @@ export async function GET(request) {
       ...i, bidang: i.bidang || '-', university: i.university || '-'
     }))
 
+    // ── MIX & MATCH: Fill missing names from User table ──────────────────────
+    // Legacy interns may exist in JsonStore with empty name field.
+    // Their real name lives in the User table, linked via userId or id.
+    const rawInterns = Array.from(internMap.values())
+    const noNameRaw = rawInterns.filter(i => !i.name)
+    if (noNameRaw.length > 0) {
+      const lookupIds = [...new Set([
+        ...noNameRaw.map(i => i.userId).filter(Boolean),
+        ...noNameRaw.map(i => i.id).filter(Boolean)
+      ])]
+      try {
+        const nameUsers = await prisma.user.findMany({
+          where: { id: { in: lookupIds } },
+          select: { id: true, name: true }
+        })
+        const userNameMap = new Map(nameUsers.map(u => [u.id, u.name]))
+        for (const intern of noNameRaw) {
+          const resolved =
+            (intern.userId && userNameMap.get(intern.userId)) ||
+            userNameMap.get(intern.id) ||
+            null
+          if (resolved) intern.name = resolved  // mutates in-place; internMap holds same ref
+        }
+      } catch (e) {
+        console.error('[admin/attendance] Name resolution pass error:', e.message)
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Calculate effective status on the target date
-    const allInterns = Array.from(internMap.values()).map(i => ({
+    const allInterns = rawInterns.map(i => ({
       ...i,
       effectiveStatus: getEffectiveStatusOnDate(i, today)
     }))

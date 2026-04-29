@@ -74,7 +74,36 @@ export async function GET() {
     for (const i of prismaInterns)  mergedMap.set(i.id, i)
     const allInterns = Array.from(mergedMap.values())
 
-    // Compute effective status for each intern in JS (not in DB query)
+    // ── MIX & MATCH: Fill missing names from User table ──────────────────────
+    // Legacy interns exist in JsonStore but their name field may be null/empty.
+    // The real name lives in the User table, linked via userId OR via id itself
+    // (old systems stored internId === userId for some records).
+    const noNameInterns = allInterns.filter(i => !i.name)
+    if (noNameInterns.length > 0) {
+      const lookupIds = [...new Set([
+        ...noNameInterns.map(i => i.userId).filter(Boolean),
+        ...noNameInterns.map(i => i.id).filter(Boolean)
+      ])]
+      try {
+        const nameUsers = await prisma.user.findMany({
+          where: { id: { in: lookupIds } },
+          select: { id: true, name: true }
+        })
+        const userNameMap = new Map(nameUsers.map(u => [u.id, u.name]))
+        for (const intern of noNameInterns) {
+          const resolved =
+            (intern.userId && userNameMap.get(intern.userId)) ||
+            userNameMap.get(intern.id) ||
+            null
+          if (resolved) intern.name = resolved  // mutates in-place; mergedMap holds same ref
+        }
+      } catch (e) {
+        console.error('[live] Name resolution pass error:', e.message)
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+
     const internsWithEffectiveStatus = allInterns.map(i => ({
       ...i,
       effectiveStatus: getEffectiveStatus(i)
