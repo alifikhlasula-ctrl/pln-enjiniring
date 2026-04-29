@@ -30,6 +30,20 @@ export async function GET(request) {
     legacyInterns.forEach(i => internMap.set(i.id, i))
     prismaInterns.forEach(i => internMap.set(i.id, i))
     
+    // Fallback for orphaned logs
+    const allInternIds = new Set(internMap.keys())
+    const orphanedInternIds = [...new Set(logs.map(l => l.internId).filter(id => !allInternIds.has(id)))]
+    
+    if (orphanedInternIds.length > 0) {
+      const users = await prisma.user.findMany({
+        where: { id: { in: orphanedInternIds } },
+        select: { id: true, name: true }
+      })
+      for (const u of users) {
+        internMap.set(u.id, { id: u.id, name: u.name || `ID: ${u.id.slice(0, 8)}`, bidang: '-' })
+      }
+    }
+
     // Group by Date for Chart
     const DAYS_LABEL = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
     const history = []
@@ -45,14 +59,14 @@ export async function GET(request) {
         date: ds,
         label: DAYS_LABEL[d.getDay()],
         count: present.length,
-        interns: present.map(l => ({ name: internMap.get(l.internId)?.name || 'Unknown', status: l.status, time: l.checkIn }))
+        interns: present.map(l => ({ name: internMap.get(l.internId)?.name || `Intern (${l.internId.slice(0, 8)})`, status: l.status, time: l.checkIn }))
       })
     }
 
     // List representation
     const recent = logs.sort((a,b) => new Date(b.date) - new Date(a.date)).map(l => ({
       ...l,
-      internName: internMap.get(l.internId)?.name || 'Unknown',
+      internName: internMap.get(l.internId)?.name || `Intern (${l.internId.slice(0, 8)})`,
       bidang: internMap.get(l.internId)?.bidang || '-'
     }))
 

@@ -4,14 +4,28 @@ import { getDB } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
+// ── Minimal effective-status resolver for a specific date ──
+function getEffectiveStatusOnDate(intern, targetDateStr) {
+  const targetDate = new Date(targetDateStr + 'T00:00:00Z')
+  targetDate.setHours(0, 0, 0, 0)
+  
+  const s = String(intern.status || 'ACTIVE').toUpperCase()
+  if (s === 'TERMINATED') return 'TERMINATED'
+  if (s === 'ACTIVE' || s === 'PENDING') {
+    if (intern.periodStart) {
+      const start = new Date(intern.periodStart + 'T00:00:00Z')
+      start.setHours(0, 0, 0, 0)
+      if (start > targetDate) return 'PENDING'
+    }
+    if (intern.periodEnd && intern.periodEnd < targetDateStr) return 'COMPLETED'
+  }
+  if (s === 'PENDING') return 'PENDING'
+  return s
+}
+
 /**
  * GET /api/admin/attendance
- * Returns ALL intern attendance for a given date, including:
- * - Interns who clocked in (with photos)
- * - Interns who submitted Sakit/Izin
- * - Interns who are ABSENT (no record at all)
- *
- * Query: ?date=YYYY-MM-DD  (defaults to today WIB)
+ * Returns ALL intern attendance for a given date.
  */
 export async function GET(request) {
   try {
@@ -27,18 +41,17 @@ export async function GET(request) {
       orderBy: { checkIn: 'asc' }
     })
 
-    // ── 2. Build intern map from BOTH sources ──
+    // ── 2. Fetch ALL non-deleted interns ──
     let prismaInterns = []
     try {
       prismaInterns = await prisma.intern.findMany({
-        where: { deletedAt: null },  // no status filter — take all non-deleted
+        where: { deletedAt: null },
         select: {
           id: true, name: true, bidang: true, university: true,
-          userId: true, facePhotoUrl: true, email: true, status: true
+          userId: true, facePhotoUrl: true, email: true, status: true,
+          periodStart: true, periodEnd: true
         }
       })
-      // Only keep ACTIVE interns (case-insensitive)
-      prismaInterns = prismaInterns.filter(i => (i.status || '').toUpperCase() === 'ACTIVE')
     } catch (e) {
       console.error('[admin/attendance] Prisma intern fetch error:', e.message)
     }
@@ -46,9 +59,7 @@ export async function GET(request) {
     let legacyInterns = []
     try {
       const db = await getDB()
-      legacyInterns = (db.interns || []).filter(i =>
-        !i.deletedAt && (i.status || '').toUpperCase() === 'ACTIVE'
-      )
+      legacyInterns = (db.interns || []).filter(i => !i.deletedAt)
     } catch (e) {
       console.error('[admin/attendance] Legacy intern fetch error:', e.message)
     }
@@ -56,18 +67,41 @@ export async function GET(request) {
     // Merge — Prisma overrides legacy for same id
     const internMap = new Map()
     legacyInterns.forEach(i => internMap.set(i.id, {
-      id: i.id, name: i.name, bidang: i.bidang || '-',
-      university: i.university || '-', userId: i.userId,
-      facePhotoUrl: i.facePhotoUrl || null, email: i.email || null
+      ...i, bidang: i.bidang || '-', university: i.university || '-'
     }))
     prismaInterns.forEach(i => internMap.set(i.id, {
-      id: i.id, name: i.name, bidang: i.bidang || '-',
-      university: i.university || '-', userId: i.userId,
-      facePhotoUrl: i.facePhotoUrl || null, email: i.email || null
+      ...i, bidang: i.bidang || '-', university: i.university || '-'
     }))
-    const allInterns = Array.from(internMap.values())
 
-    console.log(`[admin/attendance] date=${today} | prismaInterns=${prismaInterns.length} | legacyInterns=${legacyInterns.length} | total=${allInterns.length} | logs=${logs.length}`)
+    // Calculate effective status on the target date
+    const allInterns = Array.from(internMap.values()).map(i => ({
+      ...i,
+      effectiveStatus: getEffectiveStatusOnDate(i, today)
+    }))
+
+    // Re-populate internMap with effectiveStatus
+    allInterns.forEach(i => internMap.set(i.id, i))
+
+    // Resolve orphaned logs (logs where internId isn't in internMap)
+    const allInternIds = new Set(allInterns.map(i => i.id))
+    const orphanedInternIds = [...new Set(logs.map(l => l.internId).filter(id => !allInternIds.has(id)))]
+    
+    let userFallbacks = []
+    if (orphanedInternIds.length > 0) {
+      const users = await prisma.user.findMany({
+        where: { id: { in: orphanedInternIds } },
+        select: { id: true, name: true, email: true }
+      })
+      userFallbacks = users.map(u => ({
+        id: u.id, name: u.name || `ID: ${u.id.slice(0, 8)}`,
+        bidang: '-', university: '-', userId: u.id, email: u.email,
+        status: 'UNKNOWN', effectiveStatus: 'UNKNOWN'
+      }))
+      for (const u of userFallbacks) {
+        internMap.set(u.id, u)
+        allInterns.push(u)
+      }
+    }
 
     // ── 3. Build todaySummary: log + absent interns ──
     const presentIds = new Set(logs.map(l => l.internId))
@@ -83,15 +117,16 @@ export async function GET(request) {
       status:      log.status,
       editedBy:    log.editedBy || null,
       editedAt:    log.editedAt ? log.editedAt.toISOString() : null,
-      // Photo: Storage URL preferred (fast), Base64 sendable for small records
       faceInUrl:   log.faceInUrl  || (log.faceInBase64  ? (log.faceInBase64.startsWith('data:') ? log.faceInBase64 : `data:image/jpeg;base64,${log.faceInBase64}`)  : null),
       faceOutUrl:  log.faceOutUrl || (log.faceOutBase64 ? (log.faceOutBase64.startsWith('data:') ? log.faceOutBase64 : `data:image/jpeg;base64,${log.faceOutBase64}`) : null),
-      intern: intern || { name: 'Unknown', bidang: '-', university: '-' }
+      intern: intern || { name: `Intern (${log.internId.slice(0, 8)})`, bidang: '-', university: '-' }
     })
 
     const todayLogEntries  = logs.map(l => serializeLog(l, internMap.get(l.internId)))
+    
+    // Only show "ABSENT" for interns who were effectively ACTIVE on that date
     const absentEntries    = allInterns
-      .filter(i => !presentIds.has(i.id))
+      .filter(i => !presentIds.has(i.id) && i.effectiveStatus === 'ACTIVE')
       .map(i => ({
         id: null, internId: i.id, date: today,
         checkIn: null, checkOut: null, checkInLoc: null, checkOutLoc: null,
