@@ -1,18 +1,12 @@
 const { PrismaClient } = require('@prisma/client')
-const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3')
-const Database = require('better-sqlite3')
-const path = require('path')
+// PostgreSQL via DATABASE_URL env — no adapter needed
+const prisma = new PrismaClient()
 
-// Use absolute path to ensure adapter finds it
-const dbPath = path.resolve(__dirname, 'dev.db')
-const db = new Database(dbPath)
-const adapter = new PrismaBetterSqlite3(db)
-const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  console.log('Using DB at:', dbPath)
   // ... rest of the seed script ...
   try {
+
     await prisma.user.deleteMany({})
     // ...
   } catch (e) {
