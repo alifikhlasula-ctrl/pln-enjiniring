@@ -8,6 +8,12 @@ export const revalidate = 0
 function getEffectiveStatus(intern) {
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const todayStr = today.toISOString().split('T')[0]
+  
+  if (intern.deletedAt) {
+    const deletedDate = new Date(intern.deletedAt)
+    if (deletedDate < today) return 'TERMINATED'
+  }
+  
   const s = String(intern.status || 'ACTIVE').toUpperCase()
   if (s === 'TERMINATED') return 'TERMINATED'
   if (s === 'ACTIVE' || s === 'PENDING') {
@@ -27,7 +33,7 @@ export async function GET() {
     const todayStr = today.toISOString().split('T')[0]
     const todayMMDD = `${todayStr.split('-')[1]}-${todayStr.split('-')[2]}`
 
-    // ── Fetch today's logs + ALL non-deleted interns (no status filter) ──
+    // ── Fetch today's logs + ALL interns (no status filter, include deleted for historical map) ──
     // We must not filter by status here — effective status is computed in JS.
     const [logs, allInterns] = await Promise.all([
       prisma.attendanceLog.findMany({
@@ -35,11 +41,11 @@ export async function GET() {
         orderBy: { checkIn: 'desc' }
       }),
       prisma.intern.findMany({
-        where: { deletedAt: null },
+        // No deletedAt filter here so we map logs of interns deleted today
         select: {
           id: true, name: true, bidang: true,
           periodStart: true, periodEnd: true,
-          status: true, birthDate: true
+          status: true, birthDate: true, deletedAt: true
         },
         orderBy: { name: 'asc' }
       })

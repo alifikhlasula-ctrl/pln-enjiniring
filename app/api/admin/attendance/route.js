@@ -9,6 +9,11 @@ function getEffectiveStatusOnDate(intern, targetDateStr) {
   const targetDate = new Date(targetDateStr + 'T00:00:00Z')
   targetDate.setHours(0, 0, 0, 0)
   
+  if (intern.deletedAt) {
+    const deletedDate = new Date(intern.deletedAt)
+    if (deletedDate < targetDate) return 'TERMINATED'
+  }
+  
   const s = String(intern.status || 'ACTIVE').toUpperCase()
   if (s === 'TERMINATED') return 'TERMINATED'
   if (s === 'ACTIVE' || s === 'PENDING') {
@@ -41,15 +46,15 @@ export async function GET(request) {
       orderBy: { checkIn: 'asc' }
     })
 
-    // ── 2. Fetch ALL non-deleted interns ──
+    // ── 2. Fetch ALL interns (including deleted, so past logs aren't orphaned) ──
     let prismaInterns = []
     try {
       prismaInterns = await prisma.intern.findMany({
-        where: { deletedAt: null },
+        // No deletedAt filter here: we need their names even if deleted later
         select: {
           id: true, name: true, bidang: true, university: true,
           userId: true, facePhotoUrl: true, email: true, status: true,
-          periodStart: true, periodEnd: true
+          periodStart: true, periodEnd: true, deletedAt: true
         }
       })
     } catch (e) {
@@ -59,7 +64,8 @@ export async function GET(request) {
     let legacyInterns = []
     try {
       const db = await getDB()
-      legacyInterns = (db.interns || []).filter(i => !i.deletedAt)
+      // Also don't filter out deleted interns in legacy map
+      legacyInterns = db.interns || []
     } catch (e) {
       console.error('[admin/attendance] Legacy intern fetch error:', e.message)
     }
