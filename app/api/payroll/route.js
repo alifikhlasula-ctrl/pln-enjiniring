@@ -216,18 +216,12 @@ export async function GET(request) {
     const totalAllowance = validPresenceCount * allowanceRate
     const periodKey = startDate && endDate ? `${startDate}_${endDate}` : pKey
     
-    // Check PayrollRecord first, then fall back to JSON payrolls
-    let existingPayroll = periodKey
+    // Strict period match only. Do NOT inherit status from a different period's record.
+    // If no exact period match is found, the status defaults to PENDING (not yet submitted).
+    const existingPayroll = periodKey
       ? (existingPayrolls.find(p => p.internId === intern.id && p.period === periodKey)
          || (data.payrolls || []).find(p => p.internId === intern.id && p.period === periodKey))
       : null
-
-    // Fallback: If no exact period match, find ANY non-PENDING record for this intern.
-    // This happens when intern's date range != admin's batch date range.
-    if (!existingPayroll) {
-      existingPayroll = existingPayrolls.find(p => p.internId === intern.id && ['TRANSFERRED', 'PAID'].includes(p.status))
-        || (data.payrolls || []).find(p => p.internId === intern.id && ['TRANSFERRED', 'PAID'].includes(p.status))
-    }
 
     return {
       id: existingPayroll?.id || intern.id,
@@ -255,6 +249,7 @@ export async function GET(request) {
       paidBy: existingPayroll?.paidBy || null,
       notes: existingPayroll?.notes || ''
     }
+
   }
 
   const payrollList = activeInterns.map(intern => buildItem(intern))
