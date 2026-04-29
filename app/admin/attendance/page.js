@@ -309,12 +309,17 @@ export default function MonitorAbsensiPage() {
 
   useEffect(() => { load(date) }, [date, histDays])
 
-  const filtered = filterStatus === 'ALL' ? summary : summary.filter(l => l.status === filterStatus)
+  const filtered = filterStatus === 'ALL' ? summary
+    : filterStatus === 'NO_OUT' ? summary.filter(l => l.checkIn && !l.checkOut && l.status !== 'ABSENT')
+    : filterStatus === 'NO_IN' ? summary.filter(l => !l.checkIn && l.checkOut && l.status !== 'ABSENT')
+    : summary.filter(l => l.status === filterStatus)
 
   const stats = {
     hadir: summary.filter(l => l.status === 'PRESENT').length,
     telat: summary.filter(l => l.status === 'LATE').length,
     alpa:  summary.filter(l => l.status === 'ABSENT').length,
+    noOut: summary.filter(l => l.checkIn && !l.checkOut && l.status !== 'ABSENT').length,
+    noIn:  summary.filter(l => !l.checkIn && l.checkOut && l.status !== 'ABSENT').length,
     total: summary.length
   }
 
@@ -414,8 +419,14 @@ export default function MonitorAbsensiPage() {
             <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{fmtDate(date)}</span>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {['ALL', 'PRESENT', 'LATE', 'ABSENT'].map(s => {
-              const cfg = s === 'ALL' ? { label: 'Semua', color: 'var(--primary)' } : getStatusConfig(s)
+            {['ALL', 'PRESENT', 'LATE', 'ABSENT', 'NO_OUT', 'NO_IN'].map(s => {
+              let cfg;
+              let count = null;
+              if (s === 'ALL') { cfg = { label: 'Semua', color: 'var(--primary)' } }
+              else if (s === 'NO_OUT') { cfg = { label: 'Lupa Clock-Out', color: '#f97316' }; count = stats.noOut; }
+              else if (s === 'NO_IN') { cfg = { label: 'Lupa Clock-In', color: '#f97316' }; count = stats.noIn; }
+              else { cfg = getStatusConfig(s); count = s === 'PRESENT' ? stats.hadir : s === 'LATE' ? stats.telat : stats.alpa; }
+              
               return (
                 <button key={s} onClick={() => setFilter(s)} style={{
                   padding: '5px 12px', borderRadius: 99, border: `1px solid ${filterStatus === s ? cfg.color : 'var(--border)'}`,
@@ -423,7 +434,7 @@ export default function MonitorAbsensiPage() {
                   color: filterStatus === s ? '#fff' : 'var(--text-secondary)',
                   fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.15s'
                 }}>
-                  {cfg.label} {s !== 'ALL' && `(${s === 'PRESENT' ? stats.hadir : s === 'LATE' ? stats.telat : stats.alpa})`}
+                  {cfg.label} {count !== null && `(${count})`}
                 </button>
               )
             })}
