@@ -18,7 +18,7 @@ export async function GET(request) {
     const todayStr2 = today.toISOString().split('T')[0]
 
     // ── Parallel Execution: Fetch all independent data sources at once ──
-    const [data, allInterns, onboarding, auditLogs, checkinToday, weeklyRaw, recentAttendance, todayLogs] = await Promise.all([
+    const [data, allInterns, onboarding, auditLogs, checkinToday, weeklyRaw, recentAttendance, todayLogs, dbEvals, dbSurveys, totalResponses] = await Promise.all([
       getDB('ACTIVE', { clone: false }),
       db.getInterns(false),
       prisma.onboarding.findMany(),
@@ -33,7 +33,10 @@ export async function GET(request) {
       prisma.attendanceLog.findMany({
         where: { date: todayStr },
         select: { internId: true, status: true, checkIn: true, checkOut: true }
-      })
+      }),
+      prisma.evaluation.findMany(),
+      prisma.survey.findMany(),
+      prisma.surveyResponse.count()
     ])
 
     // Main KPIs focus on the Target Year (Program Active)
@@ -67,14 +70,17 @@ export async function GET(request) {
     const pendingOnboarding = onboarding.filter(o => o.status === 'PENDING').length
 
     // ── Evaluasi Stats ─────────────────────────────────
-    const evals = data.evaluations || []
-    const avgEvalScore = evals.length ? (evals.reduce((s, e) => s + e.finalScore, 0) / evals.length).toFixed(1) : 0
+    // Combine JSON fallback and Prisma DB
+    const evals = [...(data.evaluations || []), ...dbEvals]
+    // Filter to active interns to get a relevant average
+    const relevantEvals = evals.filter(e => activeInterns.some(i => i.id === e.internId))
+    const avgEvalScore = relevantEvals.length ? (relevantEvals.reduce((s, e) => s + e.finalScore, 0) / relevantEvals.length).toFixed(1) : 0
     const pendingEvals = activeInterns.filter(i => !evals.some(e => e.internId === i.id)).length
 
     // ── Survei Stats ───────────────────────────────────
-    const surveys = data.surveys || []
+    const surveys = [...(data.surveys || []), ...dbSurveys]
     const activeSurveys = surveys.filter(s => s.active).length
-    const totalResponses = (data.surveyResponses || []).length
+    const totalResponsesFinal = ((data.surveyResponses || []).length) + totalResponses
 
     const expiringInterns = activeInterns.filter(i => {
       if (!i.periodEnd) return false
@@ -188,7 +194,7 @@ export async function GET(request) {
         avgEvalScore,
         pendingEvals,
         activeSurveys,
-        totalResponses,
+        totalResponses: totalResponsesFinal,
         expiringSoon:    expiringInterns.length,
         totalInterns:    allInterns.length,
         totalUsers:      (data.users || []).length,

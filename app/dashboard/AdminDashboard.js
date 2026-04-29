@@ -664,7 +664,7 @@ function ExpiringWidget({data,loading}) {
 /* ── Evaluation Summary Widget ───────────────────── */
 function EvaluationWidget({data,loading}) {
   return (
-    <div className="card">
+    <div className="card" style={{position:'relative', overflow:'hidden', display:'flex', flexDirection:'column'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
         <h3 style={{fontWeight:700,fontSize:'0.95rem',display:'flex',alignItems:'center',gap:6}}>
           <Star size={16} strokeWidth={2} style={{color:'#f59e0b'}}/>
@@ -672,15 +672,27 @@ function EvaluationWidget({data,loading}) {
         </h3>
         <a href="/evaluations" className="btn btn-secondary btn-sm" style={{textDecoration:'none',fontSize:'0.75rem'}}>Detail</a>
       </div>
-      {loading ? <div style={{height:80,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/> : (
-        <div style={{display:'flex',gap:'1rem',alignItems:'center'}}>
-          <div style={{flex:1,textAlign:'center',padding:'1rem',background:'var(--bg-main)',borderRadius:'var(--radius-lg)',border:'1px solid var(--border)'}}>
-            <p style={{fontSize:'2rem',fontWeight:800,color:'var(--primary)'}}>{data?.avgScore || 0}</p>
-            <p style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:4}}>Rata-rata Skor</p>
+      {loading ? <div style={{flex:1, background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/> : (
+        <div style={{display:'flex',gap:'1rem',alignItems:'center', flex:1}}>
+          <div style={{
+            flex:1,textAlign:'center',padding:'1.25rem 1rem',background:'var(--bg-main)',
+            borderRadius:'var(--radius-lg)',border:'1px solid rgba(245,158,11,0.2)',
+            transition:'all 0.25s', cursor:'pointer', position:'relative', overflow:'hidden'
+          }} onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 10px 25px -5px rgba(245,158,11,0.15)'; e.currentTarget.style.borderColor='#f59e0b'}}
+             onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.borderColor='rgba(245,158,11,0.2)'}}>
+            <div style={{position:'absolute',top:0,left:0,right:0,height:4,background:'linear-gradient(90deg, #f59e0b, #fbbf24)'}}/>
+            <p style={{fontSize:'2.25rem',fontWeight:900,color:'var(--primary)',lineHeight:1}}>{data?.avgScore || 0}</p>
+            <p style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:8,fontWeight:600}}>Rata-rata Skor</p>
           </div>
-          <div style={{flex:1,textAlign:'center',padding:'1rem',background:'var(--bg-main)',borderRadius:'var(--radius-lg)',border:'1px solid var(--border)'}}>
-            <p style={{fontSize:'2rem',fontWeight:800,color:'var(--warning)'}}>{data?.pending || 0}</p>
-            <p style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:4}}>Belum Dievaluasi</p>
+          <div style={{
+            flex:1,textAlign:'center',padding:'1.25rem 1rem',background:'var(--bg-main)',
+            borderRadius:'var(--radius-lg)',border:'1px solid rgba(239,68,68,0.2)',
+            transition:'all 0.25s', cursor:'pointer', position:'relative', overflow:'hidden'
+          }} onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 10px 25px -5px rgba(239,68,68,0.15)'; e.currentTarget.style.borderColor='#ef4444'}}
+             onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.borderColor='rgba(239,68,68,0.2)'}}>
+            <div style={{position:'absolute',top:0,left:0,right:0,height:4,background:'linear-gradient(90deg, #ef4444, #f87171)'}}/>
+            <p style={{fontSize:'2.25rem',fontWeight:900,color:'var(--danger)',lineHeight:1}}>{data?.pending || 0}</p>
+            <p style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:8,fontWeight:600}}>Belum Dievaluasi</p>
           </div>
         </div>
       )}
@@ -691,7 +703,7 @@ function EvaluationWidget({data,loading}) {
 /* ── Survey Status Widget ────────────────────────── */
 function SurveyWidget({data,loading}) {
   return (
-    <div className="card">
+    <div className="card" style={{display:'flex', flexDirection:'column'}}>
        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
         <h3 style={{fontWeight:700,fontSize:'0.95rem',display:'flex',alignItems:'center',gap:6}}>
           <MessageSquare size={16} strokeWidth={2} style={{color:'var(--secondary)'}}/>
@@ -699,15 +711,27 @@ function SurveyWidget({data,loading}) {
         </h3>
         <a href="/surveys" className="btn btn-secondary btn-sm" style={{textDecoration:'none',fontSize:'0.75rem'}}>Kelola</a>
       </div>
-      {loading ? <div style={{height:80,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/> : (
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.75rem',background:'var(--secondary-light)',borderRadius:'var(--radius-md)'}}>
-            <span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--secondary)'}}>Survei Aktif</span>
-            <span style={{fontSize:'1.1rem',fontWeight:800,color:'var(--secondary)'}}>{data?.active || 0}</span>
+      {loading ? <div style={{flex:1,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/> : (
+        <div style={{display:'flex',flexDirection:'column',gap:12, flex:1, justifyContent:'center'}}>
+          <div style={{
+            display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1rem',
+            background:'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.02))',
+            borderRadius:'var(--radius-lg)', border:'1px solid rgba(16,185,129,0.3)',
+            transition:'all 0.2s', cursor:'pointer'
+          }} onMouseEnter={e=>e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
+            <div style={{display:'flex', alignItems:'center', gap:8}}>
+              <div style={{width:8, height:8, borderRadius:'50%', background:'#10b981', boxShadow:'0 0 10px #10b981'}}/>
+              <span style={{fontSize:'0.85rem',fontWeight:700,color:'var(--secondary)'}}>Survei Aktif</span>
+            </div>
+            <span style={{fontSize:'1.5rem',fontWeight:900,color:'var(--secondary)',lineHeight:1}}>{data?.active || 0}</span>
           </div>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.75rem',background:'var(--bg-main)',borderRadius:'var(--radius-md)'}}>
-            <span style={{fontSize:'0.82rem',color:'var(--text-secondary)'}}>Total Respon</span>
-            <span style={{fontWeight:700}}>{data?.responses || 0}</span>
+          <div style={{
+            display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1rem',
+            background:'var(--bg-main)',borderRadius:'var(--radius-lg)', border:'1px solid var(--border)',
+            transition:'all 0.2s', cursor:'pointer'
+          }} onMouseEnter={e=>e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
+            <span style={{fontSize:'0.85rem',fontWeight:600,color:'var(--text-secondary)'}}>Total Respon Diterima</span>
+            <span style={{fontSize:'1.25rem',fontWeight:800,color:'var(--text-main)',lineHeight:1}}>{data?.responses || 0}</span>
           </div>
         </div>
       )}
@@ -984,7 +1008,11 @@ function AnnouncementsWidget() {
         {loading
           ? [...Array(2)].map((_,i)=><div key={i} style={{height:60,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/>)
           : safeItems.length===0
-            ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'1.5rem'}}>Belum ada pengumuman. Klik "+ Buat" untuk memulai.</p>
+            ? <div style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'3rem 1rem', background:'rgba(99,102,241,0.03)', borderRadius:'var(--radius-md)', border:'1px dashed rgba(99,102,241,0.2)'}}>
+                <Megaphone size={32} style={{color:'var(--primary)', opacity:0.5, marginBottom:'0.75rem'}}/>
+                <p style={{color:'var(--text-secondary)',fontSize:'0.85rem', fontWeight:700, margin:0}}>Belum ada pengumuman</p>
+                <p style={{color:'var(--text-muted)',fontSize:'0.75rem', marginTop:4, textAlign:'center'}}>Klik "+ Buat" untuk membagikan informasi ke intern.</p>
+              </div>
             : safeItems.map(ann=>{
                 const s = P[ann.priority]||P.INFO
                 return (
@@ -1214,7 +1242,11 @@ function EventsWidget() {
         {loading
           ? [...Array(3)].map((_,i)=><div key={i} style={{height:52,background:'var(--border)',borderRadius:8,animation:'pulse 1.4s ease-in-out infinite'}}/>)
           : safeEvents.length===0
-            ? <p style={{color:'var(--text-muted)',fontSize:'0.82rem',textAlign:'center',padding:'1.5rem'}}>Belum ada event terjadwal.</p>
+            ? <div style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'3rem 1rem', background:'rgba(139,92,246,0.03)', borderRadius:'var(--radius-md)', border:'1px dashed rgba(139,92,246,0.2)'}}>
+                <CalendarDays size={32} style={{color:'#8b5cf6', opacity:0.5, marginBottom:'0.75rem'}}/>
+                <p style={{color:'var(--text-secondary)',fontSize:'0.85rem', fontWeight:700, margin:0}}>Belum ada event terjadwal</p>
+                <p style={{color:'var(--text-muted)',fontSize:'0.75rem', marginTop:4, textAlign:'center'}}>Klik "+ Tambah" untuk membuat jadwal baru.</p>
+              </div>
             : safeEvents.map(ev=>{
                 const evDate  = new Date(ev.date); evDate.setHours(0,0,0,0)
                 const past    = evDate < today
