@@ -160,7 +160,7 @@ export async function POST(request) {
           checkIn: now,
           checkInLoc: location || 'Lokasi tidak tersedia',
           faceInUrl:    resolvedFaceInUrl,
-          faceInBase64: !resolvedFaceInUrl && faceBase64 ? faceBase64 : null, // only fallback if storage failed
+          faceInBase64: null, // LOCKED: never store Base64 in DB — Storage URL only
           status
         }
       })
@@ -239,7 +239,7 @@ export async function POST(request) {
           checkOut: now,
           checkOutLoc: location || 'Lokasi tidak tersedia',
           faceOutUrl:    resolvedFaceOutUrl,
-          faceOutBase64: !resolvedFaceOutUrl && faceBase64 ? faceBase64 : null, // only fallback if storage failed
+          faceOutBase64: null, // LOCKED: never store Base64 in DB — Storage URL only
         }
       })
       try { await db.addLog(userId, 'CLOCK_OUT', { location }) } catch (_) {}
