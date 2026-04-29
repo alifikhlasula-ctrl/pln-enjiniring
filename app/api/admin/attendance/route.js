@@ -63,9 +63,15 @@ export async function GET(request) {
 
     let legacyInterns = []
     try {
-      const db = await getDB()
-      // Also don't filter out deleted interns in legacy map
-      legacyInterns = db.interns || []
+      const [activeDB, archiveDB] = await Promise.all([
+        getDB('ACTIVE'),
+        getDB('ARCHIVE')
+      ])
+      // Include both active and archived interns so no legacy ID is orphaned
+      legacyInterns = [
+        ...(activeDB.interns || []),
+        ...(archiveDB.interns || [])
+      ]
     } catch (e) {
       console.error('[admin/attendance] Legacy intern fetch error:', e.message)
     }

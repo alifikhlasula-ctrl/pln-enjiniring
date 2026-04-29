@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getDB } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -33,15 +34,15 @@ export async function GET() {
     const todayStr = today.toISOString().split('T')[0]
     const todayMMDD = `${todayStr.split('-')[1]}-${todayStr.split('-')[2]}`
 
-    // ── Fetch today's logs + ALL interns (no status filter, include deleted for historical map) ──
+    // ── Fetch today's logs + ALL interns from ALL sources ──
     // We must not filter by status here — effective status is computed in JS.
-    const [logs, allInterns] = await Promise.all([
+    const [logs, prismaInterns] = await Promise.all([
       prisma.attendanceLog.findMany({
         where: { date: todayStr },
         orderBy: { checkIn: 'desc' }
       }),
       prisma.intern.findMany({
-        // No deletedAt filter here so we map logs of interns deleted today
+        // No deletedAt filter: include deleted interns so their logs aren't orphaned
         select: {
           id: true, name: true, bidang: true,
           periodStart: true, periodEnd: true,
@@ -50,6 +51,28 @@ export async function GET() {
         orderBy: { name: 'asc' }
       })
     ])
+
+    // ── Also fetch legacy interns from JsonStore (ids like i177xxxx) ──
+    // These ONLY exist in JsonStore, not in Prisma — critical for name resolution
+    let legacyInterns = []
+    try {
+      const [activeDB, archiveDB] = await Promise.all([
+        getDB('ACTIVE'),
+        getDB('ARCHIVE')
+      ])
+      legacyInterns = [
+        ...(activeDB.interns || []),
+        ...(archiveDB.interns || [])
+      ]
+    } catch (e) {
+      console.error('[live] Legacy intern fetch error:', e.message)
+    }
+
+    // ── Merge: JsonStore interns first (lower priority), Prisma overrides ──
+    const mergedMap = new Map()
+    for (const i of legacyInterns) mergedMap.set(i.id, i)
+    for (const i of prismaInterns)  mergedMap.set(i.id, i)
+    const allInterns = Array.from(mergedMap.values())
 
     // Compute effective status for each intern in JS (not in DB query)
     const internsWithEffectiveStatus = allInterns.map(i => ({
@@ -126,12 +149,14 @@ export async function GET() {
     })
 
     // Orphaned logs (have attendance today but not in active monitor list)
+    // Note: internMap already includes legacy JsonStore interns, so most
+    // 'Intern (i177xxxx)' IDs should now be resolved here.
     const orphanedPayload = logs
       .filter(l => !activeInternIds.has(l.internId))
       .map(l => {
         const intern = internMap.get(l.internId) || {
           id: l.internId,
-          name: `ID: ${l.internId.slice(0, 8)}`,
+          name: `⚠ Unknown (${l.internId.slice(0, 8)})`,
           bidang: '-', periodStart: null, periodEnd: null,
           status: null, effectiveStatus: null, birthDate: null
         }

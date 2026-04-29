@@ -22,8 +22,14 @@ export async function GET(request) {
     
     let legacyInterns = []
     try {
-      const db = await getDB()
-      legacyInterns = db.interns || []
+      const [activeDB, archiveDB] = await Promise.all([
+        getDB('ACTIVE'),
+        getDB('ARCHIVE')
+      ])
+      legacyInterns = [
+        ...(activeDB.interns || []),
+        ...(archiveDB.interns || [])
+      ]
     } catch(e) {}
 
     const internMap = new Map()
