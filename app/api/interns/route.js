@@ -59,10 +59,12 @@ export async function GET(request) {
     const stats = {
       total:        allInterns.length,
       active:       allInterns.filter(i => i.status === 'ACTIVE').length,
+      pending:      allInterns.filter(i => i.status === 'PENDING').length,
       completed:    allInterns.filter(i => i.status === 'COMPLETED').length,
       terminated:   allInterns.filter(i => i.status === 'TERMINATED').length,
       expiringSoon: 0 // Will calc later if needed
     }
+
 
     // ── Filter ──────────────────────────────────────
     let filtered = allInterns.filter(i =>

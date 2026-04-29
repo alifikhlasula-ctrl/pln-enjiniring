@@ -292,7 +292,7 @@ function ImportModal({onClose, onImported}) {
 export default function InternsPage() {
   const [interns, setInterns]       = useState([])
   const [pagination, setPagination] = useState({total:0,page:1,limit:10,totalPages:1})
-  const [stats, setStats]           = useState({total:0,active:0,completed:0,terminated:0,expiringSoon:0})
+  const [stats, setStats]           = useState({total:0,active:0,pending:0,completed:0,terminated:0,expiringSoon:0})
   const [loading, setLoading]       = useState(true)
   const [newlyAdded, setNewlyAdded] = useState([])
 
@@ -534,7 +534,8 @@ export default function InternsPage() {
           <h1 className="title">Manajemen Peserta Magang {programView==='archive'?'— Arsip':''}</h1>
           <div style={{display:'flex',gap:'0.5rem',marginTop:'0.375rem',flexWrap:'wrap'}}>
             {[
-              {label:`${stats.active} Aktif`,  filter:'ACTIVE',   color:'var(--secondary)'},
+              {label:`${stats.active} Aktif`,   filter:'ACTIVE',     color:'var(--secondary)'},
+              {label:`${stats.pending} Pending`, filter:'PENDING',    color:'#f59e0b'},
               {label:`${stats.completed} Selesai`, filter:'COMPLETED', color:'var(--primary)'},
               {label:`${stats.terminated} Dihentikan`, filter:'TERMINATED', color:'var(--danger)'},
               ...(stats.expiringSoon>0?[{label:`⚠ ${stats.expiringSoon} Akan Berakhir`,filter:'ACTIVE',color:'var(--warning)'}]:[])
@@ -601,7 +602,7 @@ export default function InternsPage() {
         <div style={{background:'var(--primary-light)',border:'1px solid rgba(99,102,241,0.2)',borderRadius:'var(--radius-lg)',padding:'0.75rem 1.25rem',marginBottom:'1rem',display:'flex',alignItems:'center',gap:'0.875rem',flexWrap:'wrap'}}>
           <span style={{fontSize:'0.85rem',fontWeight:700,color:'var(--primary)'}}>{selectedIds.length} dipilih</span>
           <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
-            {['ACTIVE','COMPLETED','TERMINATED'].map(s=>(
+            {['ACTIVE','PENDING','COMPLETED','TERMINATED'].map(s=>(
               <button key={s} className="btn btn-secondary" style={{fontSize:'0.75rem',padding:'0.375rem 0.75rem'}} onClick={()=>handleBulkStatus(s)}>→ {s}</button>
             ))}
             <button className="btn btn-secondary" style={{fontSize:'0.75rem',padding:'0.375rem 0.75rem'}} onClick={()=>exportToExcel(true)}><FileSpreadsheet size={13} strokeWidth={2}/> Export Terpilih</button>
@@ -621,6 +622,7 @@ export default function InternsPage() {
           <select className="select" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{width:150}}>
             <option value="ALL">Semua Status</option>
             <option value="ACTIVE">ACTIVE</option>
+            <option value="PENDING">PENDING</option>
             <option value="COMPLETED">COMPLETED</option>
             <option value="TERMINATED">TERMINATED</option>
           </select>
@@ -697,7 +699,7 @@ export default function InternsPage() {
                     const isNew      = newlyAdded.includes(intern.id)
                     const isSelected = selectedIds.includes(intern.id)
                     const pct        = progressPct(intern.periodStart, intern.periodEnd)
-                    const sc         = {ACTIVE:{bg:'#dcfce7',color:'#065f46'},COMPLETED:{bg:'#ede9fe',color:'#5b21b6'},TERMINATED:{bg:'#fee2e2',color:'#991b1b'}}[intern.status]||{}
+                    const sc = {ACTIVE:{bg:'#dcfce7',color:'#065f46'},PENDING:{bg:'#fef3c7',color:'#92400e'},COMPLETED:{bg:'#ede9fe',color:'#5b21b6'},TERMINATED:{bg:'#fee2e2',color:'#991b1b'}}[intern.status]||{}
                     return (
                       <tr key={intern.id} style={{
                         background:isNew?'rgba(99,102,241,0.08)':isSelected?'var(--primary-light)':'transparent',
@@ -731,7 +733,7 @@ export default function InternsPage() {
                         <td>
                           {quickEditId===intern.id ? (
                             <div style={{display:'flex',flexDirection:'column',gap:3,position:'relative'}}>
-                              {['ACTIVE','COMPLETED','TERMINATED'].map(s=>(
+                              {['ACTIVE','PENDING','COMPLETED','TERMINATED'].map(s=>(
                                 <button key={s} onClick={()=>handleQuickStatus(intern.id,s)}
                                   style={{fontSize:'0.68rem',fontWeight:700,padding:'3px 8px',borderRadius:4,border:'none',cursor:'pointer',background:s===intern.status?sc.bg:'var(--bg-main)',color:s===intern.status?sc.color:'var(--text-secondary)',textAlign:'left'}}>
                                   {s}
@@ -808,7 +810,7 @@ export default function InternsPage() {
                   <div className="form-group"><label className="label">Perguruan Tinggi/Sekolah *</label><input type="text" className="input" required value={formData.university} onChange={e=>set('university',e.target.value)}/></div>
                   <div className="form-group"><label className="label">Jurusan *</label><input type="text" className="input" required value={formData.major} onChange={e=>set('major',e.target.value)}/></div>
                   <div className="form-group"><label className="label">Jenjang</label><select className="select" value={formData.jenjang} onChange={e=>set('jenjang',e.target.value)}><option value="S1">S1</option><option value="D3">D3</option><option value="SMK/SMA">SMK/SMA</option></select></div>
-                  <div className="form-group"><label className="label">Status</label><select className="select" value={formData.status} onChange={e=>set('status',e.target.value)}><option value="ACTIVE">ACTIVE</option><option value="COMPLETED">COMPLETED</option><option value="TERMINATED">TERMINATED</option></select></div>
+                  <div className="form-group"><label className="label">Status</label><select className="select" value={formData.status} onChange={e=>set('status',e.target.value)}><option value="ACTIVE">ACTIVE</option><option value="PENDING">PENDING</option><option value="COMPLETED">COMPLETED</option><option value="TERMINATED">TERMINATED</option></select></div>
                 </>}
                 {activeTab===3&&<>
                   <div className="form-group"><label className="label">Bidang</label><input type="text" className="input" value={formData.bidang} onChange={e=>set('bidang',e.target.value)}/></div>
