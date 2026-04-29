@@ -4,64 +4,82 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+// ── Minimal effective-status resolver (mirrors lib/db.js getEffectiveStatus) ──
+function getEffectiveStatus(intern) {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().split('T')[0]
+  const s = String(intern.status || 'ACTIVE').toUpperCase()
+  if (s === 'TERMINATED') return 'TERMINATED'
+  if (s === 'ACTIVE' || s === 'PENDING') {
+    if (intern.periodStart) {
+      const start = new Date(intern.periodStart + 'T00:00:00Z')
+      if (start > today) return 'PENDING'
+    }
+    if (intern.periodEnd && intern.periodEnd < todayStr) return 'COMPLETED'
+  }
+  if (s === 'PENDING') return 'PENDING'
+  return s
+}
+
 export async function GET() {
   try {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
     const todayMMDD = `${todayStr.split('-')[1]}-${todayStr.split('-')[2]}`
 
-    // ── Primary query: active interns + today's logs ──
-    const [logs, activeInterns] = await Promise.all([
+    // ── Fetch today's logs + ALL non-deleted interns (no status filter) ──
+    // We must not filter by status here — effective status is computed in JS.
+    const [logs, allInterns] = await Promise.all([
       prisma.attendanceLog.findMany({
         where: { date: todayStr },
         orderBy: { checkIn: 'desc' }
       }),
       prisma.intern.findMany({
-        where: {
-          deletedAt: null,
-          status: { equals: 'ACTIVE', mode: 'insensitive' }
+        where: { deletedAt: null },
+        select: {
+          id: true, name: true, bidang: true,
+          periodStart: true, periodEnd: true,
+          status: true, birthDate: true
         },
-        select: { id: true, name: true, bidang: true, periodEnd: true, status: true, birthDate: true },
         orderBy: { name: 'asc' }
       })
     ])
 
-    // Filter out interns who have completed their period
-    const activeAndNotCompleted = activeInterns.filter(i => {
-      if (!i.periodEnd) return true
-      return i.periodEnd >= todayStr
-    })
+    // Compute effective status for each intern in JS (not in DB query)
+    const internsWithEffectiveStatus = allInterns.map(i => ({
+      ...i,
+      effectiveStatus: getEffectiveStatus(i)
+    }))
 
-    // ── BUG FIX: Resolve orphaned log internIds that don't match active interns ──
-    const activeInternIds = new Set(activeAndNotCompleted.map(i => i.id))
-    const orphanedInternIds = [...new Set(
-      logs.map(l => l.internId).filter(id => !activeInternIds.has(id))
+    // Only show ACTIVE interns in the monitor (not PENDING/COMPLETED/TERMINATED)
+    const activeInterns = internsWithEffectiveStatus.filter(i =>
+      i.effectiveStatus === 'ACTIVE'
+    )
+
+    // Build a full lookup map for ALL interns (for resolving orphaned logs)
+    const internMap = new Map(internsWithEffectiveStatus.map(i => [i.id, i]))
+
+    // ── Resolve any log internIds that don't map to a known intern ──
+    const activeInternIds = new Set(activeInterns.map(i => i.id))
+    const allInternIds    = new Set(allInterns.map(i => i.id))
+
+    const stillUnknownIds = [...new Set(
+      logs.map(l => l.internId).filter(id => !allInternIds.has(id))
     )]
 
-    let orphanInterns = []
-    if (orphanedInternIds.length > 0) {
-      orphanInterns = await prisma.intern.findMany({
-        where: { id: { in: orphanedInternIds } },
-        select: { id: true, name: true, bidang: true, periodEnd: true, deletedAt: true, status: true, birthDate: true }
-      })
-    }
-
-    // Last resort: try User table (legacy records where internId === userId)
-    const resolvedOrphanIds = new Set(orphanInterns.map(i => i.id))
-    const stillUnknownIds = orphanedInternIds.filter(id => !resolvedOrphanIds.has(id))
+    // Last resort: internId may be a userId (legacy data) — try User table
     let userFallbacks = []
     if (stillUnknownIds.length > 0) {
       const users = await prisma.user.findMany({
         where: { id: { in: stillUnknownIds } },
         select: { id: true, name: true }
       })
-      userFallbacks = users.map(u => ({ id: u.id, name: u.name, bidang: '-', periodEnd: null, status: 'UNKNOWN', birthDate: null }))
-    }
-
-    // Build a unified lookup map: internId → intern data
-    const internMap = new Map()
-    for (const i of [...activeAndNotCompleted, ...orphanInterns, ...userFallbacks]) {
-      internMap.set(i.id, i)
+      userFallbacks = users.map(u => ({
+        id: u.id, name: u.name || `ID: ${u.id.slice(0, 8)}`,
+        bidang: '-', periodStart: null, periodEnd: null,
+        status: 'UNKNOWN', effectiveStatus: 'UNKNOWN', birthDate: null
+      }))
+      for (const u of userFallbacks) internMap.set(u.id, u)
     }
 
     const buildEntry = (intern, log) => {
@@ -77,7 +95,7 @@ export async function GET() {
 
       return {
         internId:     intern.id,
-        name:         intern.name || 'Intern Tidak Dikenal',
+        name:         intern.name || `Intern (${intern.id?.slice(0, 8) ?? '?'})`,
         bidang:       intern.bidang || '-',
         status:       log ? log.status : 'ABSENT',
         checkIn:      log?.checkIn  ? log.checkIn.toISOString()  : null,
@@ -89,24 +107,27 @@ export async function GET() {
         hasBase64In,
         hasBase64Out,
         isOrphaned:   !activeInternIds.has(intern.id),
-        internStatus: intern.status || null,
+        internStatus: intern.effectiveStatus || intern.status || null,
         birthDate:    intern.birthDate || null,
         isBirthday,
       }
     }
 
     // Active interns (with or without a log today)
-    const activePayload = activeAndNotCompleted.map(i => {
+    const activePayload = activeInterns.map(i => {
       const log = logs.find(l => l.internId === i.id)
       return buildEntry(i, log)
     })
 
-    // Orphaned logs (interns not in active list but have attendance today)
+    // Orphaned logs (have attendance today but not in active monitor list)
     const orphanedPayload = logs
       .filter(l => !activeInternIds.has(l.internId))
       .map(l => {
         const intern = internMap.get(l.internId) || {
-          id: l.internId, name: 'Intern Tidak Dikenal', bidang: '-', periodEnd: null, status: null, birthDate: null
+          id: l.internId,
+          name: `ID: ${l.internId.slice(0, 8)}`,
+          bidang: '-', periodStart: null, periodEnd: null,
+          status: null, effectiveStatus: null, birthDate: null
         }
         return buildEntry(intern, l)
       })
