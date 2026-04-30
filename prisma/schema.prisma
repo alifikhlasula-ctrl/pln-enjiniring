@@ -26,11 +26,13 @@ model User {
   image              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  intern             Intern?
 }
 
 model Intern {
   id                     String    @id @default(cuid())
   userId                 String    @unique
+  user                   User      @relation(fields: [userId], references: [id])
   name                   String
   nim_nis                String
   email                  String?

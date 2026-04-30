@@ -25,11 +25,20 @@ export async function GET(request) {
     const today = new Date(); today.setHours(0,0,0,0)
 
     // ── Parallel Execution: Fetch from both sources simultaneously ──
-    const [relationalInterns, data] = await Promise.all([
-      prisma.intern.findMany({ 
+    // Try to include user relation (image/email); fall back gracefully if relation isn't ready
+    let relationalInterns = []
+    try {
+      relationalInterns = await prisma.intern.findMany({
         where: { deletedAt: null },
         include: { user: { select: { image: true, email: true } } }
-      }),
+      })
+    } catch (relErr) {
+      console.warn('[GET /api/interns] include failed, falling back:', relErr.message)
+      relationalInterns = await prisma.intern.findMany({ where: { deletedAt: null } })
+    }
+
+    const [, data] = await Promise.all([
+      Promise.resolve(),
       getDB('ACTIVE', { clone: false })
     ])
 

@@ -534,11 +534,11 @@ export default function InternsPage() {
           <h1 className="title">Manajemen Peserta Magang {programView==='archive'?'— Arsip':''}</h1>
           <div style={{display:'flex',gap:'0.5rem',marginTop:'0.375rem',flexWrap:'wrap'}}>
             {[
-              {label:`${stats.active} Aktif`,   filter:'ACTIVE',     color:'var(--secondary)'},
-              {label:`${stats.pending} Pending`, filter:'PENDING',    color:'#f59e0b'},
-              {label:`${stats.completed} Selesai`, filter:'COMPLETED', color:'var(--primary)'},
-              {label:`${stats.terminated} Dihentikan`, filter:'TERMINATED', color:'var(--danger)'},
-              ...(stats.expiringSoon>0?[{label:`⚠ ${stats.expiringSoon} Akan Berakhir`,filter:'ACTIVE',color:'var(--warning)'}]:[])
+              {label:`${stats.active ?? 0} Aktif`,   filter:'ACTIVE',     color:'var(--secondary)'},
+              {label:`${stats.pending ?? 0} Pending`, filter:'PENDING',    color:'#f59e0b'},
+              {label:`${stats.completed ?? 0} Selesai`, filter:'COMPLETED', color:'var(--primary)'},
+              {label:`${stats.terminated ?? 0} Dihentikan`, filter:'TERMINATED', color:'var(--danger)'},
+              ...((stats.expiringSoon ?? 0)>0?[{label:`⚠ ${stats.expiringSoon} Akan Berakhir`,filter:'ACTIVE',color:'var(--warning)'}]:[])
             ].map((s,i)=>{
               const isActive = statusFilter === s.filter;
               return (
