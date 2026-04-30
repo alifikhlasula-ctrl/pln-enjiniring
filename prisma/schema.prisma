@@ -23,6 +23,7 @@ model User {
   role               String   @default("INTERN")
   mustChangePassword Boolean  @default(false)
   fcmToken           String?  @db.Text
+  image              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
