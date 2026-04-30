@@ -17,12 +17,21 @@ const fmtDate = dt => dt ? new Date(dt).toLocaleDateString('id-ID',{day:'2-digit
 
 /* ── Modal Form: Create & Edit Report ──────────────────── */
 function ReportModal({ initial, onSave, onClose }) {
+  const MOOD_OPTIONS = [
+    { value: 'very_happy', emoji: '😄', label: 'Sangat Senang' },
+    { value: 'happy', emoji: '🙂', label: 'Senang' },
+    { value: 'neutral', emoji: '😐', label: 'Biasa' },
+    { value: 'sad', emoji: '😔', label: 'Kurang Baik' },
+    { value: 'very_sad', emoji: '😢', label: 'Buruk' },
+  ]
+
   const [form, setForm] = useState({
-    reportDate: initial?.reportDate || new Date().toISOString().split('T')[0],
-    content: initial?.content || '',
+    reportDate: initial?.reportDate || initial?.date || new Date().toISOString().split('T')[0],
+    content: initial?.content || initial?.activity || '',
     challenges: initial?.challenges || '',
     nextWeek: initial?.nextWeek || '',
-    skills: initial?.skills?.join(', ') || '',
+    skills: initial?.skills?.join ? initial.skills.join(', ') : (initial?.skills || ''),
+    mood: initial?.mood || '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -34,6 +43,7 @@ function ReportModal({ initial, onSave, onClose }) {
     const payload = {
       ...form,
       skills: form.skills.split(',').map(s=>s.trim()).filter(Boolean),
+      mood: form.mood || null,
       isDraft,
       ...(initial?.id ? { id: initial.id } : {})
     }
@@ -56,6 +66,27 @@ function ReportModal({ initial, onSave, onClose }) {
           <div>
             <label className="label" style={{marginBottom:'0.25rem'}}>Tanggal Laporan</label>
             <input type="date" className="input" value={form.reportDate} onChange={e=>setForm(p=>({...p,reportDate:e.target.value}))}/>
+          </div>
+
+          <div>
+            <label className="label" style={{marginBottom:'0.5rem'}}>Bagaimana perasaan Anda hari ini?</label>
+            <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
+              {MOOD_OPTIONS.map(m => (
+                <button key={m.value} type="button" onClick={() => setForm(p => ({...p, mood: m.value}))}
+                  style={{
+                    display:'flex',flexDirection:'column',alignItems:'center',gap:4,
+                    padding:'0.6rem 0.9rem',borderRadius:'var(--radius-lg)',
+                    border: form.mood === m.value ? '2px solid var(--primary)' : '1px solid var(--border)',
+                    background: form.mood === m.value ? 'var(--primary-light)' : 'var(--bg-main)',
+                    cursor:'pointer',transition:'all 0.15s',transform: form.mood === m.value ? 'scale(1.08)' : 'scale(1)',
+                    boxShadow: form.mood === m.value ? '0 4px 16px rgba(0,162,233,0.2)' : 'none'
+                  }}
+                >
+                  <span style={{fontSize:'1.5rem'}}>{m.emoji}</span>
+                  <span style={{fontSize:'0.62rem',fontWeight:700,color: form.mood === m.value ? 'var(--primary)' : 'var(--text-muted)'}}>{m.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

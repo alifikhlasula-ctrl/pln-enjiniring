@@ -1,0 +1,313 @@
+{
+  "timestamp": "2026-04-29T07:41:08.209Z",
+  "backupFile": "database.backup.1777448467720.json",
+  "totalBefore": 51,
+  "interns": [
+    {
+      "id": "i1776218169109",
+      "name": "Ni Luh Ade Sinta Dewi",
+      "status": "PENDING",
+      "userId": "u1776218169109"
+    },
+    {
+      "id": "i1776747004967",
+      "name": "Ahmad Nabilsyah Ritonga",
+      "status": "PENDING",
+      "userId": "u1776747004967"
+    },
+    {
+      "id": "i1776737505075",
+      "name": "AMELIA PUTRI NATASSYA ",
+      "status": "PENDING",
+      "userId": "u1776737505075"
+    },
+    {
+      "id": "i1774853424704",
+      "name": "Reviana Junita Putri",
+      "status": "ACTIVE",
+      "userId": "u1774853424704"
+    },
+    {
+      "id": "i1774853424683",
+      "name": "Vanessa Sauqila Olivian",
+      "status": "ACTIVE",
+      "userId": "u1774853424683"
+    },
+    {
+      "id": "i1774853424705",
+      "name": "Sufi Widyarini ",
+      "status": "ACTIVE",
+      "userId": "u1774853424705"
+    },
+    {
+      "id": "i1776750018977",
+      "name": "Zunur Evita Saputri",
+      "status": "PENDING",
+      "userId": "u1776750018977"
+    },
+    {
+      "id": "i1774853424686",
+      "name": "Kanaya Fellicita Perdana",
+      "status": "ACTIVE",
+      "userId": "u1774853424686"
+    },
+    {
+      "id": "i1774853424687",
+      "name": "Mahira Dinda Putri Anggrianto",
+      "status": "ACTIVE",
+      "userId": "u1774853424687"
+    },
+    {
+      "id": "i1774853424696",
+      "name": "Rafael Diel Nakamaya Lande",
+      "status": "ACTIVE",
+      "userId": "u1774853424696"
+    },
+    {
+      "id": "i1774853424710",
+      "name": "M. Joelyandro Revansyah",
+      "status": "ACTIVE",
+      "userId": "u1774853424710"
+    },
+    {
+      "id": "i1774853424709",
+      "name": "Radja Faridza Widiansyaputra",
+      "status": "ACTIVE",
+      "userId": "u1774853424709"
+    },
+    {
+      "id": "i1776748610223",
+      "name": "Dzakiyyah Harum Mahardani",
+      "status": "PENDING",
+      "userId": "u1776748610223"
+    },
+    {
+      "id": "i1776750071191",
+      "name": "Fahru Isnawijaya Kusuma",
+      "status": "PENDING",
+      "userId": "u1776750071191"
+    },
+    {
+      "id": "i1776748658175",
+      "name": "Rakan Daris Falah",
+      "status": "PENDING",
+      "userId": "u1776748658175"
+    },
+    {
+      "id": "i1774853424714",
+      "name": "Mareta Dwi Lestari",
+      "status": "ACTIVE",
+      "userId": "u1774853424714"
+    },
+    {
+      "id": "i1774928664464",
+      "name": "Priatama Zaky Al Fathoni",
+      "status": "ACTIVE",
+      "userId": "u1774928664464"
+    },
+    {
+      "id": "i1775703933059",
+      "name": "Renata Meisa Brillianti ",
+      "status": "ACTIVE",
+      "userId": "u1775703933059"
+    },
+    {
+      "id": "i1774853424719",
+      "name": "Eka Nova Setiawan",
+      "status": "ACTIVE",
+      "userId": "u1774853424719"
+    },
+    {
+      "id": "i1775796773228",
+      "name": "Fusha",
+      "status": "ACTIVE",
+      "userId": "u1775796773228"
+    },
+    {
+      "id": "i1774583697565",
+      "name": "Shifa Khoirunnisa",
+      "status": "ACTIVE",
+      "userId": "u1774583697565"
+    },
+    {
+      "id": "i1774853424711",
+      "name": "Kyla Gibran Ahmad",
+      "status": "ACTIVE",
+      "userId": "u1774853424711"
+    },
+    {
+      "id": "i1774853424713",
+      "name": "Ammar Nadhif Wicaksono",
+      "status": "ACTIVE",
+      "userId": "u1774853424713"
+    },
+    {
+      "id": "i1774928664461",
+      "name": "Ahmad Faiz Birqi",
+      "status": "ACTIVE",
+      "userId": "u1774928664461"
+    },
+    {
+      "id": "i1774928664465",
+      "name": "Muhammad Abdu Ar Rafi",
+      "status": "ACTIVE",
+      "userId": "u1774928664465"
+    },
+    {
+      "id": "i1776753423305",
+      "name": "Yoga Alif Sasmita",
+      "status": "PENDING",
+      "userId": "u1776753423305"
+    },
+    {
+      "id": "i1774853424726",
+      "name": "Salsabila",
+      "status": "ACTIVE",
+      "userId": "u1774853424726"
+    },
+    {
+      "id": "i1774853424767",
+      "name": "Firda Nur Apriani",
+      "status": "ACTIVE",
+      "userId": "u1774853424767"
+    },
+    {
+      "id": "i1775710467135",
+      "name": "Roghib Albi Panggar Besi",
+      "status": "ACTIVE",
+      "userId": "u1774928664463"
+    },
+    {
+      "id": "i1774583769711",
+      "name": "Nayla Aimee Taradiva",
+      "status": "ACTIVE",
+      "userId": "u1774583769711"
+    },
+    {
+      "id": "i1775800076430",
+      "name": "Arik Azel Syahputra",
+      "status": "ACTIVE",
+      "userId": "u1775800076430"
+    },
+    {
+      "id": "i1774853424769",
+      "name": "Dhila Mahira",
+      "status": "ACTIVE",
+      "userId": "u1774853424769"
+    },
+    {
+      "id": "i1774853424720",
+      "name": "Raihan Giga Bajurah",
+      "status": "ACTIVE",
+      "userId": "u1774853424720"
+    },
+    {
+      "id": "i1774853424731",
+      "name": "Ayu May Diana",
+      "status": "ACTIVE",
+      "userId": "u1774853424731"
+    },
+    {
+      "id": "i1776842353767",
+      "name": "Priyo Athallah Mahardika",
+      "status": "ACTIVE",
+      "userId": "u1776842353767"
+    },
+    {
+      "id": "i1774582160229",
+      "name": "Mutia Aqila Fazilatunnisa",
+      "status": "ACTIVE",
+      "userId": "u1774582160229"
+    },
+    {
+      "id": "i1777022847834",
+      "name": "Fayza Alivia Khairunnisa",
+      "status": "ACTIVE",
+      "userId": "u1777022847834"
+    },
+    {
+      "id": "i1774928664466",
+      "name": "Muhammad Fauzan Haqiqi",
+      "status": "ACTIVE",
+      "userId": "u1774928664466"
+    },
+    {
+      "id": "i1774584740777",
+      "name": "Wisnu Santoso",
+      "status": "ACTIVE",
+      "userId": "u1774584740777"
+    },
+    {
+      "id": "i1774853424685",
+      "name": "Muhammad Calvin Pasya",
+      "status": "ACTIVE",
+      "userId": "u1774853424685"
+    },
+    {
+      "id": "i1774853424712",
+      "name": "Joy Mega Nika Purba",
+      "status": "ACTIVE",
+      "userId": "u1774853424712"
+    },
+    {
+      "id": "i1774853424706",
+      "name": "Hana Aisyah Shabrina",
+      "status": "ACTIVE",
+      "userId": "u1774853424706"
+    },
+    {
+      "id": "i1775710444878",
+      "name": "R GHIFFARI M AFFAN SYAWAL",
+      "status": "ACTIVE",
+      "userId": "u1774928664462"
+    },
+    {
+      "id": "i1774853424697",
+      "name": "Muhammad Al Farezi Widian",
+      "status": "COMPLETED",
+      "userId": "u1774853424697"
+    },
+    {
+      "id": "i1774853424698",
+      "name": "Muhammad Ghiyats Aghniyal Fawaz",
+      "status": "COMPLETED",
+      "userId": "u1774853424698"
+    },
+    {
+      "id": "i1774853424699",
+      "name": "Muhammad Ahsantal Haqqo",
+      "status": "COMPLETED",
+      "userId": "u1774853424699"
+    },
+    {
+      "id": "i1774853424682",
+      "name": "Ibnu Masyhur Al Fathani",
+      "status": "ACTIVE",
+      "userId": "u1774853424682"
+    },
+    {
+      "id": "i1774853424684",
+      "name": "Randy Arya Dwi Permana",
+      "status": "COMPLETED",
+      "userId": "u1774853424684"
+    },
+    {
+      "id": "i1774584811236",
+      "name": "Muhammad Danu Nofiandi",
+      "status": "ACTIVE",
+      "userId": "u1774584811236"
+    },
+    {
+      "id": "i1776065910644",
+      "name": "Naila Balqis Quraniq",
+      "status": "PENDING",
+      "userId": "u1776065910644"
+    },
+    {
+      "id": "i1777442950739",
+      "name": "Riyan Wahyu Setiawan ",
+      "status": "PENDING",
+      "userId": "u1777442950739"
+    }
+  ]
+}

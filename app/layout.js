@@ -237,7 +237,7 @@ function LayoutContent({ children }) {
         { name: 'Payroll',      href: '/admin/payroll',    icon: FileSpreadsheet },
         { name: 'Pengumuman',    href: '/admin/announcements', icon: Megaphone },
         { name: 'Kalender Admin', href: '/admin/events',      icon: CalendarDays },
-        { name: 'Analytics',    href: '/analytics',       icon: BarChart3 },
+        { name: 'Intern Insight', href: '/admin/intern-insight', icon: BarChart3 },
         { name: 'Survei',       href: '/surveys',         icon: MessageSquare },
         { name: 'Panduan',      href: '/help',            icon: BookOpen },
         { name: 'Audit Log',    href: '/logs',            icon: History },

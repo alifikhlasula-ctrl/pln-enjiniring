@@ -105,7 +105,11 @@ export async function POST(request) {
       field: field || '',
       internName: intern?.name || 'Unknown',
       nim_nis: intern?.nim_nis || '-',
-      status: body.isDraft ? 'DRAFT' : 'TERCATAT'
+      status: body.isDraft ? 'DRAFT' : 'TERCATAT',
+      mood: body.mood || null,
+      challenges: body.challenges || null,
+      nextWeek: body.nextWeek || null,
+      skills: Array.isArray(body.skills) ? body.skills : []
     }
 
     let report;
@@ -175,6 +179,10 @@ export async function PUT(request) {
     if (body.field !== undefined) dataObj.field = body.field
     if (isDraft !== undefined) dataObj.status = isDraft ? 'DRAFT' : 'TERCATAT'
     if (body.isLiked !== undefined) dataObj.isLiked = body.isLiked
+    if (body.mood !== undefined) dataObj.mood = body.mood
+    if (body.challenges !== undefined) dataObj.challenges = body.challenges
+    if (body.nextWeek !== undefined) dataObj.nextWeek = body.nextWeek
+    if (body.skills !== undefined) dataObj.skills = Array.isArray(body.skills) ? body.skills : []
 
     const report = await prisma.dailyReport.update({
       where: { id },

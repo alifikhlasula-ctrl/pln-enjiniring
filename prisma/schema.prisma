@@ -134,6 +134,10 @@ model DailyReport {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   isLiked      Boolean  @default(false)
+  mood         String?
+  challenges   String?
+  nextWeek     String?
+  skills       String[]
 }
 
 model Onboarding {
