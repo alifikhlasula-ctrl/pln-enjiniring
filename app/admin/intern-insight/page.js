@@ -308,9 +308,10 @@ export default function InternInsightPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:'0.75rem' }}>
               <StatCard label="Total Anggaran" value={fmtRp(fn.totalBudgetAllTime)} icon="💰" color="var(--primary)" sub="Seluruh periode" />
-              <StatCard label="Anggaran Tahun Ini" value={fmtRp(fn.totalBudgetThisYear)} icon="📅" color="#22c55e" />
+              <StatCard label="Sudah Dibayar" value={fmtRp(fn.totalBudgetPaid)} icon="✅" color="#22c55e" sub="PAID + TRANSFERRED" />
+              <StatCard label="Anggaran Tahun Ini" value={fmtRp(fn.totalBudgetThisYear)} icon="📅" color="#3b82f6" />
               <StatCard label="Anggaran Bulan Ini" value={fmtRp(fn.totalBudgetThisMonth)} icon="🗓️" color="#f59e0b" />
-              <StatCard label="Total Payroll" value={fn.totalPayrolls} icon="📋" color="#6366f1" />
+              <StatCard label="Total Record Payroll" value={fn.totalPayrolls} icon="📋" color="#6366f1" />
               {fn.avgPaymentSpeed !== null && <StatCard label="Kecepatan Bayar" value={`${fn.avgPaymentSpeed} hari`} icon="⚡" color="#22c55e" sub="Rata-rata proses" />}
             </div>
 

@@ -14,12 +14,26 @@ export async function GET() {
       allEvals, allOnboardings
     ] = await Promise.all([
       prisma.intern.findMany({ where: { deletedAt: null } }),
-      prisma.dailyReport.findMany({ orderBy: { date: 'desc' } }),
-      prisma.attendanceLog.findMany(),
-      prisma.payrollRecord.findMany(),
+      prisma.dailyReport.findMany({ orderBy: { date: 'desc' }, select: { userId: true, date: true, status: true, internName: true, mood: true, activity: true, skills: true } }),
+      prisma.attendanceLog.findMany({ select: { internId: true, date: true, status: true, checkIn: true, checkOut: true } }),
+      prisma.payrollRecord.findMany({
+        select: {
+          id: true, internId: true, period: true, status: true,
+          presenceCount: true, validPresenceCount: true, allowanceRate: true,
+          totalAllowance: true, paidAt: true, createdAt: true, notes: true
+        }
+      }),
       prisma.evaluation.findMany(),
       prisma.onboarding.findMany()
     ])
+
+    // ── Fix totalAllowance: some records were stored with 0. Recompute from validPresenceCount × allowanceRate ──
+    const FLAT_RATE = 25000
+    for (const pr of allPayrolls) {
+      const computed = (pr.validPresenceCount || 0) * (pr.allowanceRate || FLAT_RATE)
+      // Use stored value if valid, otherwise use computed
+      pr._effectiveAllowance = pr.totalAllowance > 0 ? pr.totalAllowance : computed
+    }
 
     // ════════════════════════════════════════════════════════════
     // TAB 1: OVERVIEW
@@ -315,15 +329,19 @@ export async function GET() {
     for (const pr of allPayrolls) {
       // By period (use pretty label)
       const pLabel = prettyPeriod(pr.period)
-      if (!payrollByPeriod[pLabel]) payrollByPeriod[pLabel] = { period: pLabel, rawPeriod: pr.period, total: 0, count: 0 }
-      payrollByPeriod[pLabel].total += pr.totalAllowance
+      if (!payrollByPeriod[pLabel]) payrollByPeriod[pLabel] = { period: pLabel, rawPeriod: pr.period, total: 0, count: 0, paid: 0, validDays: 0 }
+      payrollByPeriod[pLabel].total += pr._effectiveAllowance
+      payrollByPeriod[pLabel].validDays += (pr.validPresenceCount || 0)
       payrollByPeriod[pLabel].count++
+      if (['PAID','TRANSFERRED'].includes((pr.status||'').toUpperCase())) {
+        payrollByPeriod[pLabel].paid += pr._effectiveAllowance
+      }
 
       // By bidang
       const intern = allInterns.find(i => i.id === pr.internId || i.userId === pr.internId)
       const bidang = intern?.bidang || 'Lainnya'
       if (!payrollByBidang[bidang]) payrollByBidang[bidang] = { bidang, total: 0, count: 0 }
-      payrollByBidang[bidang].total += pr.totalAllowance
+      payrollByBidang[bidang].total += pr._effectiveAllowance
       payrollByBidang[bidang].count++
 
       // Status — capture ALL status values dynamically
@@ -335,18 +353,18 @@ export async function GET() {
     const payrollBidangArr = Object.values(payrollByBidang).sort((a, b) => b.total - a.total)
     
     // Total anggaran
-    const totalBudgetAllTime = allPayrolls.reduce((s, p) => s + p.totalAllowance, 0)
+    const totalBudgetAllTime = allPayrolls.reduce((s, p) => s + p._effectiveAllowance, 0)
     const currentYear = today.getFullYear().toString()
     const totalBudgetThisYear = allPayrolls
       .filter(p => (p.period || '').includes(currentYear))
-      .reduce((s, p) => s + p.totalAllowance, 0)
+      .reduce((s, p) => s + p._effectiveAllowance, 0)
     const currentMonth = todayStr.slice(0, 7)
     const totalBudgetThisMonth = allPayrolls
-      .filter(p => {
-        const ym = extractYM(p.period)
-        return ym === currentMonth
-      })
-      .reduce((s, p) => s + p.totalAllowance, 0)
+      .filter(p => { const ym = extractYM(p.period); return ym === currentMonth })
+      .reduce((s, p) => s + p._effectiveAllowance, 0)
+    const totalBudgetPaid = allPayrolls
+      .filter(p => ['PAID','TRANSFERRED'].includes((p.status||'').toUpperCase()))
+      .reduce((s, p) => s + p._effectiveAllowance, 0)
 
     // Payment speed
     const paymentSpeeds = allPayrolls
@@ -411,6 +429,7 @@ export async function GET() {
         totalBudgetAllTime,
         totalBudgetThisYear,
         totalBudgetThisMonth,
+        totalBudgetPaid,
         avgPaymentSpeed,
         totalPayrolls: allPayrolls.length,
       },
