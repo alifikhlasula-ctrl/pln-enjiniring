@@ -27,12 +27,71 @@ export async function GET() {
       prisma.onboarding.findMany()
     ])
 
-    // ── Fix totalAllowance: some records were stored with 0. Recompute from validPresenceCount × allowanceRate ──
+    // ── Build lookup maps for fast O(1) access ──
     const FLAT_RATE = 25000
+
+    // Map: internId -> intern object
+    const internById = {}
+    for (const intern of allInterns) internById[intern.id] = intern
+
+    // Map: internId -> Set of dates with valid PRESENT/LATE attendance
+    const attendanceByIntern = {}
+    for (const log of allAttendance) {
+      if (!['PRESENT', 'LATE'].includes(log.status)) continue
+      if (!attendanceByIntern[log.internId]) attendanceByIntern[log.internId] = []
+      attendanceByIntern[log.internId].push(log.date) // date format YYYY-MM-DD
+    }
+
+    // Map: userId -> Set of dates with submitted report
+    const reportsByUser = {}
+    for (const r of allReports) {
+      if (r.status === 'DRAFT') continue
+      if (!reportsByUser[r.userId]) reportsByUser[r.userId] = new Set()
+      // Normalize date to YYYY-MM-DD
+      const d = r.date ? String(r.date).slice(0, 10) : null
+      if (d) reportsByUser[r.userId].add(d)
+    }
+
+    // Helper: parse period to {startDate, endDate} — supports both YYYY-MM and startDate_endDate
+    function parsePeriod(period) {
+      if (!period) return null
+      if (/^\d{4}-\d{2}$/.test(period)) {
+        // YYYY-MM: full month
+        const [y, m] = period.split('-')
+        const start = `${y}-${m}-01`
+        const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate()
+        const end = `${y}-${m}-${String(lastDay).padStart(2, '0')}`
+        return { startDate: start, endDate: end }
+      }
+      if (period.includes('_')) {
+        const [s, e] = period.split('_')
+        return { startDate: s, endDate: e }
+      }
+      return null
+    }
+
+    // ── Recompute _effectiveAllowance for EVERY PayrollRecord using real attendance×report data ──
     for (const pr of allPayrolls) {
-      const computed = (pr.validPresenceCount || 0) * (pr.allowanceRate || FLAT_RATE)
-      // Use stored value if valid, otherwise use computed
-      pr._effectiveAllowance = pr.totalAllowance > 0 ? pr.totalAllowance : computed
+      const intern = internById[pr.internId]
+      if (!intern) { pr._effectiveAllowance = 0; continue }
+
+      const range = parsePeriod(pr.period)
+      if (!range) { pr._effectiveAllowance = 0; continue }
+
+      const { startDate, endDate } = range
+      const attendanceDates = attendanceByIntern[pr.internId] || []
+      const userReportDates = reportsByUser[intern.userId] || new Set()
+
+      // Cross-validate: attendance date in range AND has report that day
+      let validDays = 0
+      for (const attDate of attendanceDates) {
+        if (attDate >= startDate && attDate <= endDate) {
+          if (userReportDates.has(attDate)) validDays++
+        }
+      }
+
+      pr._effectiveAllowance = validDays * FLAT_RATE
+      pr._recomputedValidDays = validDays
     }
 
     // ════════════════════════════════════════════════════════════
@@ -113,7 +172,7 @@ export async function GET() {
     // Mood distribution
     const moodDist = { very_happy: 0, happy: 0, neutral: 0, sad: 0, very_sad: 0 }
     const moodByWeek = {}
-    const reportsByUser = {}
+    const reportSubmitCount = {}  // { userId: { count, name } } for top submitters
 
     for (const r of allReports) {
       if (r.mood && moodDist[r.mood] !== undefined) moodDist[r.mood]++
@@ -124,8 +183,8 @@ export async function GET() {
       if (r.mood) { moodByWeek[weekKey][r.mood]++; moodByWeek[weekKey].total++ }
 
       // Reports per user
-      if (!reportsByUser[r.userId]) reportsByUser[r.userId] = { count: 0, name: r.internName || 'Unknown' }
-      reportsByUser[r.userId].count++
+      if (!reportSubmitCount[r.userId]) reportSubmitCount[r.userId] = { count: 0, name: r.internName || 'Unknown' }
+      reportSubmitCount[r.userId].count++
     }
 
     const totalMoods = Object.values(moodDist).reduce((s, v) => s + v, 0)
@@ -139,12 +198,12 @@ export async function GET() {
       return s === 'ACTIVE'
     }).map(i => i.userId)
 
-    const topSubmitters = Object.entries(reportsByUser)
+    const topSubmitters = Object.entries(reportSubmitCount)
       .map(([userId, d]) => ({ userId, name: d.name, count: d.count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
 
-    const submitterIds = new Set(Object.keys(reportsByUser))
+    const submitterIds = new Set(Object.keys(reportSubmitCount))
     const neverSubmitted = allInterns
       .filter(i => {
         const s = (i.status || 'ACTIVE').toUpperCase()
