@@ -8,10 +8,10 @@ export const dynamic = 'force-dynamic'
 /* ── Column definitions per import type ───────────── */
 const SCHEMA = {
   INTERNS: {
-    cols: ['Nama','Email','Telepon','Instansi','Jurusan','Jenjang','Bidang','Wilayah','Tahun','Tanggal Mulai','Tanggal Selesai','NIM/NIS','Gender'],
+    cols: ['Nama','Email','Telepon','Instansi','Jurusan','Jenjang','Bidang','Wilayah','Tahun','Tanggal Mulai','Tanggal Selesai','NIM/NIS','Gender','Nama Pembimbing','Jabatan Pembimbing'],
     required: ['Nama','Instansi','Jurusan'],
     sample: [
-      ['Budi Santoso','budi@kampus.ac.id','+62812345678','Universitas Indonesia','Teknik Informatika','S1','IT Development','Jakarta Selatan','2026','2026-01-01','2026-06-30','TI001','Laki-laki'],
+      ['Budi Santoso','budi@kampus.ac.id','+62812345678','Universitas Indonesia','Teknik Informatika','S1','IT Development','Jakarta Selatan','2026','2026-01-01','2026-06-30','TI001','Laki-laki','Pak Ahmad','Manager IT'],
       ['Sari Dewi','sari@kampus.ac.id','+62898765432','BINUS University','Sistem Informasi','S1','Data Analytics','Jakarta Barat','2026','2026-02-01','2026-07-31','SI002','Perempuan'],
     ]
   },
@@ -208,6 +208,8 @@ export async function PUT(request) {
           existing.periodStart = row['Tanggal Mulai'] || existing.periodStart
           existing.periodEnd = row['Tanggal Selesai'] || existing.periodEnd
           existing.duration = calcDur(existing.periodStart, existing.periodEnd)
+          existing.supervisorName = row['Nama Pembimbing'] || existing.supervisorName
+          existing.supervisorTitle = row['Jabatan Pembimbing'] || existing.supervisorTitle
           updated++
         } else {
           const ts2    = Date.now() + created + updated
@@ -228,6 +230,8 @@ export async function PUT(request) {
             duration: calcDur(row['Tanggal Mulai'], row['Tanggal Selesai']),
             suratPenerimaan:'',tanggalSuratPenerimaan:'',spk:'',tanggalSPK:'',
             amandemen:'',tanggalAmandemen:'',suratSelesai:'',tanggalSuratSelesai:'',
+            supervisorName: row['Nama Pembimbing'] || '',
+            supervisorTitle: row['Jabatan Pembimbing'] || '',
             fromImport: 'EXCEL', deletedAt: null
           }
           data.users.push(newUser)
@@ -265,7 +269,9 @@ export async function PUT(request) {
                 tahun: row['Tahun'] || prismaExisting.tahun,
                 periodStart: row['Tanggal Mulai'] || prismaExisting.periodStart,
                 periodEnd: row['Tanggal Selesai'] || prismaExisting.periodEnd,
-                duration: calcDur(row['Tanggal Mulai'], row['Tanggal Selesai'])
+                duration: calcDur(row['Tanggal Mulai'], row['Tanggal Selesai']),
+                supervisorName: row['Nama Pembimbing'] || prismaExisting.supervisorName || '',
+                supervisorTitle: row['Jabatan Pembimbing'] || prismaExisting.supervisorTitle || ''
               }
             })
           ])
@@ -298,6 +304,8 @@ export async function PUT(request) {
                 periodStart: row['Tanggal Mulai'] || '',
                 periodEnd: row['Tanggal Selesai'] || '',
                 duration: calcDur(row['Tanggal Mulai'], row['Tanggal Selesai']),
+                supervisorName: row['Nama Pembimbing'] || '',
+                supervisorTitle: row['Jabatan Pembimbing'] || '',
                 fromImport: 'EXCEL',
                 deletedAt: null
               }

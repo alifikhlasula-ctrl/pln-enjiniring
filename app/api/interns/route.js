@@ -170,7 +170,9 @@ export async function POST(request) {
                 duration: item.duration || existing.duration,
                 bankName: item.bankName || existing.bankName || '',
                 bankAccount: item.bankAccount || existing.bankAccount || '',
-                bankAccountName: item.bankAccountName || existing.bankAccountName || ''
+                bankAccountName: item.bankAccountName || existing.bankAccountName || '',
+                supervisorName: item.supervisorName || existing.supervisorName || '',
+                supervisorTitle: item.supervisorTitle || existing.supervisorTitle || ''
               }
             })
           ])
@@ -209,6 +211,13 @@ export async function POST(request) {
                 periodStart: item.periodStart || '',
                 periodEnd: item.periodEnd || '',
                 duration: item.duration || '',
+                phone: item.phone || '',
+                nik: item.nik || '',
+                bankName: item.bankName || '',
+                bankAccount: item.bankAccount || '',
+                bankAccountName: item.bankAccountName || '',
+                supervisorName: item.supervisorName || '',
+                supervisorTitle: item.supervisorTitle || '',
                 fromImport: 'EXCEL_BATCH',
                 deletedAt: null
               }
