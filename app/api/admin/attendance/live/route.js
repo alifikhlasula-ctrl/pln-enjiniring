@@ -193,11 +193,47 @@ export async function GET() {
       })
       .filter((v, i, arr) => arr.findIndex(x => x.internId === v.internId) === i)
 
-    const payload = [...activePayload, ...orphanedPayload]
+    const rawPayload = [...activePayload, ...orphanedPayload]
 
-    // Sort: PRESENT → LATE → SAKIT → IZIN → ABSENT
+    // ── DEDUPLICATION by name (case-insensitive, normalized) ────────────────
+    // Same person can appear twice when they exist in BOTH Prisma (cuid) and
+    // legacy JSON (i177xxx) with different ids but the same real name.
+    // Rule: keep the entry with actual attendance (non-ABSENT); if both have
+    // attendance, keep the one with the earlier check-in; if both are ABSENT,
+    // keep the first (Prisma/activePayload) and drop the duplicate.
     const ORDER = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 3, ABSENT: 4 }
-    const sorted = payload.sort((a, b) => {
+
+    const normName = (n) => (n || '').toLowerCase().trim().replace(/\s+/g, ' ')
+
+    const seenByName = new Map()
+    for (const entry of rawPayload) {
+      const key = normName(entry.name)
+      if (!key || key.startsWith('⚠') || key.startsWith('intern (')) {
+        // Unknown / orphaned entries — always include as-is
+        seenByName.set(entry.internId, entry)
+        continue
+      }
+      if (!seenByName.has(key)) {
+        seenByName.set(key, entry)
+      } else {
+        const existing = seenByName.get(key)
+        const existingOrder = ORDER[existing.status] ?? 9
+        const newOrder      = ORDER[entry.status]    ?? 9
+        // Prefer the entry with attendance data (lower ORDER = better)
+        if (newOrder < existingOrder) {
+          seenByName.set(key, entry)
+        } else if (newOrder === existingOrder && entry.checkIn && !existing.checkIn) {
+          // Same status but new entry has check-in time
+          seenByName.set(key, entry)
+        }
+        // else keep existing — no change
+      }
+    }
+
+    const deduplicated = Array.from(seenByName.values())
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const sorted = deduplicated.sort((a, b) => {
       const diff = (ORDER[a.status] ?? 4) - (ORDER[b.status] ?? 4)
       if (diff !== 0) return diff
       if (a.checkIn && b.checkIn) return new Date(b.checkIn) - new Date(a.checkIn)

@@ -178,7 +178,28 @@ export async function GET(request) {
 
     // Sort: PRESENT → LATE → SAKIT/IZIN → ABSENT, then alphabetically within group
     const ORDER = { PRESENT: 0, LATE: 1, SAKIT: 2, IZIN: 2, ABSENT: 3 }
-    const todaySummary = [...todayLogEntries, ...absentEntries].sort((a, b) => {
+
+    const rawSummary = [...todayLogEntries, ...absentEntries]
+
+    // ── DEDUPLICATION by name (same person in Prisma + legacy JSON) ──────────
+    const normName = (n) => (n || '').toLowerCase().trim().replace(/\s+/g, ' ')
+    const seenByName = new Map()
+    for (const entry of rawSummary) {
+      const key = normName(entry.intern?.name)
+      if (!key || key.startsWith('⚠') || key.startsWith('intern (')) {
+        seenByName.set(entry.internId, entry); continue
+      }
+      if (!seenByName.has(key)) {
+        seenByName.set(key, entry)
+      } else {
+        const existing = seenByName.get(key)
+        const existingOrder = ORDER[existing.status] ?? 9
+        const newOrder      = ORDER[entry.status]    ?? 9
+        if (newOrder < existingOrder) seenByName.set(key, entry)
+        else if (newOrder === existingOrder && entry.checkIn && !existing.checkIn) seenByName.set(key, entry)
+      }
+    }
+    const todaySummary = Array.from(seenByName.values()).sort((a, b) => {
       const oa = ORDER[a.status] ?? 9
       const ob = ORDER[b.status] ?? 9
       if (oa !== ob) return oa - ob
