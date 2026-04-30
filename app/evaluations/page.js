@@ -348,7 +348,7 @@ function EvalForm({ internId, internName, internPeriod, criteria, existing, onSa
 }
 
 /* ── Intern View: Tampilkan hasil evaluasi + Konfirmasi ─── */
-function InternEvaluationView({ evaluations, criteria }) {
+function InternEvaluationView({ evaluations, criteria, userId }) {
   const [confirming, setConfirming] = useState(false)
   const latest = evaluations[0]
 
@@ -414,7 +414,7 @@ function InternEvaluationView({ evaluations, criteria }) {
             <h3 style={{fontWeight:800}}>Hasil Evaluasi Akhir</h3>
             <p style={{fontSize:'0.75rem',color:'var(--text-muted)'}}>Periode: {latest.period} · Dibuat: {fmtDate(latest.createdAt)}</p>
             <div style={{marginTop:'1rem', display:'flex', gap:'0.75rem', flexWrap:'wrap'}}>
-               <a href={`/portfolio?userId=${latest.internId}`} target="_blank" className="btn btn-primary" style={{textDecoration:'none', gap:6, background:'#0284c7', borderColor:'#0284c7'}}>
+               <a href={`/portfolio?userId=${userId}`} target="_blank" className="btn btn-primary" style={{textDecoration:'none', gap:6, background:'#0284c7', borderColor:'#0284c7'}}>
                  <FileText size={16} strokeWidth={2}/> Unduh CV / Portofolio
                </a>
                {latest.scores?.certificateUrl && (
@@ -578,8 +578,8 @@ export default function EvaluationsPage() {
           <h1 className="title" style={{display:'flex',alignItems:'center',gap:8}}><Award size={22} strokeWidth={2}/> Hasil Evaluasi Saya</h1>
           <p className="subtitle">Lihat hasil penilaian kinerja Anda dari Admin HR.</p>
         </div>
-        {loading ? <div style={{textAlign:'center',padding:'3rem'}}><Loader2 size={24} style={{animation:'spin 1s linear infinite',color:'var(--primary)'}}/></div>
-         : <InternEvaluationView evaluations={myEvals} criteria={criteria}/>}
+         {loading ? <div style={{textAlign:'center',padding:'3rem'}}><Loader2 size={24} style={{animation:'spin 1s linear infinite',color:'var(--primary)'}}/></div>
+         : <InternEvaluationView evaluations={myEvals} criteria={criteria} userId={user.id}/>}
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     )
