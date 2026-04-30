@@ -156,15 +156,21 @@ export async function POST(request) {
               data: {
                 name: String(item.name || existing.name).trim(),
                 gender: item.gender || existing.gender,
+                phone: item.phone || existing.phone || '',
+                nik: item.nik || existing.nik || '',
                 university: String(item.university || existing.university).trim(),
                 jenjang: item.jenjang || existing.jenjang,
                 major: String(item.major || existing.major).trim(),
+                status: item.status || existing.status,
                 bidang: String(item.bidang || existing.bidang).trim(),
                 wilayah: String(item.wilayah || existing.wilayah).trim(),
                 tahun: String(item.tahun || existing.tahun).trim(),
                 periodStart: item.periodStart || existing.periodStart,
                 periodEnd: item.periodEnd || existing.periodEnd,
-                duration: item.duration || existing.duration
+                duration: item.duration || existing.duration,
+                bankName: item.bankName || existing.bankName || '',
+                bankAccount: item.bankAccount || existing.bankAccount || '',
+                bankAccountName: item.bankAccountName || existing.bankAccountName || ''
               }
             })
           ])
