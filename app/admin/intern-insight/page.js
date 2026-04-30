@@ -225,31 +225,70 @@ export default function InternInsightPage() {
 
             <Card title="⚠️ Intern yang Belum Pernah Submit Laporan">
               {wb.neverSubmitted?.length > 0 ? (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:6 }}>
-                  {wb.neverSubmitted.map((n,i) => (
-                    <div key={i} style={{ padding:'8px 12px', borderRadius:8, background:'#fef2f2', border:'1px solid #fecaca', display:'flex', justifyContent:'space-between' }}>
-                      <span style={{ fontWeight:700, fontSize:'0.8rem' }}>{n.name}</span>
-                      <span style={{ fontSize:'0.68rem', color:'var(--text-muted)' }}>{n.bidang}</span>
+                <div>
+                  <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', marginBottom:10 }}>
+                    <span style={{ fontWeight:900, color:'#f59e0b', fontSize:'1rem' }}>{wb.neverSubmitted.length}</span> intern aktif belum pernah submit laporan
+                  </p>
+                  <details>
+                    <summary style={{ cursor:'pointer', fontSize:'0.78rem', color:'var(--text-muted)', userSelect:'none', fontWeight:700 }}>
+                      Lihat daftar intern →
+                    </summary>
+                    <div style={{ marginTop:10, display:'flex', flexWrap:'wrap', gap:6 }}>
+                      {wb.neverSubmitted.map((n,i) => (
+                        <div key={i} style={{ padding:'4px 10px', borderRadius:20, background:'var(--bg-main)', border:'1px solid var(--border)', fontSize:'0.75rem', fontWeight:600 }}>
+                          {n.name}
+                          <span style={{ marginLeft:6, fontSize:'0.65rem', color:'var(--text-muted)' }}>{n.bidang?.split(' ').slice(0,2).join(' ')}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </details>
                 </div>
               ) : <p style={{ color:'#22c55e', fontWeight:700, fontSize:'0.82rem', textAlign:'center' }}>✅ Semua intern aktif sudah pernah submit!</p>}
             </Card>
 
-            <Card title="📈 Tren Kehadiran (30 Hari Terakhir)" subtitle="Jumlah kehadiran harian">
-              {at.trend?.length > 0 ? (
-                <div style={{ display:'flex', alignItems:'flex-end', gap:2, height:120, padding:'8px 0' }}>
-                  {at.trend.map((d,i) => {
-                    const max = Math.max(...at.trend.map(x => x.total), 1)
-                    return (
-                      <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
-                        <div style={{ width:'100%', height:`${(d.present/max)*100}%`, background:'#22c55e', borderRadius:'3px 3px 0 0', minHeight: d.present > 0 ? 3 : 0 }} title={`${d.date}: ${d.present} hadir`} />
-                        <span style={{ fontSize:'0.5rem', color:'var(--text-muted)', transform:'rotate(-45deg)', transformOrigin:'center' }}>{d.date.slice(5)}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : <p style={{ color:'var(--text-muted)', fontSize:'0.78rem' }}>Belum ada data</p>}
+            <Card title="📈 Tren Kehadiran (30 Hari Terakhir)" subtitle="Jumlah kehadiran harian (PRESENT + LATE) dari data absensi realtime">
+              {at.trend?.length > 0 ? (() => {
+                const maxVal = Math.max(...at.trend.map(x => x.hadir ?? x.present), 1)
+                return (
+                  <div>
+                    <div style={{ display:'flex', alignItems:'flex-end', gap:3, height:140, padding:'8px 0 4px' }}>
+                      {at.trend.map((d,i) => {
+                        const val = d.hadir ?? d.present
+                        const pct = maxVal > 0 ? (val / maxVal) * 100 : 0
+                        const isToday = d.date === new Date().toISOString().split('T')[0]
+                        return (
+                          <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, minWidth:0 }}>
+                            <div
+                              style={{
+                                width:'100%',
+                                height: pct > 0 ? `${pct}%` : 2,
+                                background: isToday ? '#f59e0b' : val > 0 ? '#22c55e' : 'var(--border)',
+                                borderRadius:'3px 3px 0 0',
+                                transition:'height 0.3s',
+                                opacity: val === 0 ? 0.3 : 1,
+                                cursor:'default'
+                              }}
+                              title={`${d.date}\nHadir: ${val}\nPRESENT: ${d.present}  LATE: ${d.late}\nSAKIT: ${d.sakit}  IZIN: ${d.izin}`}
+                            />
+                            {i % 5 === 0 && (
+                              <span style={{ fontSize:'0.48rem', color:'var(--text-muted)', transform:'rotate(-45deg)', transformOrigin:'top center', display:'block', marginTop:2, whiteSpace:'nowrap' }}>
+                                {d.date.slice(5)}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div style={{ display:'flex', gap:12, justifyContent:'flex-end', marginTop:8 }}>
+                      {[['#22c55e','Hadir'],['#f59e0b','Hari Ini'],['var(--border)','Tidak Ada Data']].map(([c,l]) => (
+                        <div key={l} style={{ display:'flex', alignItems:'center', gap:4, fontSize:'0.65rem', color:'var(--text-muted)' }}>
+                          <div style={{ width:10, height:10, borderRadius:2, background:c }} />{l}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })() : <p style={{ color:'var(--text-muted)', fontSize:'0.78rem' }}>Belum ada data absensi</p>}
             </Card>
           </div>
         )}

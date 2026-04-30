@@ -319,10 +319,24 @@ export async function GET() {
       else if (log.status === 'SAKIT') { day.sakit++; attendanceByStatus.SAKIT++ }
       else if (log.status === 'IZIN') { day.izin++; attendanceByStatus.IZIN++ }
     }
-    const attendanceTrend = Object.entries(attendanceByDay)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-30)
-      .map(([date, d]) => ({ date, ...d }))
+
+    // Fill ALL 30 days (including days with zero attendance) so chart is not sparse
+    const attendanceTrend = []
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().split('T')[0]
+      const day = attendanceByDay[dateStr] || { present: 0, late: 0, sakit: 0, izin: 0, total: 0 }
+      attendanceTrend.push({
+        date: dateStr,
+        present: day.present,
+        late: day.late,
+        sakit: day.sakit,
+        izin: day.izin,
+        hadir: day.present + day.late,   // total hadir (PRESENT + LATE)
+        total: day.total
+      })
+    }
 
     // ════════════════════════════════════════════════════════════
     // TAB 3.7: ONBOARDING
