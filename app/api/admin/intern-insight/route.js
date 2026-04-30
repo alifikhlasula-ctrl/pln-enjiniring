@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getDB } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,12 +11,11 @@ export async function GET() {
 
     // ── Parallel fetch all data sources ──
     const [
-      allInterns, allReports, allAttendance, allPayrolls,
+      allInterns, allReports, allPayrolls,
       allEvals, allOnboardings
     ] = await Promise.all([
       prisma.intern.findMany({ where: { deletedAt: null } }),
       prisma.dailyReport.findMany({ orderBy: { date: 'desc' }, select: { userId: true, date: true, status: true, internName: true, mood: true, activity: true, skills: true } }),
-      prisma.attendanceLog.findMany({ select: { internId: true, date: true, status: true, checkIn: true, checkOut: true } }),
       prisma.payrollRecord.findMany({
         select: {
           id: true, internId: true, period: true, status: true,
@@ -26,6 +26,34 @@ export async function GET() {
       prisma.evaluation.findMany(),
       prisma.onboarding.findMany()
     ])
+
+    // ── Fetch attendance: try Prisma first, fallback to JSON legacy ──
+    let allAttendance = []
+    try {
+      allAttendance = await prisma.attendanceLog.findMany({
+        select: { internId: true, date: true, status: true, checkIn: true, checkOut: true }
+      })
+    } catch (e) {
+      console.warn('[insight] Prisma attendanceLog failed:', e.message)
+    }
+
+    // Merge JSON legacy attendance if Prisma returned nothing or as supplement
+    try {
+      const jsonData = await getDB()
+      const jsonAttendances = (jsonData.attendances || [])
+      if (allAttendance.length === 0 && jsonAttendances.length > 0) {
+        // Full fallback: use JSON attendance
+        allAttendance = jsonAttendances.map(a => ({
+          internId: a.internId,
+          date: a.date ? String(a.date).slice(0, 10) : null,
+          status: a.status || 'PRESENT',
+          checkIn: a.checkIn || null,
+          checkOut: a.checkOut || null
+        })).filter(a => a.date)
+      }
+    } catch (e) {
+      console.warn('[insight] JSON fallback attendance failed:', e.message)
+    }
 
     // ── Build lookup maps for fast O(1) access ──
     const FLAT_RATE = 25000
@@ -311,8 +339,16 @@ export async function GET() {
     const attendanceByDay = {}
     const attendanceByStatus = { PRESENT: 0, LATE: 0, SAKIT: 0, IZIN: 0 }
     for (const log of allAttendance) {
-      if (!attendanceByDay[log.date]) attendanceByDay[log.date] = { present: 0, late: 0, sakit: 0, izin: 0, total: 0 }
-      const day = attendanceByDay[log.date]
+      // Normalize date: handles YYYY-MM-DD and D/M/YYYY (legacy JSON format)
+      let dateKey = log.date ? String(log.date).slice(0, 10) : null
+      if (dateKey && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateKey)) {
+        const [dd, mm, yyyy] = dateKey.split('/')
+        dateKey = `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`
+      }
+      if (!dateKey) continue
+
+      if (!attendanceByDay[dateKey]) attendanceByDay[dateKey] = { present: 0, late: 0, sakit: 0, izin: 0, total: 0 }
+      const day = attendanceByDay[dateKey]
       day.total++
       if (log.status === 'PRESENT') { day.present++; attendanceByStatus.PRESENT++ }
       else if (log.status === 'LATE') { day.late++; attendanceByStatus.LATE++ }
@@ -320,11 +356,13 @@ export async function GET() {
       else if (log.status === 'IZIN') { day.izin++; attendanceByStatus.IZIN++ }
     }
 
-    // Fill ALL 30 days (including days with zero attendance) so chart is not sparse
+    // Fill ALL 30 days using local WIB time (UTC+7) to avoid date shifting
     const attendanceTrend = []
+    const wibNow = new Date(today.getTime() + 7 * 60 * 60 * 1000)
+    const todayWib = wibNow.toISOString().split('T')[0]
     for (let i = 29; i >= 0; i--) {
-      const d = new Date(today)
-      d.setDate(d.getDate() - i)
+      const d = new Date(wibNow)
+      d.setUTCDate(d.getUTCDate() - i)
       const dateStr = d.toISOString().split('T')[0]
       const day = attendanceByDay[dateStr] || { present: 0, late: 0, sakit: 0, izin: 0, total: 0 }
       attendanceTrend.push({
@@ -333,10 +371,11 @@ export async function GET() {
         late: day.late,
         sakit: day.sakit,
         izin: day.izin,
-        hadir: day.present + day.late,   // total hadir (PRESENT + LATE)
+        hadir: day.present + day.late,
         total: day.total
       })
     }
+
 
     // ════════════════════════════════════════════════════════════
     // TAB 3.7: ONBOARDING
