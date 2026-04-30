@@ -6,7 +6,12 @@ import { withCache } from '@/lib/cache-headers'
 /* ── GET: Compute auto-alerts + custom alerts ── */
 export async function GET() {
   const data    = await getDB()
-  const today   = new Date(); today.setHours(0,0,0,0)
+  const wibOffset = 7 * 60 * 60 * 1000
+  const now = new Date()
+  const wibNow = new Date(now.getTime() + wibOffset)
+  const todayStr = wibNow.toISOString().split('T')[0]
+  const todayWibMidnight = new Date(todayStr + 'T00:00:00Z')
+  const today = todayWibMidnight
   const cfg     = data.notificationSettings || { contractDays: 14, evalDays: 7, payrollDays: 3 }
   const alerts  = []
 

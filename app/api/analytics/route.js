@@ -10,7 +10,12 @@ export async function GET(request) {
   const sub = searchParams.get('sub') || 'overview'
   const data = await getDB()
 
-  const today  = new Date(); today.setHours(0,0,0,0)
+  const wibOffset = 7 * 60 * 60 * 1000
+  const now = new Date()
+  const wibNow = new Date(now.getTime() + wibOffset)
+  const todayStr = wibNow.toISOString().split('T')[0]
+  const todayWibMidnight = new Date(todayStr + 'T00:00:00Z')
+  
   const interns = (data.interns || []).filter(i => !i.deletedAt)
   const active  = interns.filter(i => i.status === 'ACTIVE')
 
@@ -31,8 +36,8 @@ export async function GET(request) {
     for (let w = 11; w >= 0; w--) {
       const days = []
       for (let d = 0; d < 7; d++) {
-        const dt = new Date(today)
-        dt.setDate(dt.getDate() - (w * 7) - (6 - d))
+        const dt = new Date(todayWibMidnight)
+        dt.setUTCDate(dt.getUTCDate() - (w * 7) - (6 - d))
         const ds = dt.toISOString().split('T')[0]
         const count = sqlLogs.filter(a => a.date === ds && ['PRESENT','LATE'].includes(a.status)).length
         days.push({ date: ds, count, day: d })
@@ -65,7 +70,7 @@ export async function GET(request) {
   if (sub === 'allowance') {
     const months = []
     for (let m = 5; m >= 0; m--) {
-      const dt = new Date(today.getFullYear(), today.getMonth() - m, 1)
+      const dt = new Date(todayWibMidnight.getFullYear(), todayWibMidnight.getMonth() - m, 1)
       const bulan = dt.getMonth() + 1
       const tahun = dt.getFullYear()
       const periodKey = `${tahun}-${String(bulan).padStart(2, '0')}`
@@ -130,7 +135,7 @@ export async function GET(request) {
   const avgEvalScore   = evalScores.length ? (evalScores.reduce((s, v) => s + v, 0) / evalScores.length).toFixed(1) : null
 
   // BUG-01 FIX: use p.period (YYYY-MM) and p.totalAllowance instead of p.bulan/p.total
-  const thisPeriodKey  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  const thisPeriodKey  = `${todayWibMidnight.getFullYear()}-${String(todayWibMidnight.getMonth() + 1).padStart(2, '0')}`
   const thisMonthPay   = (data.payrolls || []).filter(p => p.period === thisPeriodKey)
   const totalMonthCost = thisMonthPay.reduce((s, p) => s + (p.totalAllowance || 0), 0)
 

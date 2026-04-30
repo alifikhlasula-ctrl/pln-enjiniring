@@ -9,13 +9,18 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const targetTahun = searchParams.get('tahun') || '2026'
     
-    const today = new Date(); today.setHours(0,0,0,0)
-    const todayStr = today.toISOString().split('T')[0]
-    const in14  = new Date(today.getTime() + 14 * 86400000)
+    const wibOffset = 7 * 60 * 60 * 1000
+    const now = new Date()
+    const wibNow = new Date(now.getTime() + wibOffset)
+    const todayStr = wibNow.toISOString().split('T')[0]
+    
+    // We treat WIB midnight as UTC midnight for local calculation simplicity
+    const todayWibMidnight = new Date(todayStr + 'T00:00:00Z')
+    const in14  = new Date(todayWibMidnight.getTime() + 14 * 86400000)
     const DAYS = ['Min','Sen','Sel','Rab','Kam','Jum','Sab']
-    const sevenDaysAgo = new Date(today); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
-    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0]
-    const todayStr2 = today.toISOString().split('T')[0]
+    const sevenDaysAgoMidnight = new Date(todayWibMidnight.getTime() - 6 * 86400000)
+    const sevenDaysAgoStr = sevenDaysAgoMidnight.toISOString().split('T')[0]
+    const todayStr2 = todayStr
 
     // ── Parallel Execution: Fetch all independent data sources at once ──
     const [data, allInterns, onboarding, auditLogs, checkinToday, weeklyRaw, recentAttendance, todayLogs, dbEvals, dbSurveys, totalResponses] = await Promise.all([
@@ -47,9 +52,9 @@ export async function GET(request) {
     const weeklyCountMap = Object.fromEntries(weeklyRaw.map(r => [r.date, r._count.id]))
 
     const weeklyAttendance = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today); d.setDate(d.getDate() - (6 - i))
+      const d = new Date(todayWibMidnight); d.setUTCDate(d.getUTCDate() - (6 - i))
       const ds = d.toISOString().split('T')[0]
-      return { day: DAYS[d.getDay()], date: ds, count: weeklyCountMap[ds] || 0 }
+      return { day: DAYS[d.getUTCDay()], date: ds, count: weeklyCountMap[ds] || 0 }
     })
 
     const recentAttendanceWithNames = recentAttendance.map(log => {
@@ -85,11 +90,11 @@ export async function GET(request) {
     const expiringInterns = activeInterns.filter(i => {
       if (!i.periodEnd) return false
       const e = new Date(i.periodEnd)
-      return e >= today && e <= in14
+      return e >= todayWibMidnight && e <= in14
     }).map(i => ({
       id: i.id, name: i.name, university: i.university,
       periodEnd: i.periodEnd,
-      sisaHari: Math.ceil((new Date(i.periodEnd) - today) / 86400000)
+      sisaHari: Math.ceil((new Date(i.periodEnd) - todayWibMidnight) / 86400000)
     })).sort((a,b) => a.sisaHari - b.sisaHari).slice(0, 8)
 
     const recentInterns = [...allInterns]

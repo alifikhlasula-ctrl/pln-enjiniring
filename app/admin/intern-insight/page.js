@@ -255,7 +255,9 @@ export default function InternInsightPage() {
                       {at.trend.map((d,i) => {
                         const val = d.hadir ?? d.present
                         const pct = maxVal > 0 ? (val / maxVal) * 100 : 0
-                        const isToday = d.date === new Date().toISOString().split('T')[0]
+                        const now = new Date()
+                        const wibNow = new Date(now.getTime() + (7 * 3600000))
+                        const isToday = d.date === wibNow.toISOString().split('T')[0]
                         return (
                           <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, minWidth:0 }}>
                             <div

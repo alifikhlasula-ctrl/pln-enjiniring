@@ -22,7 +22,11 @@ export async function GET(request) {
     const sortDir = searchParams.get('sortDir') || 'asc'
     const view    = searchParams.get('view')    || 'active' // active | archive
 
-    const today = new Date(); today.setHours(0,0,0,0)
+    const wibOffset = 7 * 60 * 60 * 1000
+    const now = new Date()
+    const wibNow = new Date(now.getTime() + wibOffset)
+    const todayStr = wibNow.toISOString().split('T')[0]
+    const today = new Date(todayStr + 'T00:00:00Z')
 
     // ── Parallel Execution: Fetch from both sources simultaneously ──
     // Try to include user relation (image/email); fall back gracefully if relation isn't ready
