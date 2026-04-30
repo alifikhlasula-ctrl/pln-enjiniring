@@ -74,7 +74,7 @@ function PreviewTable({ results, type }) {
   if (!results?.length) return null
 
   const cols = {
-    INTERNS:    ['Nama','Instansi','Jurusan','Jenjang','Tanggal Mulai','Tanggal Selesai'],
+    INTERNS:    ['Nama','Email','Telepon','Instansi','Jurusan','Jenjang','Bidang','Wilayah','Tahun','Tanggal Mulai','Tanggal Selesai','NIM/NIS','Gender'],
     ATTENDANCE: ['Nama Intern','Tanggal','Status','Jam Masuk','Jam Keluar'],
     PAYROLL:    ['Nama Intern','Bulan','Tahun','Hari Hadir','Tarif Harian','Total']
   }[type] || []

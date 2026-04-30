@@ -40,9 +40,22 @@ function parseRow(type, rawRow, rowIndex, data) {
   const row    = {}
   const errors = []
 
-  // Map column header → value
+  // Map column header → value with Export file fallback support
   schema.cols.forEach((col, i) => {
-    row[col] = rawRow[col] !== undefined ? String(rawRow[col]).trim() : ''
+    let val = rawRow[col]
+    if (val === undefined && type === 'INTERNS') {
+      const EXPORT_MAP = {
+        'Nama': 'Nama Lengkap',
+        'Telepon': 'No. Handphone',
+        'Gender': 'Jenis Kelamin',
+        'Tanggal Mulai': 'Mulai',
+        'Tanggal Selesai': 'Selesai'
+      }
+      if (EXPORT_MAP[col] && rawRow[EXPORT_MAP[col]] !== undefined) {
+        val = rawRow[EXPORT_MAP[col]]
+      }
+    }
+    row[col] = val !== undefined ? String(val).trim() : ''
   })
 
   // Required field validation
