@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { getDB, saveDB, db } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
@@ -164,20 +165,23 @@ export async function PUT(request) {
           return `${m>0?m+' Bulan ':''}${r>0?r+' Hari':''}`
         }
 
-        // Logic: UPSERT (Update by NIM/NIS or Email)
+        // ── 1. Update Legacy JSON ──
         const existing = data.interns.find(i => !i.deletedAt && (
           (row['NIM/NIS'] && i.nim_nis === row['NIM/NIS']) ||
           (row['Email'] && i.email === row['Email'])
         ))
 
+        let legacyId = null
+        let legacyUserId = null
+
         if (existing) {
-          // UPDATE
+          legacyId = existing.id
+          legacyUserId = existing.userId
           const uIdx = data.users.findIndex(u => u.id === existing.userId)
           if (uIdx !== -1) {
             data.users[uIdx].name = row['Nama'] || data.users[uIdx].name
             data.users[uIdx].email = row['Email'] || data.users[uIdx].email
           }
-          
           existing.name = row['Nama'] || existing.name
           existing.email = row['Email'] || existing.email
           existing.nim_nis = row['NIM/NIS'] || existing.nim_nis
@@ -193,14 +197,15 @@ export async function PUT(request) {
           existing.duration = calcDur(existing.periodStart, existing.periodEnd)
           updated++
         } else {
-          // CREATE
           const ts2    = Date.now() + created + updated
+          legacyUserId = 'u' + ts2
+          legacyId = 'i' + ts2
           const newUser = {
-            id: 'u' + ts2, email: row['Email'] || `intern${ts2}@hris.com`,
+            id: legacyUserId, email: row['Email'] || `intern${ts2}@hris.com`,
             password: 'password123', name: row['Nama'], role: 'INTERN'
           }
           const newIntern = {
-            id: 'i' + ts2, userId: newUser.id, email: row['Email'] || '',
+            id: legacyId, userId: legacyUserId, email: row['Email'] || '',
             name: row['Nama'] || '', nim_nis: row['NIM/NIS'] || ('EXC'+ts2.toString().slice(-6)),
             gender: row['Gender'] || 'Laki-laki', university: row['Instansi'] || '',
             jenjang: row['Jenjang'] || 'S1', major: row['Jurusan'] || '',
@@ -215,6 +220,76 @@ export async function PUT(request) {
           data.users.push(newUser)
           data.interns.push(newIntern)
           created++
+        }
+
+        // ── 2. Update Prisma ──
+        const nNis = (row['NIM/NIS'] || '').trim()
+        const email = (row['Email'] || '').trim()
+        
+        let prismaExisting = null
+        if (nNis) prismaExisting = await prisma.intern.findFirst({ where: { nim_nis: nNis, deletedAt: null } })
+        
+        if (prismaExisting) {
+          // UPDATE Prisma
+          await prisma.$transaction([
+            prisma.user.update({
+              where: { id: prismaExisting.userId },
+              data: {
+                name: row['Nama'] || prismaExisting.name,
+                ...(email && { email })
+              }
+            }).catch(() => null),
+            prisma.intern.update({
+              where: { id: prismaExisting.id },
+              data: {
+                name: row['Nama'] || prismaExisting.name,
+                gender: row['Gender'] || prismaExisting.gender,
+                university: row['Instansi'] || prismaExisting.university,
+                jenjang: row['Jenjang'] || prismaExisting.jenjang,
+                major: row['Jurusan'] || prismaExisting.major,
+                bidang: row['Bidang'] || prismaExisting.bidang,
+                wilayah: row['Wilayah'] || prismaExisting.wilayah,
+                tahun: row['Tahun'] || prismaExisting.tahun,
+                periodStart: row['Tanggal Mulai'] || prismaExisting.periodStart,
+                periodEnd: row['Tanggal Selesai'] || prismaExisting.periodEnd,
+                duration: calcDur(row['Tanggal Mulai'], row['Tanggal Selesai'])
+              }
+            })
+          ])
+        } else {
+          // CREATE Prisma (gunakan ID yang sama dengan legacy jika baru, agar sinkron)
+          await prisma.$transaction([
+            prisma.user.create({
+              data: {
+                id: legacyUserId,
+                email: email || `intern${legacyUserId}@hris.com`,
+                password: 'password123',
+                name: row['Nama'],
+                role: 'INTERN'
+              }
+            }),
+            prisma.intern.create({
+              data: {
+                id: legacyId,
+                userId: legacyUserId,
+                name: row['Nama'] || '',
+                nim_nis: nNis || ('EXC'+legacyId),
+                gender: row['Gender'] || 'Laki-laki',
+                university: row['Instansi'] || '',
+                jenjang: row['Jenjang'] || 'S1',
+                major: row['Jurusan'] || '',
+                status: 'ACTIVE',
+                bidang: row['Bidang'] || '',
+                wilayah: row['Wilayah'] || '',
+                tahun: row['Tahun'] || String(new Date().getFullYear()),
+                periodStart: row['Tanggal Mulai'] || '',
+                periodEnd: row['Tanggal Selesai'] || '',
+                duration: calcDur(row['Tanggal Mulai'], row['Tanggal Selesai']),
+                fromImport: 'EXCEL',
+                deletedAt: null
+              }
+            })
+          ])
         }
       }
       // Overwrite the created count locally or handle differently if needed
