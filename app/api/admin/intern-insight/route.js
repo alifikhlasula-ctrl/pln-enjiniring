@@ -285,13 +285,39 @@ export async function GET() {
 
     const payrollByPeriod = {}
     const payrollByBidang = {}
-    const payrollStatusDist = { PENDING: 0, SUBMITTED: 0, APPROVED: 0, PAID: 0 }
+    const payrollStatusDist = {}
+
+    // Helper: extract year-month from period formats like "2026-03" or "2026-03-13_2026-04-13"
+    const extractYM = (period) => {
+      if (!period) return null
+      if (/^\d{4}-\d{2}$/.test(period)) return period  // YYYY-MM
+      // startDate_endDate format — use the start date's month
+      const match = period.match(/(\d{4})-(\d{2})/)
+      return match ? `${match[1]}-${match[2]}` : null
+    }
+
+    // Helper: pretty label for period
+    const MONTH_NAMES = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
+    const prettyPeriod = (period) => {
+      if (!period) return '-'
+      if (/^\d{4}-\d{2}$/.test(period)) {
+        const [y,m] = period.split('-')
+        return `${MONTH_NAMES[parseInt(m)]} ${y}`
+      }
+      // startDate_endDate
+      const parts = period.split('_')
+      if (parts.length === 2) {
+        return `${parts[0]} s/d ${parts[1]}`
+      }
+      return period
+    }
 
     for (const pr of allPayrolls) {
-      // By period
-      if (!payrollByPeriod[pr.period]) payrollByPeriod[pr.period] = { period: pr.period, total: 0, count: 0 }
-      payrollByPeriod[pr.period].total += pr.totalAllowance
-      payrollByPeriod[pr.period].count++
+      // By period (use pretty label)
+      const pLabel = prettyPeriod(pr.period)
+      if (!payrollByPeriod[pLabel]) payrollByPeriod[pLabel] = { period: pLabel, rawPeriod: pr.period, total: 0, count: 0 }
+      payrollByPeriod[pLabel].total += pr.totalAllowance
+      payrollByPeriod[pLabel].count++
 
       // By bidang
       const intern = allInterns.find(i => i.id === pr.internId || i.userId === pr.internId)
@@ -300,33 +326,27 @@ export async function GET() {
       payrollByBidang[bidang].total += pr.totalAllowance
       payrollByBidang[bidang].count++
 
-      // Status
+      // Status — capture ALL status values dynamically
       const ps = (pr.status || 'PENDING').toUpperCase()
       payrollStatusDist[ps] = (payrollStatusDist[ps] || 0) + 1
     }
 
-    const payrollTrend = Object.values(payrollByPeriod).sort((a, b) => a.period.localeCompare(b.period))
+    const payrollTrend = Object.values(payrollByPeriod).sort((a, b) => (a.rawPeriod || '').localeCompare(b.rawPeriod || ''))
     const payrollBidangArr = Object.values(payrollByBidang).sort((a, b) => b.total - a.total)
     
     // Total anggaran
     const totalBudgetAllTime = allPayrolls.reduce((s, p) => s + p.totalAllowance, 0)
     const currentYear = today.getFullYear().toString()
     const totalBudgetThisYear = allPayrolls
-      .filter(p => p.period.startsWith(currentYear))
+      .filter(p => (p.period || '').includes(currentYear))
       .reduce((s, p) => s + p.totalAllowance, 0)
     const currentMonth = todayStr.slice(0, 7)
     const totalBudgetThisMonth = allPayrolls
-      .filter(p => p.period === currentMonth)
+      .filter(p => {
+        const ym = extractYM(p.period)
+        return ym === currentMonth
+      })
       .reduce((s, p) => s + p.totalAllowance, 0)
-
-    // Per-intern payroll trend
-    const payrollPerIntern = {}
-    for (const pr of allPayrolls) {
-      const intern = allInterns.find(i => i.id === pr.internId || i.userId === pr.internId)
-      const name = intern?.name || 'Unknown'
-      if (!payrollPerIntern[name]) payrollPerIntern[name] = []
-      payrollPerIntern[name].push({ period: pr.period, amount: pr.totalAllowance, status: pr.status })
-    }
 
     // Payment speed
     const paymentSpeeds = allPayrolls

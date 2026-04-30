@@ -37,17 +37,18 @@ function StatCard({ label, value, icon, color, sub }) {
   )
 }
 
-function MiniBar({ items, colorFn }) {
+function MiniBar({ items, colorFn, formatValue }) {
   const max = Math.max(...items.map(i => i.value), 1)
+  const fmt = formatValue || (v => v)
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-      {items.slice(0,10).map((item, i) => (
+      {items.slice(0,12).map((item, i) => (
         <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontSize:'0.72rem', fontWeight:700, width:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flexShrink:0 }}>{item.label}</span>
+          <span title={item.label} style={{ fontSize:'0.72rem', fontWeight:700, width:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flexShrink:0 }}>{item.label}</span>
           <div style={{ flex:1, height:18, background:'var(--bg-main)', borderRadius:4, overflow:'hidden' }}>
             <div style={{ width:`${(item.value/max)*100}%`, height:'100%', background: colorFn ? colorFn(i) : 'var(--primary)', borderRadius:4, transition:'width 0.5s', minWidth: item.value > 0 ? 4 : 0 }} />
           </div>
-          <span style={{ fontSize:'0.72rem', fontWeight:800, minWidth:28, textAlign:'right' }}>{item.value}</span>
+          <span style={{ fontSize:'0.72rem', fontWeight:800, minWidth:50, textAlign:'right' }}>{fmt(item.value)}</span>
         </div>
       ))}
     </div>
@@ -314,11 +315,11 @@ export default function InternInsightPage() {
             </div>
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
-              <Card title="💰 Tren Payroll per Periode" subtitle="Total allowance per bulan">
-                <MiniBar items={(fn.payrollTrend||[]).map(p => ({ label:p.period, value:p.total }))} colorFn={() => '#22c55e'} />
+              <Card title="💰 Tren Payroll per Periode" subtitle="Total allowance per periode pengajuan">
+                <MiniBar items={(fn.payrollTrend||[]).map(p => ({ label:p.period, value:p.total }))} colorFn={() => '#22c55e'} formatValue={fmtRp} />
               </Card>
               <Card title="🏢 Total Allowance per Bidang">
-                <MiniBar items={(fn.payrollByBidang||[]).map(p => ({ label:`${p.bidang} (${p.count})`, value:p.total }))} colorFn={i => `hsl(${200+i*20},65%,50%)`} />
+                <MiniBar items={(fn.payrollByBidang||[]).map(p => ({ label:`${p.bidang} (${p.count} orang)`, value:p.total }))} colorFn={i => `hsl(${200+i*20},65%,50%)`} formatValue={fmtRp} />
               </Card>
             </div>
 
@@ -327,7 +328,7 @@ export default function InternInsightPage() {
                 {Object.entries(fn.payrollStatusDist||{}).map(([k,v]) => (
                   <div key={k} style={{ padding:12, borderRadius:8, background:'var(--bg-main)', textAlign:'center', border:'1px solid var(--border)' }}>
                     <p style={{ fontSize:'0.65rem', fontWeight:800, color:'var(--text-muted)', textTransform:'uppercase' }}>{k}</p>
-                    <p style={{ fontSize:'1.5rem', fontWeight:900, color: k==='PAID'?'#22c55e':k==='PENDING'?'#f59e0b':'var(--primary)' }}>{v}</p>
+                    <p style={{ fontSize:'1.5rem', fontWeight:900, color: k==='PAID'?'#22c55e':k==='TRANSFERRED'?'#8b5cf6':k==='PENDING'?'#f59e0b':'var(--primary)' }}>{v}</p>
                   </div>
                 ))}
               </div>
