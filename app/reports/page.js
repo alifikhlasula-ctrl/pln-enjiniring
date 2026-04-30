@@ -36,6 +36,9 @@ function ReportModal({ initial, onSave, onClose }) {
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (isDraft) => {
+    if (!isDraft && !form.mood) {
+      return Swal.fire('Data Belum Lengkap', 'Bagaimana perasaan Anda hari ini wajib diisi sebelum dikirim.', 'warning')
+    }
     if (!isDraft && !form.content.trim()) {
       return Swal.fire('Data Belum Lengkap', 'Aktivitas pada hari ini wajib diisi sebelum dikirim.', 'warning')
     }
@@ -69,7 +72,7 @@ function ReportModal({ initial, onSave, onClose }) {
           </div>
 
           <div>
-            <label className="label" style={{marginBottom:'0.5rem'}}>Bagaimana perasaan Anda hari ini?</label>
+            <label className="label" style={{marginBottom:'0.5rem'}}>Bagaimana perasaan Anda hari ini? <span style={{color:'var(--danger)'}}>*</span></label>
             <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
               {MOOD_OPTIONS.map(m => (
                 <button key={m.value} type="button" onClick={() => setForm(p => ({...p, mood: m.value}))}
