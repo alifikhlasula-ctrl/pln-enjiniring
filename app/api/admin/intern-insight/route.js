@@ -209,7 +209,10 @@ export async function GET() {
       }
 
       // Demographics
-      genderCount[i.gender] = (genderCount[i.gender] || 0) + 1
+      let genderStr = i.gender || 'Lainnya'
+      if (genderStr.toLowerCase() === 'laki-laki') genderStr = 'Laki-laki'
+      if (genderStr.toLowerCase() === 'perempuan') genderStr = 'Perempuan'
+      genderCount[genderStr] = (genderCount[genderStr] || 0) + 1
       if (i.bankName) bankDist[i.bankName] = (bankDist[i.bankName] || 0) + 1
       bidangDist[i.bidang] = (bidangDist[i.bidang] || 0) + 1
       universityDist[i.university] = (universityDist[i.university] || 0) + 1
