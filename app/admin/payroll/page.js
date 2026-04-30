@@ -5,7 +5,7 @@ import {
   Wallet, Clock, CheckCircle2, Banknote, Download,
   FileSpreadsheet, RefreshCw, ChevronDown, ChevronUp,
   X, Loader2, AlertCircle, TrendingUp, CalendarDays, 
-  Filter, SquareCheck, Square, Printer
+  Filter, SquareCheck, Square, Printer, Trash2
 } from 'lucide-react'
 import Swal from 'sweetalert2'
 
@@ -118,6 +118,72 @@ export default function AdminPayrollPage() {
     }
   }
 
+  /* ── Batalkan/Void Seluruh Riwayat Transfer Periode Ini ── */
+  const voidPeriod = async () => {
+    const periodKey = `${startDate}_${endDate}`
+    const transferredCount = data.filter(d => d.status === 'TRANSFERRED' || d.status === 'PAID').length
+
+    // Konfirmasi pertama
+    const { isConfirmed: first } = await Swal.fire({
+      title: '⚠️ Batalkan Riwayat Transfer?',
+      html: `
+        <p style="margin-bottom:12px">Anda akan membatalkan <strong>${transferredCount} record transfer</strong> untuk periode:</p>
+        <p style="font-weight:900;font-size:1.1rem;color:#ef4444">${startDate} s/d ${endDate}</p>
+        <p style="margin-top:12px;font-size:0.85rem;color:#9ca3af">Semua data PayrollRecord periode ini akan dihapus permanen dari database. Status intern akan kembali ke PENDING.</p>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Lanjut',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#ef4444'
+    })
+    if (!first) return
+
+    // Konfirmasi kedua (double-confirm karena destructive)
+    const { isConfirmed: second } = await Swal.fire({
+      title: '❗ Konfirmasi Akhir',
+      html: `<p>Ketik <strong>BATALKAN</strong> untuk mengkonfirmasi penghapusan permanen.</p>`,
+      input: 'text',
+      inputPlaceholder: 'Ketik BATALKAN',
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Hapus Permanen',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#ef4444',
+      preConfirm: (val) => {
+        if (val !== 'BATALKAN') {
+          Swal.showValidationMessage('Ketik BATALKAN (huruf kapital) untuk konfirmasi')
+          return false
+        }
+        return true
+      }
+    })
+    if (!second) return
+
+    setProcessing(true)
+    try {
+      const res = await fetch(`/api/payroll?period=${encodeURIComponent(periodKey)}&confirmedBy=Admin%20HR`, {
+        method: 'DELETE'
+      })
+      const result = await res.json()
+      if (result.success) {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Berhasil Dibatalkan',
+          html: `<p>${result.message}</p><p style="font-size:0.8rem;color:#9ca3af;margin-top:8px">Riwayat ini telah dicatat di audit log.</p>`,
+          confirmButtonColor: '#22c55e'
+        })
+        fetchPayroll()
+      } else {
+        Swal.fire('Gagal', result.error || 'Terjadi kesalahan.', 'error')
+      }
+    } catch (e) {
+      Swal.fire('Error', 'Gagal menghubungi server.', 'error')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   /* ── Export Excel (Server-Side) ── */
   const exportExcel = async () => {
     setProcessing(true)
@@ -157,6 +223,18 @@ export default function AdminPayrollPage() {
           <button className="btn btn-secondary" onClick={exportExcel}>
             <FileSpreadsheet size={15} /> Export Excel
           </button>
+          {/* Tombol Batalkan Periode — tampil jika ada record TRANSFERRED atau PAID */}
+          {data.some(d => d.status === 'TRANSFERRED' || d.status === 'PAID') && (
+            <button
+              className="btn"
+              style={{ background: '#ef444420', color: '#ef4444', border: '1px solid #ef444460', fontWeight: 700 }}
+              onClick={voidPeriod}
+              disabled={processing}
+              title="Batalkan seluruh riwayat transfer untuk periode ini"
+            >
+              <Trash2 size={15} /> Batalkan Periode Ini
+            </button>
+          )}
           {pendingSelected.length > 0 && (
             <button className="btn btn-primary" onClick={() => setShowNotes(true)} disabled={processing}>
               <CheckCircle2 size={15} /> Bayar {pendingSelected.length} Terpilih

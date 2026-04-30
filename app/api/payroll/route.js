@@ -477,3 +477,50 @@ export async function PATCH(request) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
+/* ── DELETE: Batalkan/Void seluruh PayrollRecord untuk periode tertentu ── */
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const period = searchParams.get('period')
+    const confirmedBy = searchParams.get('confirmedBy') || 'Admin HR'
+
+    if (!period) {
+      return NextResponse.json({ error: 'Parameter period diperlukan.' }, { status: 400 })
+    }
+
+    // Hapus dari Prisma
+    let deletedCount = 0
+    try {
+      const result = await prisma.payrollRecord.deleteMany({ where: { period } })
+      deletedCount = result.count
+    } catch (dbErr) {
+      console.warn('[PAYROLL DELETE] Prisma deleteMany failed:', dbErr.message)
+      // Fallback: hapus dari JSON legacy
+      const data = await getDB()
+      const before = (data.payrolls || []).length
+      data.payrolls = (data.payrolls || []).filter(p => p.period !== period)
+      deletedCount = before - data.payrolls.length
+      await saveDB(data)
+    }
+
+    // Catat di audit log
+    await db.addLog(confirmedBy, 'PAYROLL_VOID', {
+      period,
+      deletedCount,
+      voidedAt: new Date().toISOString(),
+      reason: 'Admin membatalkan riwayat transfer periode yang tidak valid'
+    })
+
+    return NextResponse.json({
+      success: true,
+      period,
+      deletedCount,
+      message: `Riwayat transfer untuk periode ${period} berhasil dibatalkan (${deletedCount} record dihapus).`
+    })
+  } catch (err) {
+    console.error('[PAYROLL DELETE] Error:', err)
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
