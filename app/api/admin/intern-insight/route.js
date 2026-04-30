@@ -27,7 +27,15 @@ export async function GET() {
       prisma.onboarding.findMany()
     ])
 
-    // ── Fetch attendance: try Prisma first, fallback to JSON legacy ──
+    // ── Compute 30-day window dates ──
+    const wibOffset = 7 * 60 * 60 * 1000
+    const wibNow = new Date(today.getTime() + wibOffset)
+    const todayWib = wibNow.toISOString().split('T')[0]
+    const thirtyDaysAgo = new Date(wibNow)
+    thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 29)
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
+
+    // ── Fetch ALL attendance for cross-validation (payroll calc) ──
     let allAttendance = []
     try {
       allAttendance = await prisma.attendanceLog.findMany({
@@ -37,23 +45,58 @@ export async function GET() {
       console.warn('[insight] Prisma attendanceLog failed:', e.message)
     }
 
-    // Merge JSON legacy attendance if Prisma returned nothing or as supplement
+    // ── Fetch attendance for trend: ONLY last 30 days, same as analytics/heatmap ──
+    let trendAttendance = []
+    try {
+      trendAttendance = await prisma.attendanceLog.findMany({
+        where: {
+          date: { gte: thirtyDaysAgoStr, lte: todayWib },
+          status: { in: ['PRESENT', 'LATE', 'SAKIT', 'IZIN'] }
+        },
+        select: { date: true, status: true }
+      })
+    } catch (e) {
+      console.warn('[insight] Prisma trendAttendance failed:', e.message)
+    }
+
+    // ── JSON legacy fallback for both ──
     try {
       const jsonData = await getDB()
-      const jsonAttendances = (jsonData.attendances || [])
-      if (allAttendance.length === 0 && jsonAttendances.length > 0) {
-        // Full fallback: use JSON attendance
-        allAttendance = jsonAttendances.map(a => ({
+      const jsonAtt = (jsonData.attendances || [])
+      if (allAttendance.length === 0 && jsonAtt.length > 0) {
+        const normalize = (d) => {
+          if (!d) return null
+          const s = String(d).slice(0, 10)
+          if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+            const [dd, mm, yyyy] = s.split('/'); return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`
+          }
+          return s
+        }
+        allAttendance = jsonAtt.map(a => ({
           internId: a.internId,
-          date: a.date ? String(a.date).slice(0, 10) : null,
+          date: normalize(a.date || a.checkIn),
           status: a.status || 'PRESENT',
           checkIn: a.checkIn || null,
           checkOut: a.checkOut || null
         })).filter(a => a.date)
       }
+      if (trendAttendance.length === 0 && jsonAtt.length > 0) {
+        const normalize = (d) => {
+          if (!d) return null
+          const s = String(d).slice(0, 10)
+          if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+            const [dd, mm, yyyy] = s.split('/'); return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`
+          }
+          return s
+        }
+        trendAttendance = jsonAtt
+          .map(a => ({ date: normalize(a.date || a.checkIn), status: a.status || 'PRESENT' }))
+          .filter(a => a.date && a.date >= thirtyDaysAgoStr && a.date <= todayWib)
+      }
     } catch (e) {
       console.warn('[insight] JSON fallback attendance failed:', e.message)
     }
+
 
     // ── Build lookup maps for fast O(1) access ──
     const FLAT_RATE = 25000
@@ -336,30 +379,33 @@ export async function GET() {
     // TAB 3.5: ATTENDANCE TRENDS
     // ════════════════════════════════════════════════════════════
     
+    // ── Build attendance trend using trendAttendance (already filtered to 30 days) ──
     const attendanceByDay = {}
     const attendanceByStatus = { PRESENT: 0, LATE: 0, SAKIT: 0, IZIN: 0 }
-    for (const log of allAttendance) {
-      // Normalize date: handles YYYY-MM-DD and D/M/YYYY (legacy JSON format)
-      let dateKey = log.date ? String(log.date).slice(0, 10) : null
-      if (dateKey && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateKey)) {
-        const [dd, mm, yyyy] = dateKey.split('/')
-        dateKey = `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`
-      }
-      if (!dateKey) continue
 
+    // Count totals from allAttendance (for statusDist widget)
+    for (const log of allAttendance) {
+      if (log.status === 'PRESENT') attendanceByStatus.PRESENT++
+      else if (log.status === 'LATE') attendanceByStatus.LATE++
+      else if (log.status === 'SAKIT') attendanceByStatus.SAKIT++
+      else if (log.status === 'IZIN') attendanceByStatus.IZIN++
+    }
+
+    // Build per-day map from trendAttendance (same approach as analytics/heatmap)
+    for (const log of trendAttendance) {
+      const dateKey = log.date ? String(log.date).slice(0, 10) : null
+      if (!dateKey) continue
       if (!attendanceByDay[dateKey]) attendanceByDay[dateKey] = { present: 0, late: 0, sakit: 0, izin: 0, total: 0 }
       const day = attendanceByDay[dateKey]
       day.total++
-      if (log.status === 'PRESENT') { day.present++; attendanceByStatus.PRESENT++ }
-      else if (log.status === 'LATE') { day.late++; attendanceByStatus.LATE++ }
-      else if (log.status === 'SAKIT') { day.sakit++; attendanceByStatus.SAKIT++ }
-      else if (log.status === 'IZIN') { day.izin++; attendanceByStatus.IZIN++ }
+      if (log.status === 'PRESENT') day.present++
+      else if (log.status === 'LATE') day.late++
+      else if (log.status === 'SAKIT') day.sakit++
+      else if (log.status === 'IZIN') day.izin++
     }
 
-    // Fill ALL 30 days using local WIB time (UTC+7) to avoid date shifting
+    // Build 30-day array using wibNow computed at top
     const attendanceTrend = []
-    const wibNow = new Date(today.getTime() + 7 * 60 * 60 * 1000)
-    const todayWib = wibNow.toISOString().split('T')[0]
     for (let i = 29; i >= 0; i--) {
       const d = new Date(wibNow)
       d.setUTCDate(d.getUTCDate() - i)
@@ -375,6 +421,7 @@ export async function GET() {
         total: day.total
       })
     }
+
 
 
     // ════════════════════════════════════════════════════════════
