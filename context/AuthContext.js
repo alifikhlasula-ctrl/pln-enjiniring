@@ -95,6 +95,14 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateUser = (updates) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates }
+      setUser(updatedUser)
+      safeSetStorage('user', JSON.stringify(updatedUser))
+    }
+  }
+
   const finalizeLogin = (userObj) => {
     setUser(userObj)
     safeSetStorage('user', JSON.stringify(userObj))
@@ -102,7 +110,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, switchRole, finalizeLogin }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, switchRole, finalizeLogin, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -6,7 +6,7 @@ import { User, Phone, MapPin, GraduationCap, Map, Clock, Briefcase, CreditCard, 
 import Swal from 'sweetalert2'
 
 export default function InternProfilePage() {
-  const { user, login } = useAuth()
+  const { user, login, updateUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -63,15 +63,20 @@ export default function InternProfilePage() {
       const img = user.image
       if (img && !avatarPreview) setAvatarPreview(img)
     }
-  }, [user])
+  }, [user?.id])
 
   const fetchProfile = async () => {
     try {
       const res = await fetch(`/api/intern/profile?userId=${user.id}`, { cache: 'no-store' })
       const data = await res.json()
-      if (data.success && data.intern) {
-        setInternId(data.intern.id)
-        setFormData({
+      if (data.success) {
+        if (data.user?.image) {
+          setAvatarPreview(data.user.image)
+        }
+        
+        if (data.intern) {
+          setInternId(data.intern.id)
+          setFormData({
           name: data.intern.name || data.user?.name || '',
           nim_nis: data.intern.nim_nis || '',
           phone: data.intern.phone || '',
@@ -92,9 +97,7 @@ export default function InternProfilePage() {
           bankAccount: data.intern.bankAccount || '',
           bankAccountName: data.intern.bankAccountName || ''
         })
-      } else if (data.success && !data.intern) {
-        // Just pre-fill name from auth user
-        setFormData(prev => ({ ...prev, name: data.user?.name || '' }))
+        }
       }
     } catch (err) {
       console.error(err)
@@ -127,8 +130,7 @@ export default function InternProfilePage() {
       const data = await res.json()
       if (data.success) {
         setAvatarPreview(data.url)
-        // Optionally update auth user context
-        // Try fetch again or reload softly if needed
+        updateUser({ image: data.url }) // Update the AuthContext and localStorage
         Swal.fire({ icon: 'success', title: 'Upload Berhasil', timer: 1500, showConfirmButton: false })
       } else {
         Swal.fire('Gagal', data.error || 'Terjadi kesalahan upload', 'error')
