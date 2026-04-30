@@ -26,7 +26,10 @@ export async function GET(request) {
 
     // ── Parallel Execution: Fetch from both sources simultaneously ──
     const [relationalInterns, data] = await Promise.all([
-      prisma.intern.findMany({ where: { deletedAt: null } }),
+      prisma.intern.findMany({ 
+        where: { deletedAt: null },
+        include: { user: { select: { image: true, email: true } } }
+      }),
       getDB('ACTIVE', { clone: false })
     ])
 
