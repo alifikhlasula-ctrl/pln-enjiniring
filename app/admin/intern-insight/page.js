@@ -213,9 +213,9 @@ export default function InternInsightPage() {
             </div>
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
-              <Card title="📊 Mood vs Produktivitas" subtitle="Rata-rata jumlah kata laporan berdasarkan mood">
+              <Card title="📊 Distribusi Mood Laporan" subtitle="Jumlah laporan harian berdasarkan mood">
                 {wb.moodVsProductivity?.length > 0 ? (
-                  <MiniBar items={wb.moodVsProductivity.map(m => ({ label:`${MOOD_EMOJI[m.mood]} ${MOOD_LABEL[m.mood]||m.mood}`, value:m.avgWords }))} colorFn={i => ['#22c55e','#84cc16','#f59e0b','#f97316','#ef4444'][i] || '#6b7280'} />
+                  <MiniBar items={wb.moodVsProductivity.map(m => ({ label:`${MOOD_EMOJI[m.mood]} ${MOOD_LABEL[m.mood]||m.mood}`, value:m.count }))} colorFn={i => ['#22c55e','#84cc16','#f59e0b','#f97316','#ef4444'][i] || '#6b7280'} />
                 ) : <p style={{ color:'var(--text-muted)', fontSize:'0.78rem' }}>Belum ada data mood</p>}
               </Card>
               <Card title="🏆 Top 10 Pelapor Teraktif" subtitle="Intern dengan jumlah laporan terbanyak">
