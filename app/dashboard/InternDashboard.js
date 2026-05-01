@@ -927,6 +927,9 @@ export default function InternDashboard() {
         </div>
       </div>
 
+      {/* ── Row 7: ⭐ Kudostars — Peer Recognition ── */}
+      <KudostarsWidget userId={user?.id} />
+
       <style jsx>{`
         @keyframes slideUp { from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1} }
         @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
@@ -1108,6 +1111,169 @@ function SkillTracker({ userId }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+/* ── Kudostars Widget — Peer-to-Peer Recognition ── */
+const KUDO_CATEGORIES = [
+  { val: 'TEAMWORK', emoji: '🤝', label: 'Teamwork' },
+  { val: 'HELPFUL', emoji: '💡', label: 'Helpful' },
+  { val: 'CREATIVE', emoji: '🎨', label: 'Creative' },
+  { val: 'LEADERSHIP', emoji: '👑', label: 'Leadership' },
+  { val: 'INITIATIVE', emoji: '🚀', label: 'Initiative' }
+]
+
+function KudostarsWidget({ userId }) {
+  const [kudoData, setKudoData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [selectedIntern, setSelectedIntern] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('TEAMWORK')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!userId) return
+    fetch(`/api/recognition?userId=${userId}`)
+      .then(r => r.json())
+      .then(d => { setKudoData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [userId])
+
+  const handleSend = async () => {
+    if (!selectedIntern || !message.trim()) {
+      setError('Pilih intern dan tulis pesan')
+      return
+    }
+    setSending(true); setError('')
+    try {
+      const res = await fetch('/api/recognition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromUserId: userId,
+          toInternId: selectedIntern,
+          message: message.trim(),
+          category: selectedCategory
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setShowForm(false); setMessage(''); setSelectedIntern('')
+      const refreshed = await fetch(`/api/recognition?userId=${userId}`).then(r => r.json())
+      setKudoData(refreshed)
+      import('sweetalert2').then(({ default: S }) => {
+        S.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'success', title: `⭐ Bintang terkirim! (${data.remaining} tersisa)` })
+      })
+    } catch (e) {
+      setError(e.message)
+    } finally { setSending(false) }
+  }
+
+  const budget = kudoData?.userBudget
+  const remaining = budget?.remaining ?? 5
+  const received = budget?.received ?? 0
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'linear-gradient(135deg, #fef3c7 0%, #fef9c3 30%, #ecfccb 100%)', border: '1.5px solid #f59e0b40' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: 8 }}>
+        <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+          ⭐ Kudostars
+        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#92400e', background: '#fbbf2430', padding: '3px 10px', borderRadius: 99 }}>
+            ⭐ {received} diterima
+          </span>
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: remaining > 0 ? '#166534' : '#991b1b', background: remaining > 0 ? '#bbf7d020' : '#fecaca30', padding: '3px 10px', borderRadius: 99 }}>
+            {remaining}/5 tersisa
+          </span>
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ height: 48, background: 'var(--border)', borderRadius: 8, animation: 'pulse 1.4s ease-in-out infinite' }} />
+      ) : (
+        <>
+          {budget?.recentReceived?.length > 0 && (
+            <div style={{ marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 700, marginBottom: 6 }}>Bintang yang kamu terima:</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {budget.recentReceived.slice(0, 3).map((r, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.6)', fontSize: '0.78rem' }}>
+                    <span>{KUDO_CATEGORIES.find(c => c.val === r.category)?.emoji || '⭐'}</span>
+                    <span style={{ fontWeight: 700, color: '#78350f' }}>{r.fromName}</span>
+                    <span style={{ color: '#92400e', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>"{r.message}"</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {showForm ? (
+            <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: '0.875rem', border: '1px solid #fbbf2440' }}>
+              <select
+                value={selectedIntern} onChange={e => setSelectedIntern(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: '0.82rem', marginBottom: 8, background: 'white' }}
+              >
+                <option value="">Pilih rekan magang...</option>
+                {(kudoData?.activeInterns || []).map(i => (
+                  <option key={i.id} value={i.id}>{i.name} — {i.bidang}</option>
+                ))}
+              </select>
+
+              <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
+                {KUDO_CATEGORIES.map(c => (
+                  <button key={c.val} onClick={() => setSelectedCategory(c.val)}
+                    style={{
+                      flex: 1, minWidth: 56, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                      padding: '6px 4px', borderRadius: 8, border: `2px solid ${selectedCategory === c.val ? '#f59e0b' : 'transparent'}`,
+                      background: selectedCategory === c.val ? '#fef3c7' : 'white', cursor: 'pointer', fontSize: '0.62rem', fontWeight: 700,
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>{c.emoji}</span>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+
+              <input
+                type="text" value={message} onChange={e => setMessage(e.target.value)}
+                placeholder="Tulis pesan apresiasi..."
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: '0.82rem', marginBottom: 8, background: 'white', boxSizing: 'border-box' }}
+                maxLength={200}
+              />
+
+              {error && <p style={{ color: '#dc2626', fontSize: '0.75rem', marginBottom: 6 }}>{error}</p>}
+
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => { setShowForm(false); setError('') }} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                  Batal
+                </button>
+                <button onClick={handleSend} disabled={sending}
+                  style={{ flex: 2, padding: '8px', borderRadius: 8, border: 'none', background: '#f59e0b', color: 'white', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 800, opacity: sending ? 0.6 : 1 }}
+                >
+                  {sending ? 'Mengirim...' : '⭐ Kirim Bintang'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setShowForm(true)} disabled={remaining <= 0}
+              style={{
+                width: '100%', padding: '10px', borderRadius: 10, border: '2px dashed #f59e0b60',
+                background: remaining > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(200,200,200,0.2)',
+                cursor: remaining > 0 ? 'pointer' : 'not-allowed', fontSize: '0.85rem', fontWeight: 700,
+                color: remaining > 0 ? '#92400e' : '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'all 0.18s'
+              }}
+            >
+              {remaining > 0 ? '⭐ Beri Bintang ke Rekan Magang' : '🔒 Kuota bintang bulan ini habis'}
+            </button>
+          )}
+        </>
+      )}
     </div>
   )
 }

@@ -357,6 +357,33 @@ export async function GET(request) {
       .slice(-12)
       .map(([week, d]) => ({ week, ...d }))
 
+    // ── Mood Heatmap by Bidang (Department) ──
+    const moodByBidang = {}
+    const internByUserId = Object.fromEntries(allInterns.map(i => [i.userId, i]))
+    for (const r of reportsForStats) {
+      if (!r.mood) continue
+      const intern = internByUserId[r.userId]
+      const bidang = intern?.bidang || 'Lainnya'
+      if (!moodByBidang[bidang]) moodByBidang[bidang] = { very_happy: 0, happy: 0, neutral: 0, sad: 0, very_sad: 0, total: 0 }
+      moodByBidang[bidang][r.mood]++
+      moodByBidang[bidang].total++
+    }
+    const moodHeatmap = Object.entries(moodByBidang).map(([bidang, d]) => {
+      const hi = d.total > 0
+        ? Math.round((d.very_happy * 100 + d.happy * 75 + d.neutral * 50 + d.sad * 25 + d.very_sad * 0) / d.total)
+        : null
+      return { bidang, ...d, happinessIndex: hi, alert: hi !== null && hi < 40 }
+    }).sort((a, b) => (b.happinessIndex || 0) - (a.happinessIndex || 0))
+
+    // Happiness trend per week (sparkline data)
+    const happinessTrend = moodTrend.map(w => {
+      const t = w.total || 1
+      return {
+        week: w.week,
+        index: Math.round((w.very_happy * 100 + w.happy * 75 + w.neutral * 50 + w.sad * 25 + w.very_sad * 0) / t)
+      }
+    })
+
     // ════════════════════════════════════════════════════════════
     // TAB 3: TALENT & EVALUATION
     // ════════════════════════════════════════════════════════════
@@ -616,6 +643,8 @@ export async function GET(request) {
         topSubmitters,
         neverSubmitted,
         totalReports: reportsForStats.length,
+        moodHeatmap,
+        happinessTrend,
       },
       talent: {
         universityEffectiveness,
