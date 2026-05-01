@@ -140,10 +140,16 @@ function BuilderModal({ initial, onSave, onClose }) {
                       <button onClick={()=>delOpt(i,oi)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--danger)'}}><X size={13} strokeWidth={2}/></button>
                     </div>
                   ))}
-                  <button className="btn btn-secondary btn-sm" onClick={()=>addOpt(i)} style={{fontSize:'0.75rem',marginTop:4}}>+ Tambah Pilihan</button>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
+                    <button className="btn btn-secondary btn-sm" onClick={()=>addOpt(i)} style={{fontSize:'0.75rem'}}>+ Tambah Pilihan</button>
+                    <label style={{display:'flex',alignItems:'center',gap:6,fontSize:'0.75rem',color:'var(--text-secondary)',cursor:'pointer'}}>
+                      <input type="checkbox" checked={q.allowOther||false} onChange={e=>setQ(i,'allowOther',e.target.checked)} style={{accentColor:'var(--primary)'}}/>
+                      Izinkan opsi "Lainnya"
+                    </label>
+                  </div>
                 </div>
               )}
-              {q.type==='RATING'&&<p style={{fontSize:'0.72rem',color:'var(--text-muted)',paddingLeft:'0.5rem'}}>Responden akan memilih nilai 1–5 bintang</p>}
+              {q.type==='RATING'&&<p style={{fontSize:'0.72rem',color:'var(--text-muted)',paddingLeft:'0.5rem'}}>Responden akan memilih nilai 1–5 bintang (1 = Sangat Kurang, 5 = Sangat Baik)</p>}
             </div>
           ))}
           <button className="btn btn-secondary" onClick={addQ} style={{fontSize:'0.8rem'}}><Plus size={14} strokeWidth={2}/> Tambah Pertanyaan</button>
@@ -352,14 +358,20 @@ export default function SurveysPage() {
                   <div key={qi} style={{padding:'1rem',background:'var(--bg-main)',borderRadius:'var(--radius-lg)'}}>
                     <p style={{fontWeight:700,fontSize:'0.875rem',marginBottom:'0.875rem'}}>{qi+1}. {q.text}</p>
                     {q.type==='RATING'&&(
-                      <div style={{display:'flex',gap:'0.5rem'}}>
-                        {[1,2,3,4,5].map(v=>(
-                          <button key={v} onClick={()=>setAnswers(p=>({...p,[q.id]:v}))}
-                            style={{width:44,height:44,borderRadius:'50%',border:'2px solid',borderColor:answers[q.id]===v?'#f59e0b':'var(--border)',background:answers[q.id]===v?'#fef3c7':'var(--bg-card)',cursor:'pointer',fontSize:'1.25rem',transition:'all 0.15s'}}>
-                            <Star size={20} strokeWidth={1.5} fill={answers[q.id]>=v?'#f59e0b':'none'} color={answers[q.id]>=v?'#f59e0b':'var(--border)'}/>
-                          </button>
-                        ))}
-                        {answers[q.id]&&<span style={{marginLeft:8,fontWeight:700,color:'#f59e0b',lineHeight:'44px'}}>{answers[q.id]}/5</span>}
+                      <div>
+                        <div style={{display:'flex',gap:'0.5rem'}}>
+                          {[1,2,3,4,5].map(v=>(
+                            <button key={v} onClick={()=>setAnswers(p=>({...p,[q.id]:v}))}
+                              style={{width:44,height:44,borderRadius:'50%',border:'2px solid',borderColor:answers[q.id]===v?'#f59e0b':'var(--border)',background:answers[q.id]===v?'#fef3c7':'var(--bg-card)',cursor:'pointer',fontSize:'1.25rem',transition:'all 0.15s'}}>
+                              <Star size={20} strokeWidth={1.5} fill={answers[q.id]>=v?'#f59e0b':'none'} color={answers[q.id]>=v?'#f59e0b':'var(--border)'}/>
+                            </button>
+                          ))}
+                          {answers[q.id]&&<span style={{marginLeft:8,fontWeight:700,color:'#f59e0b',lineHeight:'44px'}}>{answers[q.id]}/5</span>}
+                        </div>
+                        <div style={{display:'flex',justifyContent:'space-between',maxWidth:240,marginTop:8,padding:'0 4px'}}>
+                          <span style={{fontSize:'0.75rem',color:'var(--text-muted)',fontWeight:700}}>1: Sangat Kurang</span>
+                          <span style={{fontSize:'0.75rem',color:'var(--text-muted)',fontWeight:700}}>5: Sangat Baik</span>
+                        </div>
                       </div>
                     )}
                     {q.type==='MULTIPLE_CHOICE'&&(
@@ -370,6 +382,13 @@ export default function SurveysPage() {
                             <span style={{fontSize:'0.85rem'}}>{opt}</span>
                           </label>
                         ))}
+                        {q.allowOther && (
+                          <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'0.5rem 0.75rem',borderRadius:'var(--radius-md)',background:(answers[q.id]!==undefined&&!q.options.includes(answers[q.id]))?'var(--primary-light)':'var(--bg-card)',border:`1.5px solid ${(answers[q.id]!==undefined&&!q.options.includes(answers[q.id]))?'var(--primary)':'var(--border)'}`,transition:'all 0.15s'}}>
+                            <input type="radio" name={q.id} checked={answers[q.id]!==undefined&&!q.options.includes(answers[q.id])} onChange={()=>{ if(answers[q.id]===undefined || q.options.includes(answers[q.id])) { setAnswers(p=>({...p,[q.id]:'_OTHER_'})) } }} style={{accentColor:'var(--primary)'}}/>
+                            <span style={{fontSize:'0.85rem',whiteSpace:'nowrap'}}>Lainnya:</span>
+                            <input type="text" className="input" style={{height:28,fontSize:'0.8rem',flex:1,padding:'0 8px',opacity:(answers[q.id]!==undefined&&!q.options.includes(answers[q.id]))?1:0.5}} placeholder="Sebutkan..." value={(answers[q.id]!==undefined&&!q.options.includes(answers[q.id]))?(answers[q.id]==='_OTHER_'?'':answers[q.id]):''} onChange={e=>setAnswers(p=>({...p,[q.id]:e.target.value||'_OTHER_'}))} disabled={!(answers[q.id]!==undefined&&!q.options.includes(answers[q.id]))} />
+                          </label>
+                        )}
                       </div>
                     )}
                     {q.type==='TEXT'&&(
