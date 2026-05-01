@@ -55,6 +55,58 @@ function MiniBar({ items, colorFn, formatValue }) {
   )
 }
 
+function ForecastDistBar({ items }) {
+  if (!items || items.length === 0) return <p style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>Tidak ada data</p>
+  // max based on projected or active, whichever is highest, so bars don't overflow
+  const maxProjected = Math.max(...items.map(i => Math.max(i.value.active + i.value.entering, 1)))
+  
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+      {/* Header Row */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, paddingBottom:6, borderBottom:'1px solid var(--border)', fontSize:'0.65rem', fontWeight:800, color:'var(--text-muted)', textTransform:'uppercase' }}>
+        <span style={{ width:160, flexShrink:0 }}>Kategori</span>
+        <div style={{ flex:1, display:'flex', justifyContent:'space-between' }}>
+          <span style={{ marginLeft:4 }}>Visualisasi Proyeksi</span>
+          <div style={{ display:'flex', gap:8, minWidth:120, justifyContent:'flex-end' }}>
+            <span style={{color:'#3b82f6', width:26, textAlign:'center'}} title="Aktif Saat Ini">AKT</span>
+            <span style={{color:'#ef4444', width:26, textAlign:'center'}} title="Akan Keluar">-OUT</span>
+            <span style={{color:'#22c55e', width:26, textAlign:'center'}} title="Akan Masuk">+IN</span>
+            <span style={{color:'var(--text-primary)', width:26, textAlign:'center'}} title="Total Proyeksi">TOT</span>
+          </div>
+        </div>
+      </div>
+
+      {items.slice(0, 12).map((item, i) => {
+        const d = item.value
+        const projected = d.active - d.exiting + d.entering
+        const activeStay = d.active - d.exiting
+        
+        return (
+          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, fontSize:'0.75rem' }} title={`Aktif: ${d.active}\nKeluar bulan ini: ${d.exiting}\nMasuk: ${d.entering}\nProyeksi: ${projected}`}>
+            <span style={{ fontWeight:700, width:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flexShrink:0 }}>{item.label}</span>
+            <div style={{ flex:1, display:'flex', alignItems:'center', gap:12 }}>
+              {/* Stacked Bar */}
+              <div style={{ flex:1, height:14, background:'var(--bg-main)', borderRadius:4, overflow:'hidden', display:'flex' }}>
+                <div style={{ width:`${(activeStay/maxProjected)*100}%`, background:'#3b82f6', transition:'width 0.5s' }} />
+                <div style={{ width:`${(d.exiting/maxProjected)*100}%`, background:'#ef4444', transition:'width 0.5s' }} />
+                <div style={{ width:`${(d.entering/maxProjected)*100}%`, background:'#22c55e', transition:'width 0.5s' }} />
+              </div>
+              
+              {/* Numbers */}
+              <div style={{ display:'flex', gap:8, minWidth:120, justifyContent:'flex-end', fontWeight:800 }}>
+                <span style={{color:'#3b82f6', width:26, textAlign:'center'}}>{d.active}</span>
+                <span style={{color:'#ef4444', width:26, textAlign:'center'}}>{d.exiting > 0 ? `-${d.exiting}` : '0'}</span>
+                <span style={{color:'#22c55e', width:26, textAlign:'center'}}>{d.entering > 0 ? `+${d.entering}` : '0'}</span>
+                <span style={{color:'var(--text-primary)', width:26, textAlign:'center'}}>{projected}</span>
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function CountdownList({ items, label, color }) {
   if (!items?.length) return <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', textAlign:'center', padding:'1rem' }}>Tidak ada data</p>
   
@@ -193,9 +245,14 @@ export default function InternInsightPage() {
               </Card>
             </div>
 
+            <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:'1rem' }}>
+              <Card title="📊 Distribusi Bidang & Proyeksi" subtitle="Analisis pergerakan intern berdasarkan bidang">
+                <ForecastDistBar items={Object.entries(ov.bidangDist).map(([l,v])=>({label:l,value:v})).sort((a,b)=>(b.value.active+b.value.entering)-(a.value.active+a.value.entering))} />
+              </Card>
+            </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
-              <Card title="📊 Distribusi Bidang">
-                <MiniBar items={Object.entries(ov.bidangDist).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)} colorFn={i => `hsl(${210+i*25},70%,55%)`} />
+              <Card title="🎓 Distribusi Jenjang">
+                <MiniBar items={Object.entries(ov.jenjangDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)} colorFn={() => '#8b5cf6'} />
               </Card>
               <Card title="🏦 Distribusi Bank">
                 <MiniBar items={Object.entries(ov.bankDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)} colorFn={i => `hsl(${160+i*30},60%,45%)`} />
@@ -209,8 +266,8 @@ export default function InternInsightPage() {
               <Card title="🎂 Ulang Tahun per Bulan">
                 <MiniBar items={ov.birthdayByMonth.map((v,i)=>({label:MONTHS[i],value:v}))} colorFn={() => '#ec4899'} />
               </Card>
-              <Card title="👨‍🏫 Pembimbing Lapangan">
-                <MiniBar items={Object.entries(ov.supervisorDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)} colorFn={i => `hsl(${30+i*20},75%,50%)`} />
+              <Card title="👨‍🏫 Pembimbing Lapangan & Proyeksi">
+                <ForecastDistBar items={Object.entries(ov.supervisorDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>(b.value.active+b.value.entering)-(a.value.active+a.value.entering))} />
               </Card>
             </div>
 
@@ -332,10 +389,12 @@ export default function InternInsightPage() {
             </Card>
 
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
-              <Card title="🏫 Distribusi Universitas/Sekolah">
-                <MiniBar items={Object.entries(ov.universityDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value).slice(0,12)} colorFn={i => `hsl(${200+i*18},65%,50%)`} />
+            <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:'1rem' }}>
+              <Card title="🏫 Distribusi Universitas/Sekolah & Proyeksi">
+                <ForecastDistBar items={Object.entries(ov.universityDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>(b.value.active+b.value.entering)-(a.value.active+a.value.entering)).slice(0,12)} />
               </Card>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:'1rem' }}>
               <Card title="📋 Onboarding Status">
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                   {Object.entries(ob.stats||{}).map(([k,v]) => (

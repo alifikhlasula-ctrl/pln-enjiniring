@@ -214,16 +214,52 @@ export async function GET(request) {
         if (month >= 0 && month < 12) birthdayByMonth[month]++
       }
 
-      // Demographics
+      // Demographics (Simple counts for bank and jenjang)
       let genderStr = i.gender || 'Lainnya'
       if (genderStr.toLowerCase() === 'laki-laki') genderStr = 'Laki-laki'
       if (genderStr.toLowerCase() === 'perempuan') genderStr = 'Perempuan'
       genderCount[genderStr] = (genderCount[genderStr] || 0) + 1
       if (i.bankName) bankDist[i.bankName] = (bankDist[i.bankName] || 0) + 1
-      bidangDist[i.bidang] = (bidangDist[i.bidang] || 0) + 1
-      universityDist[i.university] = (universityDist[i.university] || 0) + 1
       jenjangDist[i.jenjang] = (jenjangDist[i.jenjang] || 0) + 1
-      if (i.supervisorName) supervisorDist[i.supervisorName] = (supervisorDist[i.supervisorName] || 0) + 1
+
+      // Forecast Distributions (Bidang, University, Supervisor)
+      const initFDist = () => ({ active: 0, exiting: 0, entering: 0, exitingNames: [], enteringNames: [] })
+      const b = i.bidang || 'Lainnya'
+      const u = i.university || 'Lainnya'
+      const s = i.supervisorName
+      
+      if (!bidangDist[b]) bidangDist[b] = initFDist()
+      if (!universityDist[u]) universityDist[u] = initFDist()
+      if (s && !supervisorDist[s]) supervisorDist[s] = initFDist()
+
+      const currentMonth = todayStr.slice(0, 7) // YYYY-MM
+
+      if (effStatus === 'ACTIVE') {
+        bidangDist[b].active++
+        universityDist[u].active++
+        if (s) supervisorDist[s].active++
+
+        // Check if exiting this month
+        if (i.periodEnd && i.periodEnd.startsWith(currentMonth)) {
+          bidangDist[b].exiting++
+          bidangDist[b].exitingNames.push(i.name)
+          universityDist[u].exiting++
+          universityDist[u].exitingNames.push(i.name)
+          if (s) {
+            supervisorDist[s].exiting++
+            supervisorDist[s].exitingNames.push(i.name)
+          }
+        }
+      } else if (effStatus === 'PENDING') {
+        bidangDist[b].entering++
+        bidangDist[b].enteringNames.push(i.name)
+        universityDist[u].entering++
+        universityDist[u].enteringNames.push(i.name)
+        if (s) {
+          supervisorDist[s].entering++
+          supervisorDist[s].enteringNames.push(i.name)
+        }
+      }
     }
 
     pendingInterns.sort((a, b) => a.daysUntil - b.daysUntil)
