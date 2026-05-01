@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Users, Heart, Award, Briefcase, TrendingUp, Clock, FileText, DollarSign, RefreshCw, ChevronDown, Star } from 'lucide-react'
+import { BarChart3, Users, Heart, Award, Briefcase, TrendingUp, Clock, FileText, DollarSign, RefreshCw, ChevronDown, Star, Calendar } from 'lucide-react'
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -78,12 +78,19 @@ export default function InternInsightPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('overview')
+  const [filter, setFilter] = useState({ month: '', year: '' })
 
   useEffect(() => {
-    fetch('/api/admin/intern-insight?_t=' + Date.now())
+    setLoading(true)
+    const params = new URLSearchParams()
+    if (filter.month) params.append('month', filter.month)
+    if (filter.year) params.append('year', filter.year)
+    params.append('_t', Date.now().toString())
+
+    fetch(`/api/admin/intern-insight?${params.toString()}`)
       .then(r => r.json()).then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }, [filter])
 
   if (loading) return (
     <div style={{ display:'flex', justifyContent:'center', alignItems:'center', minHeight:'60vh' }}>
@@ -100,11 +107,43 @@ export default function InternInsightPage() {
     <>
       <div style={{ padding:'1.5rem', maxWidth:1400, margin:'0 auto' }}>
         {/* Header */}
-        <div style={{ marginBottom:'1.5rem' }}>
-          <h1 style={{ fontSize:'1.5rem', fontWeight:900, display:'flex', alignItems:'center', gap:8 }}>
-            <TrendingUp size={22} style={{ color:'var(--primary)' }} /> Intern Insight
-          </h1>
-          <p style={{ color:'var(--text-secondary)', fontSize:'0.82rem', marginTop:4 }}>Dashboard analitik komprehensif untuk pemantauan peserta magang</p>
+        <div style={{ marginBottom:'1.5rem', display:'flex', justifyContent:'space-between', alignItems:'flex-end', flexWrap:'wrap', gap:'1rem' }}>
+          <div>
+            <h1 style={{ fontSize:'1.5rem', fontWeight:900, display:'flex', alignItems:'center', gap:8 }}>
+              <TrendingUp size={22} style={{ color:'var(--primary)' }} /> Intern Insight
+            </h1>
+            <p style={{ color:'var(--text-secondary)', fontSize:'0.82rem', marginTop:4 }}>Dashboard analitik komprehensif untuk pemantauan peserta magang</p>
+          </div>
+          
+          <div style={{ display:'flex', gap:8, alignItems:'center', background:'var(--bg-card)', padding:'8px 12px', borderRadius:12, border:'1px solid var(--border)' }}>
+            <Calendar size={14} style={{ color:'var(--text-muted)' }} />
+            <select 
+              value={filter.month} 
+              onChange={e => setFilter({ ...filter, month: e.target.value })}
+              style={{ padding:'4px 8px', borderRadius:6, border:'1px solid var(--border)', background:'transparent', fontSize:'0.75rem', fontWeight:700, cursor:'pointer' }}
+            >
+              <option value="">Semua Bulan</option>
+              {['01','02','03','04','05','06','07','08','09','10','11','12'].map((m, i) => (
+                <option key={m} value={m}>{['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][i]}</option>
+              ))}
+            </select>
+            <select 
+              value={filter.year} 
+              onChange={e => setFilter({ ...filter, year: e.target.value })}
+              style={{ padding:'4px 8px', borderRadius:6, border:'1px solid var(--border)', background:'transparent', fontSize:'0.75rem', fontWeight:700, cursor:'pointer' }}
+            >
+              <option value="">Tahun</option>
+              {['2024','2025', '2026'].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            {(filter.month || filter.year) && (
+              <button 
+                onClick={() => setFilter({ month: '', year: '' })}
+                style={{ background:'var(--danger-light)', color:'var(--danger)', border:'none', padding:'4px 8px', borderRadius:6, fontSize:'0.65rem', fontWeight:800, cursor:'pointer' }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}

@@ -4,8 +4,14 @@ import { getDB } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const filterMonth = searchParams.get('month') // "01"-"12"
+    const filterYear = searchParams.get('year')   // "2024", "2025", etc.
+    const hasFilter = filterMonth && filterYear
+    const filterPrefix = hasFilter ? `${filterYear}-${filterMonth.padStart(2,'0')}` : null
+
     const today = new Date()
     const todayStr = today.toISOString().split('T')[0]
 
@@ -243,12 +249,17 @@ export async function GET() {
     // TAB 2: WELL-BEING & REPORTS
     // ════════════════════════════════════════════════════════════
 
+    // ── Apply Global Time Filter to Reports ──
+    const reportsForStats = hasFilter 
+      ? allReports.filter(r => r.date && String(r.date).startsWith(filterPrefix))
+      : allReports
+
     // Mood distribution
     const moodDist = { very_happy: 0, happy: 0, neutral: 0, sad: 0, very_sad: 0 }
     const moodByWeek = {}
     const reportSubmitCount = {}  // { userId: { count, name } } for top submitters
 
-    for (const r of allReports) {
+    for (const r of reportsForStats) {
       if (r.mood && moodDist[r.mood] !== undefined) moodDist[r.mood]++
       
       // Mood by week
@@ -293,7 +304,7 @@ export async function GET() {
       sad: { totalWordCount: 0, count: 0 },
       very_sad: { totalWordCount: 0, count: 0 }
     }
-    for (const r of allReports) {
+    for (const r of reportsForStats) {
       if (!r.mood) continue
       moodProductivity[r.mood].totalWordCount += (r.activity || '').split(/\s+/).length
       moodProductivity[r.mood].count++
@@ -335,7 +346,7 @@ export async function GET() {
 
     // Skill tracker (aggregate from reports)
     const skillCount = {}
-    for (const r of allReports) {
+    for (const r of reportsForStats) {
       if (r.skills && Array.isArray(r.skills)) {
         for (const sk of r.skills) {
           const normalized = sk.trim()
@@ -567,7 +578,7 @@ export async function GET() {
         moodVsProductivity,
         topSubmitters,
         neverSubmitted,
-        totalReports: allReports.length,
+        totalReports: reportsForStats.length,
       },
       talent: {
         universityEffectiveness,
