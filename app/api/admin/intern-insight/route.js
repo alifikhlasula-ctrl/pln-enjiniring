@@ -286,16 +286,21 @@ export async function GET() {
       .map(i => ({ name: i.name, bidang: i.bidang }))
 
     // Mood vs Productivity
-    const moodProductivity = {}
+    const moodProductivity = {
+      very_happy: { totalWordCount: 0, count: 0 },
+      happy: { totalWordCount: 0, count: 0 },
+      neutral: { totalWordCount: 0, count: 0 },
+      sad: { totalWordCount: 0, count: 0 },
+      very_sad: { totalWordCount: 0, count: 0 }
+    }
     for (const r of allReports) {
       if (!r.mood) continue
-      if (!moodProductivity[r.mood]) moodProductivity[r.mood] = { totalWordCount: 0, count: 0 }
       moodProductivity[r.mood].totalWordCount += (r.activity || '').split(/\s+/).length
       moodProductivity[r.mood].count++
     }
     const moodVsProductivity = Object.entries(moodProductivity).map(([mood, d]) => ({
       mood,
-      avgWords: Math.round(d.totalWordCount / d.count),
+      avgWords: d.count > 0 ? Math.round(d.totalWordCount / d.count) : 0,
       count: d.count
     }))
 
