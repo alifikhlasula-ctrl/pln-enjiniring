@@ -359,14 +359,15 @@ export async function GET(request) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 20)
 
-    // Evaluation score distribution
-    const scoreRanges = { 'A (≥85)': 0, 'B (70-84)': 0, 'C (55-69)': 0, 'D (<55)': 0 }
+    // Evaluation score distribution (Matching 10-point scale in evaluations/route.js)
+    const scoreRanges = { 'A (>=9.0)': 0, 'B (8.0-8.9)': 0, 'C (7.0-7.9)': 0, 'D (<7.0)': 0 }
     const evalAvgByBidang = {}
     for (const ev of allEvals) {
-      if (ev.finalScore >= 85) scoreRanges['A (≥85)']++
-      else if (ev.finalScore >= 70) scoreRanges['B (70-84)']++
-      else if (ev.finalScore >= 55) scoreRanges['C (55-69)']++
-      else scoreRanges['D (<55)']++
+      const score = ev.finalScore || 0
+      if (score >= 9) scoreRanges['A (>=9.0)']++
+      else if (score >= 8) scoreRanges['B (8.0-8.9)']++
+      else if (score >= 7) scoreRanges['C (7.0-7.9)']++
+      else scoreRanges['D (<7.0)']++
 
       const intern = allInterns.find(i => i.id === ev.internId || i.userId === ev.internId)
       if (intern) {
