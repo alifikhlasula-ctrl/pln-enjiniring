@@ -30,7 +30,8 @@ export async function GET(request) {
 
     // ── Today attendance status (SQL) ───────────────
     const todayLog = await prisma.attendanceLog.findUnique({
-      where: { internId_date: { internId: intern.id, date: todayStr } }
+      where: { internId_date: { internId: intern.id, date: todayStr } },
+      select: { checkIn: true, checkOut: true, status: true, checkInLoc: true, faceInUrl: true }
     }).catch(() => null)
 
     const todayAttendance = todayLog ? {
@@ -40,13 +41,22 @@ export async function GET(request) {
       checkOutTime: todayLog.checkOut?.toISOString() || null,
       status: todayLog.status,
       checkInLoc: todayLog.checkInLoc,
-      faceBase64: todayLog.faceInBase64,
+      faceUrl: todayLog.faceInUrl,
     } : { checkedIn: false, checkedOut: false }
 
-    // ── Attendance stats (SQL - fetch all for accurate stats) ────────
+    // ── Attendance stats (SQL - optimized for Egress diet) ────────
     const rawLogs = await prisma.attendanceLog.findMany({
       where: { internId: intern.id },
-      orderBy: { date: 'desc' }
+      orderBy: { date: 'desc' },
+      select: {
+        id: true,
+        date: true,
+        checkIn: true,
+        checkOut: true,
+        status: true,
+        checkInLoc: true,
+        faceInUrl: true
+      }
     }).catch(() => [])
 
     const attendanceLogs = rawLogs.slice(0, 30).map(l => ({
@@ -56,7 +66,7 @@ export async function GET(request) {
       checkOut: l.checkOut?.toISOString() || null,
       status: l.status,
       checkInLoc: l.checkInLoc,
-      faceInBase64: l.faceInBase64 ? l.faceInBase64.substring(0, 50) + '...' : null, 
+      faceInUrl: l.faceInUrl, 
     }))
 
     const presentDays = rawLogs.filter(l => l.status === 'PRESENT').length

@@ -47,7 +47,14 @@ export async function GET(request) {
     const [logs, corrections] = await Promise.all([
       prisma.attendanceLog.findMany({
         where: { internId: intern.id },
-        orderBy: { date: 'desc' }
+        orderBy: { date: 'desc' },
+        select: {
+          id: true, internId: true, date: true, checkIn: true, checkOut: true,
+          status: true, checkInLoc: true, checkOutLoc: true,
+          createdAt: true, updatedAt: true, editedAt: true, editedBy: true,
+          faceInUrl: true, faceOutUrl: true
+          // EXPLICITLY OMITTING faceInBase64 and faceOutBase64 for Data Diet
+        }
       }),
       prisma.attendanceCorrection.findMany({
         where: { internId: intern.id, status: 'PENDING' },
