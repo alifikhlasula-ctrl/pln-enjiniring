@@ -259,14 +259,17 @@ export default function InternInsightPage() {
               </Card>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'1rem' }}>
-              <Card title="🎓 Distribusi Jenjang">
-                <MiniBar items={Object.entries(ov.jenjangDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)} colorFn={() => '#8b5cf6'} />
-              </Card>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
               <Card title="🎂 Ulang Tahun per Bulan">
                 <MiniBar items={ov.birthdayByMonth.map((v,i)=>({label:MONTHS[i],value:v}))} colorFn={() => '#ec4899'} />
               </Card>
-              <Card title="👨‍🏫 Pembimbing Lapangan & Proyeksi">
+              <Card title="🎓 Total Intern Aktif">
+                <MiniBar items={[{label: 'Laki-laki', value: ov.genderCount['Laki-laki']||0}, {label: 'Perempuan', value: ov.genderCount['Perempuan']||0}]} colorFn={i => i===0 ? '#3b82f6' : '#ec4899'} />
+              </Card>
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:'1rem' }}>
+              <Card title="👨‍🏫 Pembimbing Lapangan & Proyeksi" subtitle="Analisis beban bimbingan berdasarkan intern masuk dan keluar">
                 <ForecastDistBar items={Object.entries(ov.supervisorDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>(b.value.active+b.value.entering)-(a.value.active+a.value.entering))} />
               </Card>
             </div>
