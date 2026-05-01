@@ -57,6 +57,14 @@ function MiniBar({ items, colorFn, formatValue }) {
 
 function CountdownList({ items, label, color }) {
   if (!items?.length) return <p style={{ fontSize:'0.78rem', color:'var(--text-muted)', textAlign:'center', padding:'1rem' }}>Tidak ada data</p>
+  
+  const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+  const fmtDate = (d) => {
+    if (!d) return '-'
+    const [y,m,day] = d.split('-')
+    return `${parseInt(day)} ${MONTH_NAMES[parseInt(m)-1]} ${y}`
+  }
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
       {items.map((it, i) => (
@@ -65,8 +73,8 @@ function CountdownList({ items, label, color }) {
             <p style={{ fontWeight:700, fontSize:'0.82rem' }}>{it.name}</p>
             <p style={{ fontSize:'0.68rem', color:'var(--text-muted)' }}>{it.bidang}</p>
           </div>
-          <span style={{ fontWeight:900, fontSize:'0.85rem', color, padding:'2px 10px', borderRadius:99, background:`${color}18` }}>
-            {it.daysUntil !== undefined ? `${it.daysUntil} hari` : `${it.daysLeft} hari`}
+          <span style={{ fontWeight:900, fontSize:'0.75rem', color, padding:'4px 10px', borderRadius:99, background:`${color}18`, whiteSpace:'nowrap' }}>
+            {it.periodStart ? `Masuk ${fmtDate(it.periodStart)}` : `Keluar ${fmtDate(it.periodEnd)}`}
           </span>
         </div>
       ))}
