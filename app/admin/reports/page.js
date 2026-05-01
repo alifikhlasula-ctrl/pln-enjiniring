@@ -460,7 +460,15 @@ export default function AdminReportsPage() {
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
                         <div>
-                          <p style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 1.2 }}>{fmtDate(rep.date || rep.reportDate)}</p>
+                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <p style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 1.2 }}>{fmtDate(rep.date || rep.reportDate)}</p>
+                            {rep.mood && (
+                              <span style={{ fontSize:'0.75rem', background:'var(--bg-main)', padding:'2px 8px', borderRadius:999, fontWeight:700, border:'1px solid var(--border)', display:'flex', alignItems:'center', gap:4 }}>
+                                {{ very_happy:'😄', happy:'🙂', neutral:'😐', sad:'😔', very_sad:'😢' }[rep.mood] || '😐'} 
+                                {{ very_happy:'Sangat Senang', happy:'Senang', neutral:'Biasa', sad:'Kurang Baik', very_sad:'Buruk' }[rep.mood] || rep.mood}
+                              </span>
+                            )}
+                          </div>
                           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6 }}>
                              <Clock size={12} style={{ color:'var(--text-muted)' }}/>
                              <span style={{ fontSize:'0.75rem', color:'var(--text-muted)', fontWeight:600 }}>ID: #{rep.id.slice(-8).toUpperCase()}</span>
