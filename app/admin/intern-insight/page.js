@@ -206,19 +206,123 @@ export default function InternInsightPage() {
               </Card>
             </div>
 
-            <Card title="📈 Forecast Masuk & Keluar per Bulan" subtitle="Proyeksi bulanan intern yang masuk dan selesai">
-              {ov.forecast?.length > 0 ? (
-                <div style={{ display:'grid', gridTemplateColumns:`repeat(${Math.min(ov.forecast.length,12)},1fr)`, gap:6, marginTop:8 }}>
-                  {ov.forecast.slice(-12).map(f => (
-                    <div key={f.month} style={{ textAlign:'center', padding:8, borderRadius:8, background:'var(--bg-main)', border:'1px solid var(--border)' }}>
-                      <p style={{ fontSize:'0.65rem', fontWeight:800, color:'var(--text-muted)' }}>{f.month}</p>
-                      <p style={{ fontSize:'0.85rem', fontWeight:900, color:'#22c55e' }}>+{f.enter}</p>
-                      <p style={{ fontSize:'0.85rem', fontWeight:900, color:'#ef4444' }}>-{f.exit}</p>
+            <Card title="📈 Forecast Masuk & Keluar per Bulan" subtitle="Proyeksi pergerakan intern — klik bulan untuk detail">
+              {ov.forecast?.length > 0 ? (() => {
+                const data = ov.forecast.slice(-12)
+                const maxVal = Math.max(...data.map(f => Math.max(f.enter, f.exit)), 1)
+                const totalMasuk = data.reduce((s,f) => s+f.enter, 0)
+                const totalKeluar = data.reduce((s,f) => s+f.exit, 0)
+                const netGrowth = totalMasuk - totalKeluar
+                const peakEnter = data.reduce((p,f) => f.enter > (p?.enter||0) ? f : p, null)
+                const peakExit = data.reduce((p,f) => f.exit > (p?.exit||0) ? f : p, null)
+                const MONTH_SHORT = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
+                const fmtMonth = (m) => { const [y,mo] = m.split('-'); return `${MONTH_SHORT[parseInt(mo)]} ${y}` }
+                const nowYM = new Date().toISOString().slice(0,7)
+                return (
+                  <div>
+                    {/* KPI Summary Row */}
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:20 }}>
+                      {[
+                        { label:'Total Masuk', value:`+${totalMasuk}`, color:'#22c55e', bg:'#22c55e18', icon:'📥', sub:'intern baru bergabung' },
+                        { label:'Total Keluar', value:`-${totalKeluar}`, color:'#ef4444', bg:'#ef444418', icon:'📤', sub:'intern selesai/keluar' },
+                        { label:'Net Growth', value:(netGrowth>=0?'+':'')+netGrowth, color: netGrowth>=0?'#22c55e':'#ef4444', bg:netGrowth>=0?'#22c55e18':'#ef444418', icon:'📊', sub:'pertumbuhan bersih' },
+                        { label:'Bulan Paling Padat', value: peakEnter ? fmtMonth(peakEnter.month) : '-', color:'#f59e0b', bg:'#f59e0b18', icon:'🔥', sub: peakEnter ? `+${peakEnter.enter} intern masuk` : '' },
+                      ].map(k => (
+                        <div key={k.label} style={{ padding:'10px 14px', borderRadius:10, background:k.bg, border:`1px solid ${k.color}30` }}>
+                          <p style={{ fontSize:'0.62rem', fontWeight:800, color:k.color, letterSpacing:'0.05em', textTransform:'uppercase' }}>{k.icon} {k.label}</p>
+                          <p style={{ fontSize:'1.35rem', fontWeight:900, color:k.color, lineHeight:1.1, margin:'4px 0 2px' }}>{k.value}</p>
+                          <p style={{ fontSize:'0.62rem', color:'var(--text-muted)' }}>{k.sub}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : <p style={{ color:'var(--text-muted)', fontSize:'0.78rem' }}>Belum ada data forecast</p>}
+
+                    {/* Bar Chart */}
+                    <div style={{ overflowX:'auto', paddingBottom:4 }}>
+                      <div style={{ display:'flex', alignItems:'flex-end', gap:6, minWidth: data.length * 68, height:180, position:'relative', padding:'0 4px' }}>
+                        {/* Y-axis guide lines */}
+                        {[0,0.25,0.5,0.75,1].map(pct => (
+                          <div key={pct} style={{ position:'absolute', left:0, right:0, bottom:`${pct*100}%`, borderTop:'1px dashed var(--border)', opacity:0.5, zIndex:0 }}>
+                            <span style={{ position:'absolute', right:'100%', fontSize:'0.5rem', color:'var(--text-muted)', paddingRight:4, transform:'translateY(-50%)' }}>
+                              {Math.round(maxVal*pct)}
+                            </span>
+                          </div>
+                        ))}
+                        {data.map((f) => {
+                          const enterPct = (f.enter / maxVal) * 100
+                          const exitPct = (f.exit / maxVal) * 100
+                          const net = f.enter - f.exit
+                          const isNow = f.month === nowYM
+                          const isFuture = f.month > nowYM
+                          return (
+                            <div key={f.month} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2, zIndex:1, minWidth:52 }}
+                              title={`${fmtMonth(f.month)}\nMasuk: +${f.enter}\nKeluar: -${f.exit}\nNet: ${net>=0?'+':''}${net}`}
+                            >
+                              {/* Net label */}
+                              <span style={{ fontSize:'0.55rem', fontWeight:900, color: net>0?'#22c55e':net<0?'#ef4444':'var(--text-muted)', marginBottom:2 }}>
+                                {net>0?'+':''}{net}
+                              </span>
+                              {/* Bars */}
+                              <div style={{ display:'flex', gap:2, alignItems:'flex-end', width:'100%', height:140 }}>
+                                <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end', height:'100%' }}>
+                                  <div style={{
+                                    height:`${Math.max(enterPct,2)}%`,
+                                    background: isNow ? '#34d399' : isFuture ? '#86efac' : '#22c55e',
+                                    borderRadius:'4px 4px 0 0',
+                                    opacity: isFuture ? 0.7 : 1,
+                                    transition:'height 0.4s ease',
+                                    position:'relative'
+                                  }}>
+                                    {f.enter > 0 && <span style={{ position:'absolute', top:-14, left:'50%', transform:'translateX(-50%)', fontSize:'0.55rem', fontWeight:900, color:'#22c55e', whiteSpace:'nowrap' }}>+{f.enter}</span>}
+                                  </div>
+                                </div>
+                                <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end', height:'100%' }}>
+                                  <div style={{
+                                    height:`${Math.max(exitPct,2)}%`,
+                                    background: isNow ? '#f87171' : isFuture ? '#fca5a5' : '#ef4444',
+                                    borderRadius:'4px 4px 0 0',
+                                    opacity: isFuture ? 0.7 : 1,
+                                    transition:'height 0.4s ease',
+                                    position:'relative'
+                                  }}>
+                                    {f.exit > 0 && <span style={{ position:'absolute', top:-14, left:'50%', transform:'translateX(-50%)', fontSize:'0.55rem', fontWeight:900, color:'#ef4444', whiteSpace:'nowrap' }}>-{f.exit}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Month Label */}
+                              <div style={{ textAlign:'center', marginTop:4 }}>
+                                <p style={{ fontSize:'0.58rem', fontWeight: isNow ? 900 : 700, color: isNow ? 'var(--primary)' : 'var(--text-muted)', whiteSpace:'nowrap' }}>
+                                  {fmtMonth(f.month)}{isNow ? ' ◀' : ''}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Legend & Insight Note */}
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:16, flexWrap:'wrap', gap:8 }}>
+                      <div style={{ display:'flex', gap:16 }}>
+                        {[['#22c55e','Intern Masuk'],['#ef4444','Intern Keluar']].map(([c,l]) => (
+                          <div key={l} style={{ display:'flex', alignItems:'center', gap:5, fontSize:'0.68rem', color:'var(--text-muted)', fontWeight:700 }}>
+                            <div style={{ width:12, height:12, borderRadius:3, background:c }} />{l}
+                          </div>
+                        ))}
+                        <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:'0.68rem', color:'var(--text-muted)', fontWeight:700 }}>
+                          <div style={{ width:12, height:12, borderRadius:3, background:'#86efac', opacity:0.7 }} />Proyeksi
+                        </div>
+                      </div>
+                      {peakExit && (
+                        <p style={{ fontSize:'0.65rem', color:'#f59e0b', fontWeight:700, background:'#f59e0b15', padding:'4px 10px', borderRadius:99, border:'1px solid #f59e0b30' }}>
+                          ⚠️ Puncak keluar: {fmtMonth(peakExit.month)} ({peakExit.exit} intern) — perlu rekrutmen pengganti
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })() : <p style={{ color:'var(--text-muted)', fontSize:'0.78rem' }}>Belum ada data forecast</p>}
             </Card>
+
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
               <Card title="🏫 Distribusi Universitas/Sekolah">
