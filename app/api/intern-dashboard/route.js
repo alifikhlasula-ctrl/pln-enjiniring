@@ -247,11 +247,30 @@ export async function GET(request) {
     }).catch(() => [])
     
     const respondedSurveyIds = userResponses.map(r => r.surveyId)
-    // Exclude system-generated surveys (e.g. payroll issues) from popup notification
-    // These can only be accessed deliberately via the 'Belum Terima Uang' button
+
+    // ── Survey Compliance & Skor Keaktifan ──
+    const allMandatorySurveys = await prisma.survey.findMany({
+      where: { 
+        targetRole: { in: ['INTERN', 'ALL'] },
+        deadline: { not: null } 
+      }
+    }).catch(() => [])
+
+    const missedMandatoryCount = allMandatorySurveys.filter(s => {
+      const deadlineDate = new Date(s.deadline)
+      deadlineDate.setHours(23, 59, 59, 999) // End of deadline day
+      return deadlineDate < new Date() && !respondedSurveyIds.includes(s.id)
+    }).length
+
+    const surveyPenalty = missedMandatoryCount * 5 // Deduct 5 points per missed mandatory survey
+    const finalKeaktifanScore = Math.max(0, onTimeRate - surveyPenalty)
+
     const pendingSurveys = activeSurveys.filter(s => 
       !respondedSurveyIds.includes(s.id) && s.createdBy !== 'Sistem'
-    )
+    ).map(s => ({
+      ...s,
+      isMandatory: !!s.deadline
+    }))
 
     const response = NextResponse.json({
       intern: {
@@ -266,7 +285,7 @@ export async function GET(request) {
       },
       todayAttendance,
       attendanceLogs,
-      attendanceStats: { presentDays, lateDays, totalDays, onTimeRate },
+      attendanceStats: { presentDays, lateDays, totalDays, onTimeRate: finalKeaktifanScore, baseAttendanceScore: onTimeRate, missedSurveys: missedMandatoryCount },
       weeklyStreak,
       countdown: { daysRemaining, totalDuration, elapsedDays, progressPct, periodEnd: intern.periodEnd },
       evaluations: myEvals.slice(0, 5).map(e => ({ ...e, supervisorName: (data.users || []).find(u => u.id === e.supervisorId)?.name || 'Supervisor' })),

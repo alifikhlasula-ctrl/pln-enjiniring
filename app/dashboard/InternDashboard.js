@@ -370,20 +370,25 @@ export default function InternDashboard() {
         
         if (pending.length > 0) {
           const survey = pending[0];
-          
+          const isMandatory = survey.isMandatory;
           const result = await Swal.fire({
-            title: `<span style="font-size: 1rem; padding: 4px 12px; border-radius: 999px; background: var(--primary-light); color: var(--primary)">📝 Survei Baru</span>`,
+            title: `<span style="font-size: 1rem; padding: 4px 12px; border-radius: 999px; background: ${isMandatory ? 'var(--danger-light)' : 'var(--primary-light)'}; color: ${isMandatory ? 'var(--danger)' : 'var(--primary)'}">${isMandatory ? '⚠️ Survei Wajib' : '📝 Survei Baru'}</span>`,
             html: `
               <div style="text-align: left; margin-top: 1rem;">
                 <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 8px;">${survey.title}</h3>
                 <p style="font-size: 0.95rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.5;">${survey.description || 'Admin HR meminta waktu Anda sebentar untuk mengisi survei ini.'}</p>
+                ${isMandatory ? `
+                  <div style="margin-top: 1rem; padding: 10px; border-radius: 8px; background: var(--danger-light); border: 1px solid var(--danger)30; font-size: 0.82rem; color: var(--danger); font-weight: 700;">
+                    Survei ini wajib diisi sebelum ${new Date(survey.deadline).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })}. Jika terlewat, Skor Keaktifan Anda akan berkurang secara otomatis.
+                  </div>
+                ` : ''}
               </div>
             `,
-            icon: 'info',
+            icon: isMandatory ? 'warning' : 'info',
             showCancelButton: true,
-            confirmButtonText: 'Isi Survei Sekarang',
+            confirmButtonText: isMandatory ? 'Isi Sekarang (Wajib)' : 'Isi Survei Sekarang',
             cancelButtonText: 'Nanti Saja',
-            confirmButtonColor: 'var(--primary)',
+            confirmButtonColor: isMandatory ? 'var(--danger)' : 'var(--primary)',
             background: 'var(--bg-card)',
             color: 'var(--text-primary)'
           });
@@ -513,6 +518,24 @@ export default function InternDashboard() {
           </button>
         </div>
       </div>
+      
+      {/* ── Mandatory Survey Sticky Banner ── */}
+      {D.pendingSurveys?.some(s => s.isMandatory) && (
+        <div style={{
+          background: 'var(--danger-light)', border: '1px solid var(--danger)40',
+          padding: '10px 16px', borderRadius: 12, marginBottom: '1rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          animation: 'pulse 2s infinite'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <AlertCircle size={18} color="var(--danger)" />
+            <p style={{ fontSize: '0.82rem', color: 'var(--danger)', fontWeight: 700 }}>
+              Perhatian: Anda memiliki survei wajib yang belum diselesaikan. Segera isi agar Skor Keaktifan tetap 100%.
+            </p>
+          </div>
+          <a href="/surveys" className="btn btn-sm" style={{ background: 'var(--danger)', color: 'white', border: 'none', fontWeight: 800, padding:'4px 12px' }}>Isi Sekarang</a>
+        </div>
+      )}
 
       {/* ── Push Notification Prompt ── */}
       {showPushPrompt && (
@@ -570,8 +593,8 @@ export default function InternDashboard() {
           <div className="stat-label">Status Hari Ini{today.checkInTime ? ` · ${fmtTime(today.checkInTime)}` : ''}</div>
         </div>
 
-        {/* Discipline Score */}
-        <div className="stat-card" style={{ cursor: 'default' }}>
+        {/* Skor Keaktifan (Activity Score) */}
+        <div className="stat-card" style={{ cursor: 'default' }} title={stats.missedSurveys > 0 ? `Skor berkurang karena ${stats.missedSurveys} survei wajib tidak diisi tepat waktu.` : ''}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--sp-3)' }}>
             <div className="stat-icon-wrap" style={{ background: (stats.onTimeRate || 0) >= 90 ? 'var(--success-light)' : (stats.onTimeRate || 0) >= 75 ? 'var(--primary-light)' : 'var(--danger-light)', color: (stats.onTimeRate || 0) >= 90 ? 'var(--success)' : (stats.onTimeRate || 0) >= 75 ? 'var(--primary)' : 'var(--danger)' }}>
               <Star size={20} strokeWidth={2} />
@@ -581,9 +604,9 @@ export default function InternDashboard() {
             </span>
           </div>
           {loading ? <div style={{ height: 28, width: '60%', background: 'var(--border)', borderRadius: 4, animation: 'pulse 1.4s ease-in-out infinite' }} /> : (
-            <div className="stat-value">{stats.onTimeRate || 0}<span style={{fontSize:'1rem', color:'var(--text-muted)', marginLeft:4}}>Skor</span></div>
+            <div className="stat-value">{stats.onTimeRate || 0}<span style={{fontSize:'0.82rem', color:'var(--text-muted)', marginLeft:6, fontWeight:600, letterSpacing:'-0.01em'}}>Skor Keaktifan</span></div>
           )}
-          <div className="stat-label">Total Kehadiran: {stats.presentDays || 0} hari · {stats.lateDays || 0} telat</div>
+          <div className="stat-label">Kehadiran: {stats.onTimeRate || 0}% · {stats.missedSurveys || 0} Survei Terlewat</div>
         </div>
 
         {/* Allowance */}
@@ -865,7 +888,12 @@ export default function InternDashboard() {
               }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = a.color + '15'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-main)'; e.currentTarget.style.transform = 'translateY(0)' }}>
-                <span style={{ fontSize: 24 }}>{a.icon}</span>
+                <span style={{ fontSize: 24, position: 'relative' }}>
+                  {a.icon}
+                  {a.label === 'Survei' && D.pendingSurveys?.some(s => s.isMandatory) && (
+                    <span style={{ position:'absolute', top:-2, right:-2, width:8, height:8, background:'var(--danger)', borderRadius:'50%', border:'2px solid var(--bg-card)' }} />
+                  )}
+                </span>
                 <span style={{ fontSize: '0.65rem', fontWeight: 700, textAlign: 'center', color: 'var(--text-secondary)', lineHeight: 1.2 }}>{a.label}</span>
               </a>
             ))}
