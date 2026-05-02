@@ -10,6 +10,7 @@ const TABS = [
   { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
   { id: 'kudostars', label: 'Kudostars', icon: Star },
   { id: 'alumni', label: 'Alumni Pool', icon: GraduationCap },
+  { id: 'workforce', label: 'Workforce Planning', icon: Briefcase },
 ]
 const MOOD_EMOJI = { very_happy:'😄', happy:'🙂', neutral:'😐', sad:'😔', very_sad:'😢' }
 const MOOD_LABEL = { very_happy:'Sangat Senang', happy:'Senang', neutral:'Biasa', sad:'Kurang Baik', very_sad:'Buruk' }
@@ -252,6 +253,14 @@ export default function InternInsightPage() {
   const [alumniSort, setAlumniSort] = useState('score')
   const [alumniBidang, setAlumniBidang] = useState('')
 
+  // Workforce Planning states
+  const [wfData, setWfData] = useState(null)
+  const [wfLoading, setWfLoading] = useState(false)
+  const [wfExpanded, setWfExpanded] = useState(null)       // expanded bidang name
+  const [wfEditing, setWfEditing] = useState(null)         // bidang being edited
+  const [wfEditVal, setWfEditVal] = useState('')            // quota input value
+  const [wfSaving, setWfSaving] = useState(false)
+
   useEffect(() => {
     setLoading(true)
     const params = new URLSearchParams()
@@ -278,6 +287,11 @@ export default function InternInsightPage() {
       setAlumniLoading(true)
       fetch(`/api/admin/alumni?sort=${alumniSort}&search=${alumniSearch}&bidang=${alumniBidang}`)
         .then(r => r.json()).then(d => { setAlumniData(d); setAlumniLoading(false) }).catch(() => setAlumniLoading(false))
+    }
+    if (tab === 'workforce' && !wfData && !wfLoading) {
+      setWfLoading(true)
+      fetch('/api/admin/workforce')
+        .then(r => r.json()).then(d => { setWfData(d); setWfLoading(false) }).catch(() => setWfLoading(false))
     }
   }, [tab, lbMonth])
 
@@ -1189,6 +1203,272 @@ export default function InternInsightPage() {
             </div>
           </div>
           ) : <div style={{ textAlign:'center', padding:'4rem', color:'var(--text-muted)' }}>Gagal memuat data alumni.</div>
+        )}
+
+        {/* ═══ TAB: WORKFORCE PLANNING ═══ */}
+        {tab === 'workforce' && (
+          wfLoading && !wfData
+            ? <div style={{ display:'flex', justifyContent:'center', padding:'4rem' }}><RefreshCw size={28} style={{ animation:'spin 1s linear infinite', color:'var(--primary)' }} /></div>
+            : wfData ? (() => {
+              const { departments: depts, summary: sm } = wfData
+
+              const saveQuota = async (bidang) => {
+                const q = parseInt(wfEditVal)
+                if (isNaN(q) || q < 0) return
+                setWfSaving(true)
+                try {
+                  await fetch('/api/admin/workforce', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: bidang, quota: q })
+                  })
+                  // Refetch workforce data
+                  const res = await fetch('/api/admin/workforce')
+                  const d = await res.json()
+                  setWfData(d)
+                } catch(e) { console.error(e) }
+                setWfSaving(false)
+                setWfEditing(null)
+                setWfEditVal('')
+              }
+
+              const fmtDate = (d) => {
+                if (!d) return '-'
+                const [y,m,day] = d.split('-')
+                const MN = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
+                return `${parseInt(day)} ${MN[parseInt(m)]} ${y}`
+              }
+
+              return (
+                <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
+
+                  {/* ── KPI Summary Cards ── */}
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:'0.75rem' }}>
+                    {[
+                      { label:'Total Bidang', value: sm.totalDepts, icon:'🏢', color:'var(--primary)' },
+                      { label:'Over-Capacity 🔴', value: sm.overCapacityCount, icon:'⚠️', color:'#ef4444', sub:'Butuh perhatian' },
+                      { label:'Aman / Ada Slot ✅', value: sm.safeCount, icon:'✅', color:'#22c55e', sub:'Masih tersedia' },
+                      { label:'Belum Set Quota', value: sm.noQuotaCount, icon:'📝', color:'#f59e0b', sub:'Perlu dikonfigurasi' },
+                      { label:'Total Slot Tersedia', value: sm.totalSlotTersedia, icon:'🪑', color:'#6366f1', sub:'Dari semua bidang' },
+                    ].map(k => (
+                      <div key={k.label} style={{ background:'var(--bg-card)', borderRadius:12, padding:'1rem', borderTop:`3px solid ${k.color}`, boxShadow:'0 2px 8px rgba(0,0,0,0.08)' }}>
+                        <p style={{ fontSize:'0.62rem', fontWeight:800, color:k.color, letterSpacing:'0.05em', textTransform:'uppercase' }}>{k.icon} {k.label}</p>
+                        <p style={{ fontSize:'1.8rem', fontWeight:900, color:k.color, lineHeight:1.1, margin:'4px 0 2px' }}>{k.value ?? '-'}</p>
+                        {k.sub && <p style={{ fontSize:'0.62rem', color:'var(--text-muted)' }}>{k.sub}</p>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── Capacity Bar Chart ── */}
+                  <Card title="📊 Kapasitas per Bidang" subtitle="Bar menunjukkan intern aktif vs kuota. Garis merah = batas kuota.">
+                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                      {/* Legend */}
+                      <div style={{ display:'flex', gap:16, marginBottom:4 }}>
+                        {[['#22c55e','Aktif (Aman)'],['#f59e0b','Hampir Penuh'],['#ef4444','Over-Capacity'],['rgba(239,68,68,0.7)','Garis Kuota']].map(([c,l]) => (
+                          <div key={l} style={{ display:'flex', alignItems:'center', gap:5, fontSize:'0.65rem', color:'var(--text-muted)', fontWeight:700 }}>
+                            <div style={{ width:12, height: l.includes('Garis') ? 2 : 12, borderRadius: l.includes('Garis') ? 0 : 3, background:c, border: l.includes('Garis') ? `2px dashed ${c}` : 'none' }} />{l}
+                          </div>
+                        ))}
+                      </div>
+
+                      {depts.map(dept => {
+                        const hasQuota = dept.quota > 0
+                        const pct = hasQuota ? Math.min((dept.active / dept.quota) * 100, 120) : 0
+                        const barColor = dept.overCapacity ? '#ef4444' : dept.almostFull ? '#f59e0b' : '#22c55e'
+                        const isExp = wfExpanded === dept.bidang
+
+                        return (
+                          <div key={dept.bidang}>
+                            <div
+                              style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'8px 10px', borderRadius:8, background: isExp ? 'var(--bg-main)' : 'transparent', transition:'background 0.15s' }}
+                              onClick={() => setWfExpanded(isExp ? null : dept.bidang)}
+                            >
+                              {/* Bidang name */}
+                              <span style={{ fontSize:'0.78rem', fontWeight:800, width:160, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                {dept.overCapacity ? '🔴' : dept.almostFull ? '🟡' : dept.quota > 0 ? '🟢' : '⬜'} {dept.bidang}
+                              </span>
+
+                              {/* Bar */}
+                              <div style={{ flex:1, height:20, background:'var(--bg-main)', borderRadius:6, overflow:'visible', position:'relative', border:'1px solid var(--border)' }}>
+                                <div style={{
+                                  width:`${Math.min(pct, 100)}%`,
+                                  height:'100%',
+                                  background: barColor,
+                                  borderRadius:6,
+                                  transition:'width 0.6s ease',
+                                  opacity: hasQuota ? 1 : 0.3
+                                }} />
+                                {/* Overflow bar (over-capacity portion) */}
+                                {dept.overCapacity && hasQuota && (
+                                  <div style={{ position:'absolute', right:0, top:0, width:`${Math.min((dept.active - dept.quota) / dept.quota * 100, 20)}%`, height:'100%', background:'#ef444440', borderLeft:'2px solid #ef4444', borderRadius:'0 6px 6px 0' }} />
+                                )}
+                                {/* Quota line */}
+                                {hasQuota && (
+                                  <div style={{ position:'absolute', left:'100%', top:-2, width:2, height:24, background:'#ef4444', borderRadius:2, zIndex:2 }} title={`Kuota: ${dept.quota}`} />
+                                )}
+                              </div>
+
+                              {/* Numbers */}
+                              <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0, minWidth:120, justifyContent:'flex-end' }}>
+                                <span style={{ fontSize:'0.75rem', fontWeight:900, color:barColor }}>{dept.active}</span>
+                                <span style={{ fontSize:'0.65rem', color:'var(--text-muted)' }}>/</span>
+                                <span style={{ fontSize:'0.75rem', fontWeight:700, color: hasQuota ? 'var(--text-primary)' : 'var(--text-muted)' }}>{hasQuota ? dept.quota : '—'}</span>
+                                {hasQuota && dept.slotTersedia !== null && (
+                                  <span style={{ fontSize:'0.65rem', fontWeight:800, padding:'2px 8px', borderRadius:99, background: dept.overCapacity ? '#ef444420' : '#22c55e20', color: dept.overCapacity ? '#ef4444' : '#22c55e', marginLeft:4 }}>
+                                    {dept.overCapacity ? `+${dept.active - dept.quota} OVER` : `${dept.slotTersedia} slot`}
+                                  </span>
+                                )}
+                                <ChevronDown size={14} style={{ color:'var(--text-muted)', transform: isExp ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', marginLeft:4 }} />
+                              </div>
+                            </div>
+
+                            {/* ── Expanded Detail ── */}
+                            {isExp && (
+                              <div style={{ margin:'0 10px 8px 10px', padding:12, borderRadius:10, background:'var(--bg-main)', border:'1px solid var(--border)', animation:'slideUp 0.2s ease' }}>
+                                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+
+                                  {/* Keluar */}
+                                  <div>
+                                    <p style={{ fontSize:'0.68rem', fontWeight:900, color:'#ef4444', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+                                      📤 AKAN KELUAR ({dept.keluar.length})
+                                    </p>
+                                    {dept.keluar.length > 0 ? (
+                                      <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                                        {dept.keluar.map((k,i) => (
+                                          <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'5px 8px', borderRadius:7, background:'var(--bg-card)', border:'1px solid #ef444430' }}>
+                                            <span style={{ fontSize:'0.72rem', fontWeight:700 }}>{k.name}</span>
+                                            <span style={{ fontSize:'0.65rem', color:'#ef4444', fontWeight:800, whiteSpace:'nowrap', marginLeft:8 }}>📅 {fmtDate(k.periodEnd)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', fontStyle:'italic' }}>Tidak ada yang keluar dalam 60 hari</p>}
+                                  </div>
+
+                                  {/* Masuk */}
+                                  <div>
+                                    <p style={{ fontSize:'0.68rem', fontWeight:900, color:'#22c55e', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+                                      📥 AKAN MASUK ({dept.masuk.length})
+                                    </p>
+                                    {dept.masuk.length > 0 ? (
+                                      <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                                        {dept.masuk.map((m,i) => (
+                                          <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'5px 8px', borderRadius:7, background:'var(--bg-card)', border:'1px solid #22c55e30' }}>
+                                            <span style={{ fontSize:'0.72rem', fontWeight:700 }}>{m.name}</span>
+                                            <span style={{ fontSize:'0.65rem', color:'#22c55e', fontWeight:800, whiteSpace:'nowrap', marginLeft:8 }}>📅 {fmtDate(m.periodStart)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : <p style={{ fontSize:'0.68rem', color:'var(--text-muted)', fontStyle:'italic' }}>Tidak ada yang pending masuk</p>}
+                                  </div>
+
+                                </div>
+
+                                {/* Proyeksi bulan ini */}
+                                <div style={{ marginTop:10, padding:'8px 12px', borderRadius:8, background:'var(--bg-card)', border:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                                  <span style={{ fontSize:'0.72rem', color:'var(--text-muted)', fontWeight:700 }}>📊 Proyeksi Bulan Ini:</span>
+                                  <span style={{ fontSize:'0.85rem', fontWeight:900, color: dept.proyeksi > dept.quota && dept.quota > 0 ? '#ef4444' : '#22c55e' }}>
+                                    {dept.proyeksi} orang {dept.quota > 0 ? `(dari kuota ${dept.quota})` : ''}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Card>
+
+                  {/* ── Manage Quota Table ── */}
+                  <Card title="⚙️ Manage Kuota per Bidang" subtitle="Klik Edit untuk mengatur kapasitas maksimal intern per bidang">
+                    <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
+                      {/* Header */}
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 80px 80px 120px 120px', gap:8, padding:'6px 12px', fontSize:'0.62rem', fontWeight:900, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.05em', borderBottom:'1px solid var(--border)', marginBottom:4 }}>
+                        <span>Bidang</span>
+                        <span style={{ textAlign:'center' }}>Kuota</span>
+                        <span style={{ textAlign:'center' }}>Aktif</span>
+                        <span style={{ textAlign:'center' }}>Slot / Status</span>
+                        <span style={{ textAlign:'right' }}>Action</span>
+                      </div>
+
+                      {depts.map((dept, idx) => (
+                        <div key={dept.bidang} style={{
+                          display:'grid', gridTemplateColumns:'1fr 80px 80px 120px 120px', gap:8, alignItems:'center',
+                          padding:'9px 12px', borderRadius:8, fontSize:'0.78rem',
+                          background: idx % 2 === 0 ? 'var(--bg-main)' : 'transparent',
+                          border: dept.overCapacity ? '1px solid #ef444330' : '1px solid transparent',
+                          transition:'background 0.15s'
+                        }}>
+                          {/* Bidang name */}
+                          <span style={{ fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            {dept.bidang}
+                          </span>
+
+                          {/* Quota — editable inline */}
+                          <div style={{ textAlign:'center' }}>
+                            {wfEditing === dept.bidang ? (
+                              <input
+                                type="number" min="0" value={wfEditVal}
+                                onChange={e => setWfEditVal(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveQuota(dept.bidang); if (e.key === 'Escape') { setWfEditing(null); setWfEditVal('') } }}
+                                autoFocus
+                                style={{ width:56, padding:'3px 6px', borderRadius:6, border:'2px solid var(--primary)', background:'var(--bg-card)', color:'var(--text-primary)', fontSize:'0.78rem', fontWeight:800, textAlign:'center' }}
+                              />
+                            ) : (
+                              <span style={{ fontWeight:900, color: dept.quota > 0 ? 'var(--primary)' : 'var(--text-muted)' }}>
+                                {dept.quota > 0 ? dept.quota : '—'}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Active */}
+                          <span style={{ textAlign:'center', fontWeight:800, color: dept.overCapacity ? '#ef4444' : 'var(--text-primary)' }}>{dept.active}</span>
+
+                          {/* Slot / Status */}
+                          <div style={{ textAlign:'center' }}>
+                            {dept.quota === 0
+                              ? <span style={{ fontSize:'0.65rem', color:'#f59e0b', fontWeight:700, background:'#f59e0b15', padding:'2px 8px', borderRadius:99 }}>Belum Set</span>
+                              : dept.overCapacity
+                              ? <span style={{ fontSize:'0.65rem', color:'#ef4444', fontWeight:800, background:'#ef444415', padding:'2px 8px', borderRadius:99 }}>+{dept.active - dept.quota} Over</span>
+                              : dept.almostFull
+                              ? <span style={{ fontSize:'0.65rem', color:'#f59e0b', fontWeight:800, background:'#f59e0b15', padding:'2px 8px', borderRadius:99 }}>{dept.slotTersedia} Slot</span>
+                              : <span style={{ fontSize:'0.65rem', color:'#22c55e', fontWeight:800, background:'#22c55e15', padding:'2px 8px', borderRadius:99 }}>{dept.slotTersedia} Slot ✅</span>
+                            }
+                          </div>
+
+                          {/* Action */}
+                          <div style={{ display:'flex', gap:5, justifyContent:'flex-end' }}>
+                            {wfEditing === dept.bidang ? (
+                              <>
+                                <button
+                                  onClick={() => saveQuota(dept.bidang)}
+                                  disabled={wfSaving}
+                                  style={{ padding:'4px 10px', borderRadius:6, border:'none', background:'var(--primary)', color:'#fff', fontSize:'0.65rem', fontWeight:800, cursor:'pointer', opacity: wfSaving ? 0.6 : 1 }}
+                                >Simpan</button>
+                                <button
+                                  onClick={() => { setWfEditing(null); setWfEditVal('') }}
+                                  style={{ padding:'4px 10px', borderRadius:6, border:'1px solid var(--border)', background:'transparent', color:'var(--text-muted)', fontSize:'0.65rem', fontWeight:700, cursor:'pointer' }}
+                                >Batal</button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => { setWfEditing(dept.bidang); setWfEditVal(String(dept.quota || '')) }}
+                                style={{ padding:'4px 12px', borderRadius:6, border:'1px solid var(--primary)', background:'transparent', color:'var(--primary)', fontSize:'0.65rem', fontWeight:800, cursor:'pointer', transition:'all 0.15s' }}
+                              >✏️ Edit</button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* ── Info Box ── */}
+                  <div style={{ padding:'12px 16px', borderRadius:10, background:'var(--bg-card)', border:'1px dashed var(--border)', fontSize:'0.68rem', color:'var(--text-muted)' }}>
+                    💡 <b>Cara Membaca:</b> <b>Aktif</b> = intern yang sedang berjalan. <b>Slot</b> = sisa kapasitas (Kuota - Aktif). <b>Akan Keluar</b> = intern yang <i>periodEnd</i>-nya dalam 60 hari ke depan. <b>Akan Masuk</b> = intern berstatus PENDING. Proyeksi dihitung dari data aktual bidang yang sudah ada.
+                  </div>
+
+                </div>
+              )
+            })() : <div style={{ textAlign:'center', padding:'4rem', color:'var(--text-muted)' }}>Gagal memuat data workforce.</div>
         )}
 
         {/* ═══ ENHANCED WELLBEING: Mood Heatmap (injected into existing wellbeing tab) ═══ */}
