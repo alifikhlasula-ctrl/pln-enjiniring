@@ -1265,9 +1265,27 @@ export default function InternInsightPage() {
                   <SankeyDashboard rawData={depts} />
 
                   {/* ── Accordion per bidang (below chart) ── */}
-                  <Card title="🏢 Detail per Bidang" subtitle="Klik nama bidang untuk melihat daftar intern yang akan masuk / keluar">
+                  <Card title="🏢 Detail per Bidang" subtitle="Hanya menampilkan bidang yang memiliki intern aktif, akan masuk, atau akan keluar">
                     <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
-                      {depts.map(dept => {
+                      {(() => {
+                        const activeDepts = depts.filter(d => d.active > 0 || d.masukCount > 0 || d.keluarCount > 0)
+                        const hiddenCount = depts.length - activeDepts.length
+                        return (
+                          <>
+                            {hiddenCount > 0 && (
+                              <div style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 10px 10px', fontSize:'0.7rem', color:'var(--text-muted)', borderBottom:'1px solid var(--border)', marginBottom:4 }}>
+                                <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:18, height:18, borderRadius:4, background:'rgba(255,255,255,0.06)', fontSize:'0.65rem', fontWeight:800, flexShrink:0 }}>ℹ</span>
+                                <span><b style={{ color:'var(--text-primary)' }}>{hiddenCount} bidang</b> tersembunyi karena belum ada intern yang terdaftar. Atur kuota di tabel di bawah.</span>
+                              </div>
+                            )}
+                            {activeDepts.length === 0 && (
+                              <div style={{ padding:'2.5rem', textAlign:'center', color:'var(--text-muted)', fontSize:'0.82rem' }}>
+                                <div style={{ fontSize:'2rem', marginBottom:8 }}>🏢</div>
+                                <div style={{ fontWeight:700, marginBottom:4 }}>Belum ada data intern aktif</div>
+                                <div style={{ fontSize:'0.72rem' }}>Tambahkan intern ke sistem untuk melihat detail per bidang di sini.</div>
+                              </div>
+                            )}
+                            {activeDepts.map(dept => {
                         const isExp = wfExpanded === dept.bidang
                         const barColor = dept.overCapacity ? '#ef4444' : dept.almostFull ? '#f59e0b' : '#22c55e'
                         return (
@@ -1343,8 +1361,11 @@ export default function InternInsightPage() {
                               </div>
                             )}
                           </div>
-                        )
-                      })}
+                            )
+                          })}
+                        </>
+                      )
+                      })()}
                     </div>
                   </Card>
 
