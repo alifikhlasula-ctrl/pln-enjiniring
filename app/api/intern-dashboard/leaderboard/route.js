@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { INDONESIA_HOLIDAYS_2026 } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,7 +56,10 @@ export async function GET(request) {
       })
     ])
 
-    const holidaySet = new Set(allEvents.map(e => e.date))
+    const holidaySet = new Set([
+      ...allEvents.map(e => e.date),
+      ...INDONESIA_HOLIDAYS_2026
+    ])
 
     const todayDate = new Date()
     todayDate.setHours(0, 0, 0, 0)
