@@ -132,7 +132,7 @@ export async function GET(req) {
         }
         d.setDate(d.getDate() + 1)
       }
-      return Math.max(count, 1)
+      return count
     }
 
     // ── Compute composite score for each active intern ──
@@ -145,8 +145,8 @@ export async function GET(req) {
       const surveysCompleted = surveysDone[intern.userId]?.size || 0
 
       // Normalized scores (0-100)
-      const attendanceScore = Math.min((attPoints / workingDays) * 100, 100)
-      const reportScore = Math.min((repDays / workingDays) * 100, 100)
+      const attendanceScore = workingDays > 0 ? Math.min((attPoints / workingDays) * 100, 100) : 100
+      const reportScore = workingDays > 0 ? Math.min((repDays / workingDays) * 100, 100) : 100
       const kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
       const surveyScore = totalMandatory > 0 ? (surveysCompleted / totalMandatory) * 100 : 100
 

@@ -124,7 +124,7 @@ export async function GET(request) {
         }
         d.setDate(d.getDate() + 1)
       }
-      return Math.max(count, 1)
+      return count
     }
 
     const leaderboard = allInterns.map(intern => {
@@ -134,8 +134,8 @@ export async function GET(request) {
       const stars = starCount[intern.id] || 0
       const surveysCompleted = surveysDone[intern.userId]?.size || 0
 
-      const attendanceScore = Math.min((attPoints / workingDays) * 100, 100)
-      const reportScore = Math.min((repDays / workingDays) * 100, 100)
+      const attendanceScore = workingDays > 0 ? Math.min((attPoints / workingDays) * 100, 100) : 100
+      const reportScore = workingDays > 0 ? Math.min((repDays / workingDays) * 100, 100) : 100
       const kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
       const surveyScore = totalMandatory > 0 ? (surveysCompleted / totalMandatory) * 100 : 100
 
