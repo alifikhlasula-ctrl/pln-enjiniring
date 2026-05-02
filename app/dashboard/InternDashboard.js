@@ -1003,12 +1003,6 @@ export default function InternDashboard() {
               </a>
             ))}
           </div>
-          {D.todayReportLate && (
-            <div style={{ marginTop: '12px', padding: '8px 12px', background: 'var(--warning-light)', border: '1px solid var(--warning)50', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertCircle size={16} color="var(--warning)" />
-              <span style={{ fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 700 }}>Poin laporan hari ini 0.5 (Terlambat mengisi)</span>
-            </div>
-          )}
         </div>
 
         {/* Onboarding Progress */}

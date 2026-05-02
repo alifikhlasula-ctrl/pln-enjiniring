@@ -424,6 +424,26 @@ export default function ReportsPage() {
                       <p style={{fontSize:'0.72rem',color:'var(--text-muted)',marginTop:4}}>Dibuat: {fmtDate(rep.createdAt)} {rep.submittedAt && `· Dikirim: ${fmtDate(rep.submittedAt)}`}</p>
                     </div>
                     <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}}>
+                      {(() => {
+                        let isLate = false;
+                        if (rep.createdAt && !rep.isOverride) {
+                          // Parse date strings, fallback if invalid
+                          const reportDateStr = (rep.date || rep.reportDate || '').substring(0, 10);
+                          if (reportDateStr) {
+                            const createdAtWIB = new Date(new Date(rep.createdAt).getTime() + 7 * 3600000);
+                            const createdStr = createdAtWIB.toISOString().split('T')[0];
+                            if (createdStr > reportDateStr) isLate = true;
+                          }
+                        }
+                        if (isLate) {
+                           return (
+                             <span style={{display:'flex',alignItems:'center',gap:4,padding:'4px 10px',borderRadius:999,background:'var(--warning-light)',color:'var(--warning)',fontSize:'0.72rem',fontWeight:800}}>
+                               <AlertCircle size={14} /> Terlambat (0.5 Poin)
+                             </span>
+                           )
+                        }
+                        return null;
+                      })()}
                       {rep.isLiked && (
                         <span style={{display:'flex',alignItems:'center',gap:4,padding:'4px 10px',borderRadius:999,background:'var(--danger-light)',color:'var(--danger)',fontSize:'0.72rem',fontWeight:800}}>
                           <Heart size={14} fill="currentColor" /> Diapresiasi Admin
