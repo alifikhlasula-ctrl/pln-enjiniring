@@ -260,6 +260,7 @@ export default function InternInsightPage() {
   const [wfEditing, setWfEditing] = useState(null)         // bidang being edited
   const [wfEditVal, setWfEditVal] = useState('')            // quota input value
   const [wfSaving, setWfSaving] = useState(false)
+  const [wfHover, setWfHover] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -1261,8 +1262,6 @@ export default function InternInsightPage() {
 
                   {/* ── Clustered Column + Line Chart ── */}
                   {(() => {
-                    const [wfHover, setWfHover] = React.useState(null)
-                    const [wfHoverPos, setWfHoverPos] = React.useState({ x: 0, y: 0 })
                     const chartDepts = depts.filter(d => d.active > 0 || d.masukCount > 0 || d.quota > 0)
                     const maxVal = Math.max(
                       ...chartDepts.map(d => Math.max(d.active, d.masukCount, d.keluarCount, d.quota || 0)),
@@ -1340,10 +1339,8 @@ export default function InternInsightPage() {
                                 <g key={dept.bidang}
                                   style={{ cursor:'pointer' }}
                                   onClick={() => setWfExpanded(wfExpanded === dept.bidang ? null : dept.bidang)}
-                                  onMouseEnter={(e) => {
+                                  onMouseEnter={() => {
                                     setWfHover(dept.bidang)
-                                    const rect = e.currentTarget.closest('svg').getBoundingClientRect()
-                                    setWfHoverPos({ x: gx + groupW / 2, y: yTick(Math.max(dept.active, dept.masukCount, dept.keluarCount, dept.quota || 0)) })
                                   }}
                                 >
                                   {/* Hover highlight bg */}
