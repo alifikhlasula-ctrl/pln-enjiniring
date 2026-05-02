@@ -11,30 +11,33 @@ const WEIGHTS = {
   surveys: 0.10
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
-    const todayStr = new Date().toISOString().split('T')[0]
+    const monthParam = req.nextUrl.searchParams.get('month') || new Date().toISOString().slice(0, 7)
+    
+    // Date ranges for the selected month
+    const startOfMonth = new Date(`${monthParam}-01T00:00:00.000Z`)
+    const endOfMonth = new Date(startOfMonth)
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1)
 
     const [
       allInternsRaw, allAttendance, allReports,
-      allEvals, allRecognitions, allSurveys, allResponses
+      allRecognitions, allSurveys, allResponses, allEvents
     ] = await Promise.all([
       prisma.intern.findMany({
         where: { deletedAt: null, status: 'ACTIVE' },
         select: { id: true, userId: true, name: true, bidang: true, university: true, periodStart: true, periodEnd: true }
       }),
       prisma.attendanceLog.findMany({
-        where: { status: { in: ['PRESENT', 'LATE'] } },
+        where: { date: { startsWith: monthParam } },
         select: { internId: true, date: true, status: true }
       }),
       prisma.dailyReport.findMany({
-        where: { status: { not: 'DRAFT' } },
+        where: { status: { not: 'DRAFT' }, date: { startsWith: monthParam } },
         select: { userId: true, date: true }
       }),
-      prisma.evaluation.findMany({
-        select: { internId: true, finalScore: true, createdAt: true }
-      }),
       prisma.recognition.findMany({
+        where: { createdAt: { gte: startOfMonth, lt: endOfMonth } },
         select: { toInternId: true }
       }),
       prisma.survey.findMany({
@@ -42,31 +45,43 @@ export async function GET() {
         select: { id: true }
       }),
       prisma.surveyResponse.findMany({
+        where: { submittedAt: { gte: startOfMonth, lt: endOfMonth } },
         select: { surveyId: true, respondentId: true }
+      }),
+      prisma.event.findMany({
+        where: { type: { in: ['HOLIDAY', 'LIBUR'] }, date: { startsWith: monthParam } },
+        select: { date: true }
       })
     ])
+
+    const holidaySet = new Set(allEvents.map(e => e.date))
 
     const todayDate = new Date()
     todayDate.setHours(0, 0, 0, 0)
     const allInterns = allInternsRaw.filter(i => {
       if (!i.periodEnd) return true
       const end = new Date(i.periodEnd)
-      // Exclude if their period ends tomorrow (H-1) or earlier
-      return end.getTime() > (todayDate.getTime() + 86400000)
+      // Exclude if their period ended before the selected month started
+      return end.getTime() >= startOfMonth.getTime()
     })
 
     const mandatorySurveyIds = allSurveys.map(s => s.id)
     const totalMandatory = mandatorySurveyIds.length
 
     // ── Build lookup maps ──
-    // Attendance days per intern
-    const attendanceDays = {}
+    const attendanceScores = {}
+    const rawAttendanceDays = {}
     for (const log of allAttendance) {
-      if (!attendanceDays[log.internId]) attendanceDays[log.internId] = new Set()
-      attendanceDays[log.internId].add(log.date)
+      if (!attendanceScores[log.internId]) {
+        attendanceScores[log.internId] = 0
+        rawAttendanceDays[log.internId] = 0
+      }
+      rawAttendanceDays[log.internId] += 1
+      if (log.status === 'PRESENT' || log.status === 'LATE') attendanceScores[log.internId] += 1
+      else if (log.status === 'SAKIT' || log.status === 'IZIN') attendanceScores[log.internId] += 0.5
+      // ALPA adds 0
     }
 
-    // Report days per userId
     const reportDays = {}
     for (const r of allReports) {
       if (!reportDays[r.userId]) reportDays[r.userId] = new Set()
@@ -74,22 +89,12 @@ export async function GET() {
       if (d) reportDays[r.userId].add(d)
     }
 
-    // Latest eval per intern
-    const latestEval = {}
-    for (const ev of allEvals) {
-      if (!latestEval[ev.internId] || new Date(ev.createdAt) > new Date(latestEval[ev.internId].createdAt)) {
-        latestEval[ev.internId] = ev
-      }
-    }
-
-    // Stars received per intern
     const starCount = {}
     for (const r of allRecognitions) {
       starCount[r.toInternId] = (starCount[r.toInternId] || 0) + 1
     }
     const maxStars = Math.max(...Object.values(starCount), 1)
 
-    // Survey responses per user
     const surveysDone = {}
     for (const r of allResponses) {
       if (mandatorySurveyIds.includes(r.surveyId)) {
@@ -98,16 +103,33 @@ export async function GET() {
       }
     }
 
-    // ── Calculate working days since period start ──
-    const getWorkingDays = (startStr) => {
-      if (!startStr) return 60 // default
-      const start = new Date(startStr)
-      const end = new Date()
+    // ── Calculate working days for the selected month ──
+    const getWorkingDays = (periodStartStr, periodEndStr) => {
+      let mStart = new Date(startOfMonth)
+      let mEnd = new Date(endOfMonth.getTime() - 1)
+      const now = new Date()
+      
+      // If looking at the current month, only count up to today
+      if (mStart.getFullYear() === now.getFullYear() && mStart.getMonth() === now.getMonth()) {
+        mEnd = now
+      }
+
+      const pStart = periodStartStr ? new Date(periodStartStr) : new Date(0)
+      const pEnd = periodEndStr ? new Date(periodEndStr) : new Date(8640000000000000)
+
+      let start = pStart > mStart ? pStart : mStart
+      let end = pEnd < mEnd ? pEnd : mEnd
+
       let count = 0
-      const d = new Date(start)
+      let d = new Date(start)
+      d.setHours(0,0,0,0)
+      
       while (d <= end) {
         const day = d.getDay()
-        if (day !== 0 && day !== 6) count++ // exclude weekends
+        const dateStr = d.toISOString().split('T')[0]
+        if (day !== 0 && day !== 6 && !holidaySet.has(dateStr)) {
+          count++
+        }
         d.setDate(d.getDate() + 1)
       }
       return Math.max(count, 1)
@@ -115,17 +137,16 @@ export async function GET() {
 
     // ── Compute composite score for each active intern ──
     const leaderboard = allInterns.map(intern => {
-      const workingDays = getWorkingDays(intern.periodStart)
-      const attDays = attendanceDays[intern.id]?.size || 0
+      const workingDays = getWorkingDays(intern.periodStart, intern.periodEnd)
+      const attPoints = attendanceScores[intern.id] || 0
+      const attDaysRaw = rawAttendanceDays[intern.id] || 0
       const repDays = reportDays[intern.userId]?.size || 0
-      const evalScore = latestEval[intern.id]?.finalScore || 0
       const stars = starCount[intern.id] || 0
       const surveysCompleted = surveysDone[intern.userId]?.size || 0
 
       // Normalized scores (0-100)
-      const attendanceScore = Math.min((attDays / workingDays) * 100, 100)
-      const reportScore = attDays > 0 ? Math.min((repDays / attDays) * 100, 100) : 0
-      const evalNormalized = (evalScore / 10) * 100 // scale 0-10 → 0-100
+      const attendanceScore = Math.min((attPoints / workingDays) * 100, 100)
+      const reportScore = Math.min((repDays / workingDays) * 100, 100)
       const kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
       const surveyScore = totalMandatory > 0 ? (surveysCompleted / totalMandatory) * 100 : 100
 
@@ -138,6 +159,7 @@ export async function GET() {
 
       return {
         internId: intern.id,
+        userId: intern.userId,
         name: intern.name,
         bidang: intern.bidang,
         university: intern.university,
@@ -149,10 +171,9 @@ export async function GET() {
           surveys: +surveyScore.toFixed(1)
         },
         raw: {
-          attendanceDays: attDays,
+          attendanceDays: attDaysRaw,
           workingDays,
           reportDays: repDays,
-          evalScore,
           stars,
           surveysCompleted,
           totalMandatory
@@ -190,3 +211,4 @@ export async function GET() {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+

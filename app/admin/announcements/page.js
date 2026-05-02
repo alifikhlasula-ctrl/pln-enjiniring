@@ -185,6 +185,7 @@ export default function AdminAnnouncements() {
                     <option value="INFO">Informasi Biasa</option>
                     <option value="WARNING">Peringatan</option>
                     <option value="URGENT">Sangat Mendesak (Urgent)</option>
+                    <option value="POPUP">Sistem Pop-up Penting</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, alignSelf: 'center', marginTop: '1.5rem' }}>

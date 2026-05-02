@@ -385,20 +385,40 @@ export default function InternDashboard() {
           const ann = unread[unread.length - 1]; 
           const prio = ANNOUNCEMENT_PRIORITIES[ann.priority] || ANNOUNCEMENT_PRIORITIES.INFO;
           
-          await Swal.fire({
-            title: `<span style="font-size: 1rem; padding: 4px 12px; border-radius: 999px; background: ${prio.bg}; color: ${prio.color}">${prio.label}</span>`,
-            html: `
-              <div style="text-align: left; margin-top: 1rem;">
-                <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 12px;">${ann.title}</h3>
-                <p style="font-size: 0.95rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6;">${ann.content}</p>
-              </div>
-            `,
-            icon: ann.priority === 'URGENT' ? 'warning' : 'info',
-            confirmButtonText: 'Saya Mengerti',
-            confirmButtonColor: 'var(--primary)',
-            background: 'var(--bg-card)',
-            color: 'var(--text-primary)'
-          });
+          if (ann.priority === 'POPUP') {
+            await Swal.fire({
+              title: `<div style="display:flex;align-items:center;justify-content:center;gap:10px;"><span style="font-size:2rem;">📢</span> <span style="font-size: 1.3rem; font-weight:900; color:var(--text-primary); text-shadow: 0 2px 10px rgba(0,0,0,0.1)">Pengumuman Penting</span></div>`,
+              html: `
+                <div style="text-align: left; margin-top: 1rem;">
+                  <h3 style="font-weight: 900; font-size: 1.4rem; color: var(--primary); margin-bottom: 12px; line-height:1.2;">${ann.title}</h3>
+                  <div style="font-size: 0.95rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.7; padding:16px; background:rgba(255,255,255,0.05); border-radius:12px; border:1px solid rgba(255,255,255,0.1); box-shadow:inset 0 2px 10px rgba(0,0,0,0.05)">${ann.content}</div>
+                </div>
+              `,
+              confirmButtonText: 'Luar Biasa, Saya Mengerti!',
+              confirmButtonColor: 'var(--primary)',
+              background: 'rgba(255, 255, 255, 0.85)',
+              backdrop: 'rgba(0,0,0,0.4) backdrop-filter: blur(8px)',
+              customClass: {
+                popup: 'glass-popup-premium'
+              },
+              width: '550px'
+            });
+          } else {
+            await Swal.fire({
+              title: `<span style="font-size: 1rem; padding: 4px 12px; border-radius: 999px; background: ${prio.bg}; color: ${prio.color}">${prio.label}</span>`,
+              html: `
+                <div style="text-align: left; margin-top: 1rem;">
+                  <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 12px;">${ann.title}</h3>
+                  <p style="font-size: 0.95rem; color: var(--text-secondary); white-space: pre-wrap; line-height: 1.6;">${ann.content}</p>
+                </div>
+              `,
+              icon: ann.priority === 'URGENT' ? 'warning' : 'info',
+              confirmButtonText: 'Saya Mengerti',
+              confirmButtonColor: 'var(--primary)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)'
+            });
+          }
 
           viewedArr.push(ann.id);
           localStorage.setItem('viewed_announcements', JSON.stringify(viewedArr));
@@ -1365,29 +1385,37 @@ function KudostarsWidget({ userId }) {
 function LeaderboardWidget({ userId }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
 
   useEffect(() => {
     if (!userId) return
-    fetch(`/api/intern-dashboard/leaderboard?userId=${userId}`)
+    setLoading(true)
+    fetch(`/api/intern-dashboard/leaderboard?userId=${userId}&month=${month}`)
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [userId])
+  }, [userId, month])
 
-  if (loading) return <div className="card" style={{ marginBottom: 'var(--sp-4)', height: 200, background: 'var(--bg-card)', animation: 'pulse 1.4s infinite' }} />
+  if (loading && !data) return <div className="card" style={{ marginBottom: 'var(--sp-4)', height: 200, background: 'var(--bg-card)', animation: 'pulse 1.4s infinite' }} />
   if (!data?.top5) return null
 
   return (
     <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: 8 }}>
         <h3 style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
-          <Trophy size={20} color="#f59e0b" fill="#f59e0b20" /> Leaderboard Bulan Ini
+          <Trophy size={20} color="#f59e0b" fill="#f59e0b20" /> Leaderboard Bulanan
         </h3>
-        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Berdasarkan Total Poin</span>
+        <input 
+          type="month" 
+          value={month} 
+          onChange={e => setMonth(e.target.value)}
+          style={{ padding: '4px 8px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.75rem', background: 'var(--bg-main)', color: 'var(--text-primary)' }}
+        />
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {data.top5.map((item, i) => (
+        {loading && <div style={{ height: 100, background: 'var(--bg-main)', borderRadius: 12, animation: 'pulse 1s infinite' }} />}
+        {!loading && data.top5.map((item, i) => (
           <div key={item.internId} style={{ 
             display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', 
             background: item.userId === userId ? 'var(--primary-light)' : 'var(--bg-main)',

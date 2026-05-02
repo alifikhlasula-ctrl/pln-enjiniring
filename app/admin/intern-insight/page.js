@@ -147,6 +147,7 @@ export default function InternInsightPage() {
   // Gamification tab states
   const [lbData, setLbData] = useState(null)
   const [lbLoading, setLbLoading] = useState(false)
+  const [lbMonth, setLbMonth] = useState(new Date().toISOString().slice(0, 7))
   const [kudoData, setKudoData] = useState(null)
   const [kudoLoading, setKudoLoading] = useState(false)
   const [alumniData, setAlumniData] = useState(null)
@@ -169,9 +170,9 @@ export default function InternInsightPage() {
 
   // Lazy-load gamification data on tab switch
   useEffect(() => {
-    if (tab === 'leaderboard' && !lbData && !lbLoading) {
+    if (tab === 'leaderboard') {
       setLbLoading(true)
-      fetch('/api/admin/leaderboard').then(r => r.json()).then(d => { setLbData(d); setLbLoading(false) }).catch(() => setLbLoading(false))
+      fetch(`/api/admin/leaderboard?month=${lbMonth}`).then(r => r.json()).then(d => { setLbData(d); setLbLoading(false) }).catch(() => setLbLoading(false))
     }
     if (tab === 'kudostars' && !kudoData && !kudoLoading) {
       setKudoLoading(true)
@@ -182,7 +183,7 @@ export default function InternInsightPage() {
       fetch(`/api/admin/alumni?sort=${alumniSort}&search=${alumniSearch}&bidang=${alumniBidang}`)
         .then(r => r.json()).then(d => { setAlumniData(d); setAlumniLoading(false) }).catch(() => setAlumniLoading(false))
     }
-  }, [tab])
+  }, [tab, lbMonth])
 
   // Re-fetch alumni on filter change
   useEffect(() => {
@@ -773,9 +774,20 @@ export default function InternInsightPage() {
 
         {/* ═══ TAB: LEADERBOARD ═══ */}
         {tab === 'leaderboard' && (
-          lbLoading ? <div style={{ display:'flex', justifyContent:'center', padding:'4rem' }}><RefreshCw size={28} style={{ animation:'spin 1s linear infinite', color:'var(--primary)' }} /></div> :
+          lbLoading && !lbData ? <div style={{ display:'flex', justifyContent:'center', padding:'4rem' }}><RefreshCw size={28} style={{ animation:'spin 1s linear infinite', color:'var(--primary)' }} /></div> :
           lbData ? (
           <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background:'var(--bg-card)', padding:'12px 16px', borderRadius:12, border:'1px solid var(--border)', flexWrap:'wrap', gap:8 }}>
+              <h3 style={{ fontWeight: 800, fontSize: '1.1rem', margin: 0, color: 'var(--text-primary)' }}>Pilih Bulan Leaderboard</h3>
+              <input 
+                type="month" 
+                value={lbMonth} 
+                onChange={e => setLbMonth(e.target.value)}
+                style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', background: 'var(--bg-main)', color: 'var(--text-primary)', fontWeight:600 }}
+              />
+            </div>
+            {lbLoading && <div style={{ height: 4px, width: '100%', background: 'var(--primary-light)', borderRadius: 2, overflow:'hidden' }}><div style={{ height:'100%', background:'var(--primary)', width:'30%', animation:'pulse 1s infinite alternate' }}/></div>}
+
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:'0.75rem' }}>
               <StatCard label="Intern Aktif" value={lbData.stats?.totalActive} icon="👥" color="var(--primary)" />
               <StatCard label="Rata-rata Skor" value={lbData.stats?.avgComposite} icon="📊" color="#22c55e" sub="Skala 0-100" />
