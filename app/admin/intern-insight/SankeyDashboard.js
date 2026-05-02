@@ -1,376 +1,377 @@
 'use client'
-import React, { useEffect, useRef, useState, useMemo } from 'react'
-import * as d3 from 'd3'
-import { sankey, sankeyLinkHorizontal, sankeyJustify } from 'd3-sankey'
-import { Edit2, RefreshCcw, Maximize2, Settings2, HelpCircle } from 'lucide-react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 
-// Constants
-const MARGIN = { top: 40, right: 120, bottom: 40, left: 120 }
-const MIN_NODE_HEIGHT = 15
+const C = {
+  purple: '#a855f7', purpleBg: 'rgba(168,85,247,0.10)', purpleBd: 'rgba(168,85,247,0.25)',
+  blue:   '#3b82f6', blueBg:   'rgba(59,130,246,0.08)',  blueBd:   'rgba(59,130,246,0.22)',
+  amber:  '#f59e0b', amberBg:  'rgba(245,158,11,0.08)',  amberBd:  'rgba(245,158,11,0.22)',
+  green:  '#22c55e', greenBg:  'rgba(34,197,94,0.08)',   greenBd:  'rgba(34,197,94,0.22)',
+  red:    '#ef4444', redBg:    'rgba(239,68,68,0.08)',   redBd:    'rgba(239,68,68,0.25)',
+}
+
+function bezier(x1, y1, x2, y2) {
+  const cx = (x1 + x2) / 2
+  return `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`
+}
+
+function BulletBar({ active, quota, masukCount, overCapacity }) {
+  const total = active + masukCount
+  const max = Math.max(quota || 0, total, 1) * 1.15
+  const pA = Math.min(100, (active / max) * 100)
+  const pM = Math.min(100 - pA, (masukCount / max) * 100)
+  const pQ = quota > 0 ? Math.min(99, (quota / max) * 100) : null
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ position: 'relative', height: 7, background: 'rgba(255,255,255,0.07)', borderRadius: 4 }}>
+        <div style={{ position:'absolute', left:0, top:0, height:'100%', width:`${pA}%`, background: overCapacity ? C.red : C.blue, borderRadius: '4px 0 0 4px', transition:'width 0.4s' }} />
+        {masukCount > 0 && <div style={{ position:'absolute', left:`${pA}%`, top:0, height:'100%', width:`${pM}%`, background:C.purple, opacity:0.75 }} />}
+        {pQ !== null && <div style={{ position:'absolute', left:`${pQ}%`, top:-4, bottom:-4, width:2, background:'#fff', borderRadius:2, boxShadow:'0 0 6px #fff8', zIndex:2 }} />}
+      </div>
+      <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, fontSize:'0.65rem', color:'rgba(255,255,255,0.4)' }}>
+        <span style={{ color: overCapacity ? C.red : C.blue, fontWeight:700 }}>{active} aktif</span>
+        {masukCount > 0 && <span style={{ color:C.purple, fontWeight:700 }}>+{masukCount} masuk</span>}
+        <span>kuota: <b style={{ color: overCapacity ? C.red : (quota > 0 ? C.green : 'rgba(255,255,255,0.25)') }}>{quota > 0 ? quota : '—'}</b></span>
+      </div>
+    </div>
+  )
+}
+
+function ColHeader({ color, icon, label, count, sub }) {
+  return (
+    <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${color}33` }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <span style={{ fontSize:'0.7rem', fontWeight:800, letterSpacing:'0.07em', textTransform:'uppercase', color, display:'flex', alignItems:'center', gap:5 }}>
+          {icon} {label}
+        </span>
+        <span style={{ fontSize:'1.3rem', fontWeight:900, color, lineHeight:1 }}>{count}</span>
+      </div>
+      {sub && <p style={{ margin:'4px 0 0', fontSize:'0.65rem', color:'rgba(255,255,255,0.35)' }}>{sub}</p>}
+    </div>
+  )
+}
+
+function Card({ color, bg, bd, hovered, onClick, style = {}, children }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: hovered ? bg.replace('0.08','0.15').replace('0.10','0.18') : bg,
+        border: `1px solid ${hovered ? color + '88' : bd}`,
+        borderRadius: 10, padding:'10px 13px', transition:'all 0.2s',
+        boxShadow: hovered ? `0 0 18px ${color}22` : 'none',
+        cursor: onClick ? 'pointer' : 'default',
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
 
 export default function SankeyDashboard({ rawData }) {
   const containerRef = useRef(null)
-  const svgRef = useRef(null)
-  const [width, setWidth] = useState(1000)
-  const [height, setHeight] = useState(600)
-  
-  // Simulation State
-  const [simulationMode, setSimulationMode] = useState(false)
-  const [simData, setSimData] = useState([])
-  const [editingNode, setEditingNode] = useState(null)
+  const [rects, setRects]         = useState({})
+  const [hovered, setHovered]     = useState(null)
+  const [simMode, setSimMode]     = useState(false)
+  const [simData, setSimData]     = useState([])
+  const [editNode, setEditNode]   = useState(null)
 
-  // Initialize simulation data from rawData
-  useEffect(() => {
-    if (!simulationMode) {
-      setSimData(JSON.parse(JSON.stringify(rawData || [])))
-    }
-  }, [rawData, simulationMode])
+  const pendingRefs = useRef({})
+  const bidangRefs  = useRef({})
+  const keluarRefs  = useRef({})
+  const alumniRef   = useRef(null)
 
-  // Responsive dimensions
   useEffect(() => {
-    const observer = new ResizeObserver(entries => {
-      if (entries[0]) {
-        const { width } = entries[0].contentRect
-        setWidth(width)
-        // Dynamic height based on number of categories
-        const numDepts = rawData?.length || 0
-        setHeight(Math.max(600, numDepts * 40))
-      }
-    })
-    if (containerRef.current) observer.observe(containerRef.current)
-    return () => observer.disconnect()
+    setSimData(rawData ? JSON.parse(JSON.stringify(rawData)) : [])
   }, [rawData])
 
-  // D3 Render Effect
+  const calcRects = useCallback(() => {
+    if (!containerRef.current) return
+    const base = containerRef.current.getBoundingClientRect()
+    const out = {}
+
+    Object.entries(pendingRefs.current).forEach(([k, el]) => {
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      out[`p_${k}`] = { x: r.right - base.left, y: (r.top + r.bottom) / 2 - base.top }
+    })
+    Object.entries(bidangRefs.current).forEach(([k, el]) => {
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      out[`b_${k}`] = { xL: r.left - base.left, xR: r.right - base.left, y: (r.top + r.bottom) / 2 - base.top }
+    })
+    Object.entries(keluarRefs.current).forEach(([k, el]) => {
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      out[`k_${k}`] = { xL: r.left - base.left, xR: r.right - base.left, y: (r.top + r.bottom) / 2 - base.top }
+    })
+    if (alumniRef.current) {
+      const r = alumniRef.current.getBoundingClientRect()
+      out['alumni'] = { xL: r.left - base.left, y: (r.top + r.bottom) / 2 - base.top }
+    }
+    setRects(out)
+  }, [simData])
+
   useEffect(() => {
-    if (!svgRef.current || !simData.length || width === 0) return
+    const id = requestAnimationFrame(calcRects)
+    return () => cancelAnimationFrame(id)
+  }, [calcRects])
 
-    const svg = d3.select(svgRef.current)
-    svg.selectAll('*').remove() // Clear previous
+  useEffect(() => {
+    if (!containerRef.current) return
+    const obs = new ResizeObserver(() => requestAnimationFrame(calcRects))
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
+  }, [calcRects])
 
-    const innerWidth = width - MARGIN.left - MARGIN.right
-    const innerHeight = height - MARGIN.top - MARGIN.bottom
+  const depts       = simData.filter(d => d.active > 0 || d.masukCount > 0 || d.keluarCount > 0 || d.selesaiCount > 0)
+  const totalMasuk  = depts.reduce((s, d) => s + (d.masukCount  || 0), 0)
+  const totalKeluar = depts.reduce((s, d) => s + (d.keluarCount || 0), 0)
+  const totalAlumni = depts.reduce((s, d) => s + (d.selesaiCount|| 0), 0)
 
-    // 1. Data Processing for Sankey
-    const nodesMap = new Map()
-    const links = []
+  // Build SVG lines
+  const lines = []
+  depts.forEach(d => {
+    const w = v => Math.max(1.5, Math.sqrt(v) * 2.2)
 
-    const addNode = (id, cat, extra = {}) => {
-      if (!nodesMap.has(id)) nodesMap.set(id, { id, category: cat, ...extra })
+    if ((d.masukCount || 0) > 0) {
+      const p = rects[`p_${d.bidang}`], b = rects[`b_${d.bidang}`]
+      if (p && b) lines.push({ key:`pm_${d.bidang}`, path: bezier(p.x, p.y, b.xL, b.y), color: C.purple, w: w(d.masukCount), op: hovered === null || hovered === d.bidang ? 0.55 : 0.07 })
     }
-
-    addNode('Akan Masuk', 'source')
-    addNode('Aktif', 'target')
-    addNode('Akan Keluar', 'target')
-    addNode('Selesai', 'target')
-
-    simData.forEach(d => {
-      // Create node for each department
-      addNode(d.bidang, 'bidang', d)
-      
-      const vMasuk = d.masukCount || 0
-      const vKeluar = d.keluarCount || 0
-      const vSelesai = d.selesaiCount || 0
-      const vAktif = Math.max(0, d.active - vKeluar) // Active staying long term
-
-      if (vMasuk > 0) links.push({ source: 'Akan Masuk', target: d.bidang, value: vMasuk })
-      if (vAktif > 0) links.push({ source: d.bidang, target: 'Aktif', value: vAktif })
-      if (vKeluar > 0) links.push({ source: d.bidang, target: 'Akan Keluar', value: vKeluar })
-      if (vSelesai > 0) links.push({ source: d.bidang, target: 'Selesai', value: vSelesai })
-      
-      // Handle isolated nodes (Sankey needs at least a dummy link to render properly)
-      if (vMasuk === 0 && vAktif === 0 && vKeluar === 0 && vSelesai === 0) {
-        // Add a tiny dummy link to force rendering if user wants to see 0-capacity nodes
-        links.push({ source: d.bidang, target: 'Aktif', value: 0.001, isDummy: true })
-      }
-    })
-
-    const graphData = {
-      nodes: Array.from(nodesMap.values()),
-      links: links
+    if ((d.keluarCount || 0) > 0) {
+      const b = rects[`b_${d.bidang}`], k = rects[`k_${d.bidang}`]
+      if (b && k) lines.push({ key:`bk_${d.bidang}`, path: bezier(b.xR, b.y, k.xL, k.y), color: C.amber, w: w(d.keluarCount), op: hovered === null || hovered === d.bidang ? 0.55 : 0.07 })
     }
-
-    // Node id mapping for d3-sankey
-    const nodeIndex = new Map(graphData.nodes.map((d, i) => [d.id, i]))
-    graphData.links.forEach(l => {
-      l.source = nodeIndex.get(l.source)
-      l.target = nodeIndex.get(l.target)
-    })
-
-    // 2. Sankey Layout Initialization
-    const sankeyLayout = sankey()
-      .nodeId(d => d.index)
-      .nodeAlign(sankeyJustify)
-      .nodeWidth(200) // Wide nodes for Bullet Chart
-      .nodePadding(30)
-      .extent([[0, 0], [innerWidth, innerHeight]])
-
-    let sankeyGraph
-    try {
-      sankeyGraph = sankeyLayout(graphData)
-    } catch (e) {
-      console.error("Sankey Layout Error:", e)
-      return
+    if ((d.selesaiCount || 0) > 0) {
+      const k = rects[`k_${d.bidang}`], a = rects['alumni']
+      if (k && a) lines.push({ key:`ka_${d.bidang}`, path: bezier(k.xR, k.y, a.xL, a.y), color: C.green, w: w(d.selesaiCount), op: hovered === null || hovered === d.bidang ? 0.55 : 0.07 })
     }
+  })
 
-    // 3. Zoom Container (Google Maps Style LOD)
-    const gMain = svg.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
-    
-    const zoom = d3.zoom()
-      .scaleExtent([0.5, 3])
-      .on('zoom', (e) => {
-        gMain.attr('transform', `translate(${e.transform.x + MARGIN.left},${e.transform.y + MARGIN.top}) scale(${e.transform.k})`)
-        
-        // LOD Logic: Fade links based on zoom scale
-        const lodOpacity = Math.min(0.6, Math.max(0.05, (e.transform.k - 0.5) * 1.5))
-        gMain.selectAll('.link-path').style('opacity', d => d.isDummy ? 0 : lodOpacity)
-      })
-
-    svg.call(zoom)
-
-    // 4. Draw Links
-    const linkGroup = gMain.append('g').attr('class', 'links')
-    const pathGenerator = sankeyLinkHorizontal()
-
-    const linkPaths = linkGroup.selectAll('path')
-      .data(sankeyGraph.links)
-      .join('path')
-      .attr('class', 'link-path')
-      .attr('d', pathGenerator)
-      .style('fill', 'none')
-      .style('stroke', d => {
-        if (d.isDummy) return 'transparent'
-        const t = d.target.category === 'target' ? d.target.id : d.target.category
-        if (t === 'Aktif') return '#3b82f6'
-        if (t === 'Akan Keluar') return '#ef4444'
-        if (t === 'Selesai') return '#22c55e'
-        return 'url(#gradient-' + d.source.index + '-' + d.target.index + ')'
-      })
-      .style('stroke-opacity', d => d.isDummy ? 0 : 0.3)
-      .style('stroke-width', d => Math.max(1, d.width))
-
-    // Gradients for links
-    const defs = svg.append('defs')
-    sankeyGraph.links.forEach(d => {
-      if(d.isDummy) return
-      const gradient = defs.append('linearGradient')
-        .attr('id', `gradient-${d.source.index}-${d.target.index}`)
-        .attr('gradientUnits', 'userSpaceOnUse')
-        .attr('x1', d.source.x1).attr('x2', d.target.x0)
-        
-      gradient.append('stop').attr('offset', '0%').attr('stop-color', '#a855f7')
-      gradient.append('stop').attr('offset', '100%').attr('stop-color', '#3b82f6')
-    })
-
-    // Hover Interaction for Links
-    linkPaths
-      .on('mouseenter', function() { d3.select(this).style('stroke-opacity', 0.8) })
-      .on('mouseleave', function() { d3.select(this).style('stroke-opacity', 0.3) })
-
-    // 5. Draw Nodes
-    const nodeGroup = gMain.append('g').attr('class', 'nodes')
-    
-    const nodes = nodeGroup.selectAll('g.node')
-      .data(sankeyGraph.nodes)
-      .join('g')
-      .attr('class', 'node')
-      .attr('transform', d => `translate(${d.x0},${d.y0})`)
-      .style('cursor', d => d.category === 'bidang' ? 'pointer' : 'default')
-      .on('click', (event, d) => {
-        if (simulationMode && d.category === 'bidang') {
-          setEditingNode(d)
-        }
-      })
-
-    // Node Backgrounds
-    nodes.append('rect')
-      .attr('height', d => Math.max(MIN_NODE_HEIGHT, d.y1 - d.y0))
-      .attr('width', d => d.x1 - d.x0)
-      .attr('rx', 6)
-      .style('fill', d => {
-        if (d.category === 'source') return 'rgba(168, 85, 247, 0.15)'
-        if (d.category === 'target') return 'rgba(59, 130, 246, 0.15)'
-        return 'var(--bg-card)'
-      })
-      .style('stroke', d => {
-        if (d.category === 'source') return '#a855f7'
-        if (d.category === 'target') return '#3b82f6'
-        return d.overCapacity ? '#ef4444' : 'var(--border)'
-      })
-      .style('stroke-width', 2)
-      .style('filter', 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))')
-
-    // Node Labels (Smart Labeling Setup)
-    const labels = nodes.append('text')
-      .attr('x', d => d.category === 'source' ? -10 : d.category === 'target' ? (d.x1 - d.x0) + 10 : 10)
-      .attr('y', d => d.category === 'bidang' ? 15 : (d.y1 - d.y0) / 2)
-      .attr('dy', d => d.category === 'bidang' ? 0 : '0.35em')
-      .attr('text-anchor', d => d.category === 'source' ? 'end' : d.category === 'target' ? 'start' : 'start')
-      .style('font-size', d => d.category === 'bidang' ? '12px' : '14px')
-      .style('font-weight', 'bold')
-      .style('fill', 'var(--text-primary)')
-      .style('pointer-events', 'none')
-      .text(d => d.id)
-
-    // 6. Bullet Charts inside 'Bidang' Nodes
-    const bidangNodes = nodes.filter(d => d.category === 'bidang')
-    
-    // Calculate Bullet max width
-    const bulletWidth = sankeyLayout.nodeWidth() - 20
-    
-    bidangNodes.each(function(d) {
-      const g = d3.select(this)
-      const h = Math.max(MIN_NODE_HEIGHT, d.y1 - d.y0)
-      
-      if (h < 40) return // Hide bullet if node is too compressed vertically
-
-      // Max scale for bullet
-      const maxVal = Math.max(d.quota || 0, d.active + (d.masukCount || 0)) * 1.2 || 10
-      const scaleX = d3.scaleLinear().domain([0, maxVal]).range([0, bulletWidth])
-
-      // Background Track
-      g.append('rect')
-        .attr('x', 10).attr('y', 25).attr('width', bulletWidth).attr('height', 8)
-        .attr('rx', 4).style('fill', 'var(--bg-main)')
-
-      // Capacity Bar
-      const totalCapacity = d.active + (d.masukCount || 0)
-      const color = d.overCapacity ? '#ef4444' : '#22c55e'
-      
-      g.append('rect')
-        .attr('x', 10).attr('y', 25).attr('width', scaleX(totalCapacity)).attr('height', 8)
-        .attr('rx', 4).style('fill', color)
-
-      // Quota Line (Target)
-      if (d.quota > 0) {
-        g.append('line')
-          .attr('x1', 10 + scaleX(d.quota)).attr('y1', 21)
-          .attr('x2', 10 + scaleX(d.quota)).attr('y2', 37)
-          .style('stroke', '#fff').style('stroke-width', 2)
-      }
-
-      // Stats Text
-      g.append('text')
-        .attr('x', 10).attr('y', 45)
-        .style('font-size', '10px').style('fill', 'var(--text-muted)')
-        .text(`Aktif: ${d.active} | Masuk: ${d.masukCount} | Quota: ${d.quota || '∞'}`)
-    })
-
-    // 7. Fisheye Zoom (Hover Expand)
-    nodes.on('mouseenter.fisheye', function(event, d) {
-      d3.select(this).transition().duration(200)
-        .attr('transform', `translate(${d.x0 - 5},${d.y0 - 5}) scale(1.05)`)
-      d3.select(this).select('rect').style('filter', 'drop-shadow(0 8px 16px rgba(0,0,0,0.5))')
-    })
-    .on('mouseleave.fisheye', function(event, d) {
-      d3.select(this).transition().duration(200)
-        .attr('transform', `translate(${d.x0},${d.y0}) scale(1)`)
-      d3.select(this).select('rect').style('filter', 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))')
-    })
-
-    // 8. Force Collision Detection for Labels (Micro d3-force)
-    // Only apply force to source/target labels if they overlap
-    const labelNodes = []
-    labels.each(function(d) {
-      if (d.category !== 'bidang') {
-        const bbox = this.getBBox()
-        labelNodes.push({ id: d.id, x: 0, y: d.y0 + d.y1 / 2, width: bbox.width, height: bbox.height, element: this })
-      }
-    })
-
-    const simulation = d3.forceSimulation(labelNodes)
-      .force('collide', d3.forceCollide().radius(d => d.height / 2 + 5).iterations(2))
-      .force('y', d3.forceY(d => d.y).strength(1))
-      .stop()
-
-    for (let i = 0; i < 50; i++) simulation.tick()
-
-    labelNodes.forEach(d => {
-      d3.select(d.element)
-        .transition().duration(300)
-        .attr('y', d.y)
-    })
-
-  }, [simData, width, height, simulationMode])
-
-  // Handlers for Simulation
-  const handleUpdateSim = (e) => {
+  const handleSim = e => {
     e.preventDefault()
     const fd = new FormData(e.target)
-    const newMasuk = parseInt(fd.get('masukCount')) || 0
-    const newQuota = parseInt(fd.get('quota')) || 0
-    
+    const masukCount = parseInt(fd.get('masukCount')) || 0
+    const quota      = parseInt(fd.get('quota'))      || 0
     setSimData(prev => prev.map(d => {
-      if (d.bidang === editingNode.bidang) {
-        const updated = { ...d, masukCount: newMasuk, quota: newQuota }
-        updated.overCapacity = updated.quota > 0 && (updated.active + updated.masukCount) > updated.quota
-        return updated
-      }
-      return d
+      if (d.bidang !== editNode.bidang) return d
+      return { ...d, masukCount, quota, overCapacity: quota > 0 && (d.active + masukCount) > quota }
     }))
-    setEditingNode(null)
+    setEditNode(null)
   }
 
   return (
-    <div style={{ background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column' }}>
-      
-      {/* Dashboard Header */}
-      <div style={{ padding:'1.5rem', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(255,255,255,0.02)' }}>
+    <div style={{ background:'linear-gradient(145deg,#0c1020 0%,#0e0b1e 100%)', borderRadius:16, border:'1px solid rgba(255,255,255,0.07)', overflow:'hidden', fontFamily:"'Inter','Segoe UI',sans-serif", color:'#fff' }}>
+
+      {/* ── Header ── */}
+      <div style={{ padding:'1.1rem 1.5rem', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
         <div>
-          <h2 style={{ margin:0, fontSize:'1.2rem', display:'flex', alignItems:'center', gap:10 }}>
-            <RefreshCcw size={20} color="var(--primary)" /> Hybrid Sankey-Bullet Analytics
+          <h2 style={{ margin:0, fontSize:'1rem', fontWeight:800 }}>
+            🔀 Talent Flow Analytics
           </h2>
-          <p style={{ margin:'4px 0 0', fontSize:'0.85rem', color:'var(--text-muted)' }}>
-            Visualisasi pergerakan talent. {simulationMode ? 'Mode Simulasi Aktif.' : 'Gunakan scroll untuk zoom in/out.'}
+          <p style={{ margin:'3px 0 0', fontSize:'0.72rem', color:'rgba(255,255,255,0.4)' }}>
+            Visualisasi pergerakan intern · Pending → Bidang → Akan Selesai → Alumni
           </p>
         </div>
-        <button 
-          onClick={() => {
-            setSimulationMode(!simulationMode)
-            if (simulationMode) setEditingNode(null)
-          }}
-          style={{ 
-            padding:'8px 16px', background: simulationMode ? '#ef4444' : 'var(--primary)', color:'#fff', 
-            border:'none', borderRadius:8, fontWeight:'bold', cursor:'pointer', display:'flex', alignItems:'center', gap:8 
-          }}
-        >
-          {simulationMode ? <><RefreshCcw size={16} /> Akhiri Simulasi</> : <><Edit2 size={16} /> Mode Simulasi</>}
-        </button>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ display:'flex', gap:12, fontSize:'0.68rem' }}>
+            {[[C.purple,'Akan Masuk'],[C.blue,'Aktif'],[C.amber,'Akan Selesai'],[C.green,'Alumni']].map(([c,l]) => (
+              <span key={l} style={{ display:'flex', alignItems:'center', gap:4, color:'rgba(255,255,255,0.45)' }}>
+                <span style={{ display:'inline-block', width:8, height:8, borderRadius:2, background:c }} />{l}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={() => { setSimMode(s => !s); setEditNode(null) }}
+            style={{ padding:'6px 14px', background: simMode ? 'rgba(239,68,68,0.18)' : 'rgba(168,85,247,0.18)', color: simMode ? C.red : C.purple, border:`1px solid ${simMode ? C.red : C.purple}44`, borderRadius:8, fontWeight:700, fontSize:'0.75rem', cursor:'pointer', transition:'all 0.2s' }}
+          >
+            {simMode ? '✕ Keluar' : '⚡ Simulasi'}
+          </button>
+        </div>
       </div>
 
-      {/* Main Graph Area */}
-      <div ref={containerRef} style={{ width:'100%', height:'600px', position:'relative', background:'var(--bg-main)' }}>
-        <svg ref={svgRef} width="100%" height="100%" style={{ cursor: simulationMode ? 'crosshair' : 'grab' }} />
-        
-        {/* Simulation Floating Panel */}
-        {simulationMode && editingNode && (
-          <div style={{ position:'absolute', top:20, right:20, background:'var(--bg-card)', padding:'1.5rem', borderRadius:12, border:'1px solid var(--primary)', boxShadow:'0 10px 25px rgba(0,0,0,0.5)', width:300, zIndex:10 }}>
-            <h3 style={{ margin:'0 0 1rem', fontSize:'1rem' }}>Edit Simulasi: {editingNode.bidang}</h3>
-            <form onSubmit={handleUpdateSim} style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
-              <div>
-                <label style={{ fontSize:'0.8rem', color:'var(--text-muted)' }}>Proyeksi Masuk Baru</label>
-                <input name="masukCount" type="number" defaultValue={editingNode.masukCount} style={{ width:'100%', padding:'8px', borderRadius:6, border:'1px solid var(--border)', background:'var(--bg-main)', color:'#fff', marginTop:4 }} />
-              </div>
-              <div>
-                <label style={{ fontSize:'0.8rem', color:'var(--text-muted)' }}>Sesuaikan Kuota</label>
-                <input name="quota" type="number" defaultValue={editingNode.quota} style={{ width:'100%', padding:'8px', borderRadius:6, border:'1px solid var(--border)', background:'var(--bg-main)', color:'#fff', marginTop:4 }} />
-              </div>
-              <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                <button type="submit" style={{ flex:1, padding:'8px', background:'var(--primary)', color:'#fff', border:'none', borderRadius:6, cursor:'pointer' }}>Terapkan</button>
-                <button type="button" onClick={() => setEditingNode(null)} style={{ flex:1, padding:'8px', background:'var(--bg-main)', color:'var(--text-muted)', border:'1px solid var(--border)', borderRadius:6, cursor:'pointer' }}>Batal</button>
+      {/* ── Body ── */}
+      <div ref={containerRef} style={{ position:'relative', padding:'1.25rem 1.5rem' }}>
+
+        {/* SVG overlay */}
+        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', zIndex:1, overflow:'visible' }}>
+          <defs>
+            {lines.map(l => {
+              const m = l.path.match(/M ([\d.]+) ([\d.]+)/)
+              const e = l.path.match(/([\d.]+) ([\d.]+)$/)
+              return (
+                <linearGradient key={`g_${l.key}`} id={`g_${l.key}`} gradientUnits="userSpaceOnUse"
+                  x1={m?.[1]||0} y1={m?.[2]||0} x2={e?.[1]||0} y2={e?.[2]||0}>
+                  <stop offset="0%"   stopColor={l.color} stopOpacity="0.9" />
+                  <stop offset="100%" stopColor={l.color} stopOpacity="0.4" />
+                </linearGradient>
+              )
+            })}
+          </defs>
+          {lines.map(l => (
+            <path key={l.key} d={l.path} fill="none"
+              stroke={`url(#g_${l.key})`} strokeWidth={l.w} strokeOpacity={l.op}
+              style={{ transition:'stroke-opacity 0.25s' }} />
+          ))}
+        </svg>
+
+        {/* 4 columns */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1.9fr 1fr 1fr', gap:'1.25rem', position:'relative', zIndex:2 }}>
+
+          {/* ══ COL 1: AKAN MASUK ══ */}
+          <div>
+            <ColHeader color={C.purple} icon="📥" label="Akan Masuk" count={totalMasuk} sub="Intern pending per bidang" />
+            <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+              {depts.filter(d => (d.masukCount||0) > 0).map(d => (
+                <div key={d.bidang} ref={el => { pendingRefs.current[d.bidang] = el }}
+                  onMouseEnter={() => setHovered(d.bidang)} onMouseLeave={() => setHovered(null)}>
+                  <Card color={C.purple} bg={C.purpleBg} bd={C.purpleBd} hovered={hovered === d.bidang}>
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:6 }}>
+                      <span style={{ fontSize:'0.7rem', color:'rgba(255,255,255,0.75)', fontWeight:600, lineHeight:1.35 }}>{d.bidang}</span>
+                      <span style={{ fontSize:'1.2rem', fontWeight:900, color:C.purple, flexShrink:0 }}>{d.masukCount}</span>
+                    </div>
+                    {(d.masuk||[]).slice(0,2).map((m,i) => (
+                      <div key={i} style={{ fontSize:'0.62rem', color:'rgba(255,255,255,0.3)', marginTop:3, lineHeight:1.2 }}>
+                        {(m.name||'').split(' ').slice(0,2).join(' ')} · {(m.periodStart||'').slice(0,7)}
+                      </div>
+                    ))}
+                    {d.masukCount > 2 && <div style={{ fontSize:'0.62rem', color: C.purple+'99', marginTop:2 }}>+{d.masukCount-2} lainnya</div>}
+                  </Card>
+                </div>
+              ))}
+              {depts.filter(d=>(d.masukCount||0)>0).length === 0 && (
+                <div style={{ padding:'2rem 1rem', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:'0.75rem' }}>Tidak ada<br/>pending</div>
+              )}
+            </div>
+          </div>
+
+          {/* ══ COL 2: BIDANG ══ */}
+          <div>
+            <ColHeader color={C.blue} icon="🏢" label="Bidang" count={depts.length} sub="Kapasitas & status kuota" />
+            <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+              {depts.map(d => (
+                <div key={d.bidang} ref={el => { bidangRefs.current[d.bidang] = el }}
+                  onMouseEnter={() => setHovered(d.bidang)} onMouseLeave={() => setHovered(null)}>
+                  <Card
+                    color={d.overCapacity ? C.red : C.blue}
+                    bg={d.overCapacity ? C.redBg : C.blueBg}
+                    bd={d.overCapacity ? C.redBd : C.blueBd}
+                    hovered={hovered === d.bidang}
+                    onClick={simMode ? () => setEditNode(d) : undefined}
+                  >
+                    <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
+                      <span style={{ fontSize:'0.73rem', fontWeight:700, color:'rgba(255,255,255,0.88)', lineHeight:1.35, flex:1 }}>{d.bidang}</span>
+                      <div style={{ flexShrink:0 }}>
+                        {d.overCapacity
+                          ? <span style={{ fontSize:'0.58rem', padding:'2px 7px', background:'rgba(239,68,68,0.2)', color:C.red, borderRadius:10, fontWeight:800, border:'1px solid rgba(239,68,68,0.35)' }}>OVER</span>
+                          : d.almostFull
+                          ? <span style={{ fontSize:'0.58rem', padding:'2px 7px', background:'rgba(245,158,11,0.2)', color:C.amber, borderRadius:10, fontWeight:800, border:'1px solid rgba(245,158,11,0.35)' }}>PENUH</span>
+                          : d.quota > 0
+                          ? <span style={{ fontSize:'0.58rem', padding:'2px 7px', background:'rgba(34,197,94,0.15)', color:C.green, borderRadius:10, fontWeight:800, border:'1px solid rgba(34,197,94,0.3)' }}>OK</span>
+                          : null
+                        }
+                      </div>
+                    </div>
+                    <BulletBar active={d.active} quota={d.quota} masukCount={d.masukCount||0} overCapacity={d.overCapacity} />
+                    {simMode && <div style={{ marginTop:5, fontSize:'0.62rem', color:C.purple+'99' }}>⚡ klik untuk edit simulasi</div>}
+                  </Card>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ══ COL 3: AKAN SELESAI ══ */}
+          <div>
+            <ColHeader color={C.amber} icon="⏳" label="Akan Selesai" count={totalKeluar} sub="Kontrak selesai ≤ 60 hari" />
+            <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+              {depts.filter(d => (d.keluarCount||0) > 0).map(d => (
+                <div key={d.bidang} ref={el => { keluarRefs.current[d.bidang] = el }}
+                  onMouseEnter={() => setHovered(d.bidang)} onMouseLeave={() => setHovered(null)}>
+                  <Card color={C.amber} bg={C.amberBg} bd={C.amberBd} hovered={hovered === d.bidang}>
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:6 }}>
+                      <span style={{ fontSize:'0.7rem', color:'rgba(255,255,255,0.75)', fontWeight:600, lineHeight:1.35 }}>{d.bidang}</span>
+                      <span style={{ fontSize:'1.2rem', fontWeight:900, color:C.amber, flexShrink:0 }}>{d.keluarCount}</span>
+                    </div>
+                    {(d.keluar||[]).slice(0,2).map((k,i) => (
+                      <div key={i} style={{ fontSize:'0.62rem', color:'rgba(255,255,255,0.3)', marginTop:3 }}>
+                        {(k.name||'').split(' ').slice(0,2).join(' ')} · {(k.periodEnd||'').slice(0,7)}
+                      </div>
+                    ))}
+                    {d.keluarCount > 2 && <div style={{ fontSize:'0.62rem', color:C.amber+'99', marginTop:2 }}>+{d.keluarCount-2} lainnya</div>}
+                  </Card>
+                </div>
+              ))}
+              {depts.filter(d=>(d.keluarCount||0)>0).length === 0 && (
+                <div style={{ padding:'2rem 1rem', textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:'0.75rem' }}>Tidak ada<br/>akan selesai</div>
+              )}
+            </div>
+          </div>
+
+          {/* ══ COL 4: ALUMNI POOL ══ */}
+          <div>
+            <ColHeader color={C.green} icon="🎓" label="Alumni" count={totalAlumni} sub="Telah menyelesaikan program" />
+            <div ref={alumniRef}>
+              <Card color={C.green} bg={C.greenBg} bd={C.greenBd} hovered={false}>
+                <div style={{ textAlign:'center', padding:'1rem 0' }}>
+                  <div style={{ fontSize:'2.5rem', fontWeight:900, color:C.green, lineHeight:1 }}>{totalAlumni}</div>
+                  <div style={{ fontSize:'0.7rem', color:'rgba(255,255,255,0.45)', marginTop:6 }}>Total Alumni / Selesai</div>
+                </div>
+                <div style={{ borderTop:'1px solid rgba(34,197,94,0.15)', paddingTop:10, marginTop:8, display:'flex', flexDirection:'column', gap:5 }}>
+                  {depts.filter(d=>(d.selesaiCount||0)>0).map(d => (
+                    <div key={d.bidang} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'0.68rem' }}>
+                      <span style={{ color:'rgba(255,255,255,0.5)', lineHeight:1.3 }}>{d.bidang.length > 22 ? d.bidang.slice(0,21)+'…' : d.bidang}</span>
+                      <span style={{ color:C.green, fontWeight:800, flexShrink:0, marginLeft:6 }}>{d.selesaiCount}</span>
+                    </div>
+                  ))}
+                  {totalAlumni === 0 && (
+                    <div style={{ textAlign:'center', color:'rgba(255,255,255,0.2)', fontSize:'0.72rem', padding:'0.5rem 0' }}>Belum ada data alumni</div>
+                  )}
+                </div>
+              </Card>
+            </div>
+
+            {/* Summary stats */}
+            <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:6 }}>
+              {[
+                { label:'Over Kapasitas', val: depts.filter(d=>d.overCapacity).length, color: C.red },
+                { label:'Hampir Penuh',   val: depts.filter(d=>d.almostFull).length,   color: C.amber },
+                { label:'Aman',           val: depts.filter(d=>d.quota>0&&!d.overCapacity&&!d.almostFull).length, color: C.green },
+              ].map(s => (
+                <div key={s.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 12px', background:'rgba(255,255,255,0.03)', borderRadius:8, border:'1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ fontSize:'0.68rem', color:'rgba(255,255,255,0.45)' }}>{s.label}</span>
+                  <span style={{ fontSize:'0.9rem', fontWeight:800, color:s.color }}>{s.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Simulation Edit Panel ── */}
+        {simMode && editNode && (
+          <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', background:'#111827', border:'1px solid rgba(168,85,247,0.4)', borderRadius:14, padding:'1.5rem', width:310, zIndex:100, boxShadow:'0 25px 60px rgba(0,0,0,0.7)' }}>
+            <h3 style={{ margin:'0 0 4px', fontSize:'0.95rem', color:C.purple }}>⚡ Simulasi: {editNode.bidang}</h3>
+            <p style={{ margin:'0 0 1.25rem', fontSize:'0.72rem', color:'rgba(255,255,255,0.4)' }}>Ubah angka untuk proyeksi What-If</p>
+            <form onSubmit={handleSim} style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              {[
+                { name:'masukCount', label:'Proyeksi Intern Masuk', def: editNode.masukCount||0 },
+                { name:'quota',      label:'Kuota Bidang',           def: editNode.quota||0 },
+              ].map(f => (
+                <div key={f.name}>
+                  <label style={{ display:'block', fontSize:'0.72rem', color:'rgba(255,255,255,0.5)', marginBottom:5 }}>{f.label}</label>
+                  <input name={f.name} type="number" min={0} defaultValue={f.def}
+                    style={{ width:'100%', padding:'8px 10px', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:7, color:'#fff', fontSize:'0.9rem', boxSizing:'border-box' }} />
+                </div>
+              ))}
+              <div style={{ display:'flex', gap:8, marginTop:4 }}>
+                <button type="submit" style={{ flex:1, padding:'9px', background:C.purple, color:'#fff', border:'none', borderRadius:8, fontWeight:700, cursor:'pointer', fontSize:'0.82rem' }}>Terapkan</button>
+                <button type="button" onClick={() => setEditNode(null)} style={{ flex:1, padding:'9px', background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, cursor:'pointer', fontSize:'0.82rem' }}>Batal</button>
               </div>
             </form>
           </div>
         )}
-
-        {/* Info Legend */}
-        <div style={{ position:'absolute', bottom:20, left:20, display:'flex', gap:16, background:'var(--bg-card)', padding:'8px 16px', borderRadius:8, border:'1px solid var(--border)', fontSize:'0.75rem', fontWeight:'bold' }}>
-          <span style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:10, height:10, background:'#a855f7', borderRadius:2 }}/> Sumber Masuk</span>
-          <span style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:10, height:10, background:'#3b82f6', borderRadius:2 }}/> Aktif & Stabil</span>
-          <span style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:10, height:10, background:'#ef4444', borderRadius:2 }}/> Akan Keluar (60 Hr)</span>
-          <span style={{ display:'flex', alignItems:'center', gap:6 }}><div style={{ width:10, height:10, background:'#22c55e', borderRadius:2 }}/> Selesai / Alumni</span>
-          <span style={{ display:'flex', alignItems:'center', gap:6, marginLeft:10, color:'var(--text-muted)' }}><Maximize2 size={12}/> Scroll to Zoom</span>
-        </div>
+        {simMode && editNode && (
+          <div onClick={() => setEditNode(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:99 }} />
+        )}
       </div>
     </div>
   )
