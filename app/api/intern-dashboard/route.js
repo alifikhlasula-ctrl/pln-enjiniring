@@ -302,6 +302,13 @@ export async function GET(request) {
       badges.push({ id: 'b5', name: 'Future Leader', icon: 'Target', color: '#f43f5e', desc: 'Menunjukkan inisiatif kepemimpinan yang baik.' })
     }
 
+    const pendingSurveys = activeSurveys.filter(s => 
+      !respondedSurveyIds.includes(s.id) && s.createdBy !== 'Sistem'
+    ).map(s => ({
+      ...s,
+      isMandatory: !!s.deadline
+    }))
+
     const response = NextResponse.json({
       intern: {
         id: intern.id,
