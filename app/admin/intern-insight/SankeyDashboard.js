@@ -124,10 +124,11 @@ export default function SankeyDashboard({ rawData }) {
     return () => obs.disconnect()
   }, [calcRects])
 
-  const depts       = simData.filter(d => d.active > 0 || d.masukCount > 0 || d.keluarCount > 0 || d.selesaiCount > 0)
+  const allDepts    = simData || []
+  const depts       = allDepts.filter(d => d.active > 0 || d.masukCount > 0 || d.keluarCount > 0)
   const totalMasuk  = depts.reduce((s, d) => s + (d.masukCount  || 0), 0)
   const totalKeluar = depts.reduce((s, d) => s + (d.keluarCount || 0), 0)
-  const totalAlumni = depts.reduce((s, d) => s + (d.selesaiCount|| 0), 0)
+  const totalAlumni = allDepts.reduce((s, d) => s + (d.selesaiCount|| 0), 0)
 
   // Build SVG lines
   const lines = []
@@ -317,7 +318,7 @@ export default function SankeyDashboard({ rawData }) {
                   <div style={{ fontSize:'0.7rem', color:'rgba(255,255,255,0.45)', marginTop:6 }}>Total Alumni / Selesai</div>
                 </div>
                 <div style={{ borderTop:'1px solid rgba(34,197,94,0.15)', paddingTop:10, marginTop:8, display:'flex', flexDirection:'column', gap:5 }}>
-                  {depts.filter(d=>(d.selesaiCount||0)>0).map(d => (
+                  {allDepts.filter(d=>(d.selesaiCount||0)>0).map(d => (
                     <div key={d.bidang} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:'0.68rem' }}>
                       <span style={{ color:'rgba(255,255,255,0.5)', lineHeight:1.3 }}>{d.bidang.length > 22 ? d.bidang.slice(0,21)+'…' : d.bidang}</span>
                       <span style={{ color:C.green, fontWeight:800, flexShrink:0, marginLeft:6 }}>{d.selesaiCount}</span>
@@ -333,9 +334,9 @@ export default function SankeyDashboard({ rawData }) {
             {/* Summary stats */}
             <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:6 }}>
               {[
-                { label:'Over Kapasitas', val: depts.filter(d=>d.overCapacity).length, color: C.red },
-                { label:'Hampir Penuh',   val: depts.filter(d=>d.almostFull).length,   color: C.amber },
-                { label:'Aman',           val: depts.filter(d=>d.quota>0&&!d.overCapacity&&!d.almostFull).length, color: C.green },
+                { label:'Over Kapasitas', val: allDepts.filter(d=>d.overCapacity).length, color: C.red },
+                { label:'Hampir Penuh',   val: allDepts.filter(d=>d.almostFull).length,   color: C.amber },
+                { label:'Aman',           val: allDepts.filter(d=>d.quota>0&&!d.overCapacity&&!d.almostFull).length, color: C.green },
               ].map(s => (
                 <div key={s.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 12px', background:'rgba(255,255,255,0.03)', borderRadius:8, border:'1px solid rgba(255,255,255,0.06)' }}>
                   <span style={{ fontSize:'0.68rem', color:'rgba(255,255,255,0.45)' }}>{s.label}</span>
