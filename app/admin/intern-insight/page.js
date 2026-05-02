@@ -59,6 +59,102 @@ function MiniBar({ items, colorFn, formatValue }) {
   )
 }
 
+/* ── Interactive SVG Pie Chart ─────────────────── */
+function PieChart({ items, colorFn, title, total, size = 180 }) {
+  const [hovered, setHovered] = React.useState(null)
+  const sum = items.reduce((s, i) => s + i.value, 0) || 1
+  const cx = size / 2, cy = size / 2, r = size * 0.38, innerR = size * 0.22
+
+  let cumAngle = -Math.PI / 2
+  const slices = items.map((item, idx) => {
+    const angle = (item.value / sum) * 2 * Math.PI
+    const start = cumAngle
+    cumAngle += angle
+    const end = cumAngle
+    const color = colorFn ? colorFn(idx, item.label) : `hsl(${idx * 40}, 65%, 55%)`
+    const midAngle = start + angle / 2
+    const labelR = r * 0.72
+    return { item, start, end, angle, color, midAngle, labelR, idx }
+  })
+
+  const describeArc = (cx, cy, r, startAngle, endAngle, expand = false) => {
+    const offset = expand ? 6 : 0
+    const midA = (startAngle + endAngle) / 2
+    const ox = cx + Math.cos(midA) * offset, oy = cy + Math.sin(midA) * offset
+    const x1 = ox + r * Math.cos(startAngle), y1 = oy + r * Math.sin(startAngle)
+    const x2 = ox + r * Math.cos(endAngle),   y2 = oy + r * Math.sin(endAngle)
+    const xi1 = ox + innerR * Math.cos(startAngle), yi1 = oy + innerR * Math.sin(startAngle)
+    const xi2 = ox + innerR * Math.cos(endAngle),   yi2 = oy + innerR * Math.sin(endAngle)
+    const large = endAngle - startAngle > Math.PI ? 1 : 0
+    if (endAngle - startAngle < 0.01) return ''
+    return `M ${xi1} ${yi1} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${innerR} ${innerR} 0 ${large} 0 ${xi1} ${yi1} Z`
+  }
+
+  const hov = hovered !== null ? slices[hovered] : null
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
+        {/* SVG Donut */}
+        <div style={{ position:'relative', flexShrink:0 }}>
+          <svg width={size} height={size} style={{ overflow:'visible', filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.15))' }}>
+            {slices.map((s, i) => (
+              <path
+                key={i}
+                d={describeArc(cx, cy, r, s.start, s.end, hovered === i)}
+                fill={s.color}
+                stroke="var(--bg-card)"
+                strokeWidth={2}
+                style={{ cursor:'pointer', transition:'d 0.2s ease, opacity 0.2s', opacity: hovered !== null && hovered !== i ? 0.45 : 1 }}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+              />
+            ))}
+            {/* Center Text */}
+            <text x={cx} y={cy - 8} textAnchor="middle" fontSize={size * 0.16} fontWeight="900" fill="var(--text-primary)">
+              {hov ? hov.item.value : total ?? sum}
+            </text>
+            <text x={cx} y={cy + 10} textAnchor="middle" fontSize={size * 0.07} fill="var(--text-muted)" fontWeight="700">
+              {hov ? (hov.item.value / sum * 100).toFixed(1) + '%' : 'Total'}
+            </text>
+            {hov && (
+              <text x={cx} y={cy + 24} textAnchor="middle" fontSize={size * 0.065} fill={hov.color} fontWeight="800">
+                {hov.item.label.length > 10 ? hov.item.label.slice(0,10)+'…' : hov.item.label}
+              </text>
+            )}
+          </svg>
+        </div>
+
+        {/* Legend */}
+        <div style={{ flex:1, display:'flex', flexDirection:'column', gap:7, minWidth:120 }}>
+          {slices.map((s, i) => (
+            <div
+              key={i}
+              style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', opacity: hovered !== null && hovered !== i ? 0.45 : 1, transition:'opacity 0.15s' }}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <div style={{ width:10, height:10, borderRadius:3, background:s.color, flexShrink:0, boxShadow:`0 0 0 2px ${s.color}30` }} />
+              <span style={{ fontSize:'0.72rem', fontWeight:700, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.item.label}</span>
+              <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+                <span style={{ fontSize:'0.72rem', fontWeight:900, color:s.color }}>{s.item.value}</span>
+                <span style={{ fontSize:'0.62rem', color:'var(--text-muted)' }}>{(s.item.value/sum*100).toFixed(1)}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Hovered detail pill */}
+      {hov && (
+        <div style={{ padding:'6px 14px', borderRadius:99, background:`${hov.color}18`, border:`1px solid ${hov.color}40`, fontSize:'0.72rem', fontWeight:800, color:hov.color, textAlign:'center', transition:'all 0.2s' }}>
+          {hov.item.label} — {hov.item.value} intern ({(hov.item.value/sum*100).toFixed(1)}%)
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ForecastDistBar({ items }) {
   if (!items || items.length === 0) return <p style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>Tidak ada data</p>
   // max based on projected or active, whichever is highest, so bars don't overflow
@@ -292,20 +388,33 @@ export default function InternInsightPage() {
               </Card>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
-              <Card title="🎓 Distribusi Jenjang">
-                <MiniBar items={Object.entries(ov.jenjangDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)} colorFn={() => '#8b5cf6'} />
+              <Card title="🎓 Distribusi Jenjang" subtitle="Hover slice untuk detail">
+                <PieChart
+                  items={Object.entries(ov.jenjangDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)}
+                  colorFn={(i) => ['#8b5cf6','#6366f1','#a78bfa','#c4b5fd','#7c3aed'][i] || `hsl(${260+i*20},65%,55%)`}
+                />
               </Card>
-              <Card title="🏦 Distribusi Bank">
-                <MiniBar items={Object.entries(ov.bankDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value)} colorFn={i => `hsl(${160+i*30},60%,45%)`} />
+              <Card title="🏦 Distribusi Bank" subtitle="Hover slice untuk detail">
+                <PieChart
+                  items={Object.entries(ov.bankDist||{}).map(([l,v])=>({label:l,value:v})).sort((a,b)=>b.value-a.value).slice(0,8)}
+                  colorFn={(i) => `hsl(${160+i*25},60%,45%)`}
+                />
               </Card>
             </div>
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
-              <Card title="🎂 Ulang Tahun per Bulan">
-                <MiniBar items={ov.birthdayByMonth.map((v,i)=>({label:MONTHS[i],value:v}))} colorFn={() => '#ec4899'} />
+              <Card title="🎂 Ulang Tahun per Bulan" subtitle="Persebaran ulang tahun intern">
+                <PieChart
+                  items={ov.birthdayByMonth.map((v,i)=>({label:MONTHS[i],value:v})).filter(x=>x.value>0)}
+                  colorFn={(i) => `hsl(${330+i*12},70%,55%)`}
+                />
               </Card>
-              <Card title="🎓 Total Intern Aktif">
-                <MiniBar items={[{label: 'Laki-laki', value: ov.genderCount['Laki-laki']||0}, {label: 'Perempuan', value: ov.genderCount['Perempuan']||0}]} colorFn={i => i===0 ? '#3b82f6' : '#ec4899'} />
+              <Card title="🧑‍🤝‍🧑 Distribusi Gender" subtitle="Komposisi intern berdasarkan jenis kelamin">
+                <PieChart
+                  items={[{label:'Laki-laki',value:ov.genderCount['Laki-laki']||0},{label:'Perempuan',value:ov.genderCount['Perempuan']||0}]}
+                  colorFn={(i) => i===0?'#3b82f6':'#ec4899'}
+                  size={200}
+                />
               </Card>
             </div>
 
