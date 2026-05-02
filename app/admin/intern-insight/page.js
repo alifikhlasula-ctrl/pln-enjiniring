@@ -786,7 +786,8 @@ export default function InternInsightPage() {
                 style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', background: 'var(--bg-main)', color: 'var(--text-primary)', fontWeight:600 }}
               />
             </div>
-            {lbLoading && <div style={{ height: 4px, width: '100%', background: 'var(--primary-light)', borderRadius: 2, overflow:'hidden' }}><div style={{ height:'100%', background:'var(--primary)', width:'30%', animation:'pulse 1s infinite alternate' }}/></div>}
+
+            <div style={{ display:'flex', flexDirection:'column', gap:'1rem', opacity: lbLoading ? 0.6 : 1, transition:'opacity 0.2s' }}>
 
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:'0.75rem' }}>
               <StatCard label="Intern Aktif" value={lbData.stats?.totalActive} icon="👥" color="var(--primary)" />
@@ -865,6 +866,7 @@ export default function InternInsightPage() {
                 <MiniBar items={Object.entries(lbData.stats.topBidang).map(([l,v]) => ({label:l, value:v})).sort((a,b) => b.value-a.value)} colorFn={i => `hsl(${200+i*30},65%,50%)`} />
               </Card>
             )}
+            </div>{/* end lbLoading wrapper */}
           </div>
           ) : <div style={{ textAlign:'center', padding:'4rem', color:'var(--text-muted)' }}>Gagal memuat data leaderboard.</div>
         )}
