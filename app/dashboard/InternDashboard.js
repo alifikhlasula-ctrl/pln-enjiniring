@@ -144,43 +144,47 @@ function StatusPicker({ userId, onStatusSaved }) {
 
 /* ── Badges List Section ─────────────────────────── */
 function BadgesSection({ badges, loading }) {
-  if (!loading && (!badges || (badges || []).length === 0)) return null
-
   const IconMap = { Award, Brain, Users, Zap, Target, Heart }
+  const hasBadges = (badges || []).length > 0
 
   return (
-    <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'var(--bg-card)' }}>
+    <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1.25rem' }}>
         <Trophy size={16} strokeWidth={2} style={{ color: '#f59e0b' }} /> Pencapaian & Badge Anda
       </h3>
       
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }}>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none', minHeight: hasBadges ? 'auto' : 80, alignItems: 'center' }}>
         {loading ? (
           [1, 2, 3].map(i => (
-            <div key={i} style={{ minWidth: 110, height: 120, background: 'var(--bg-main)', borderRadius: 16, animation: 'pulse 1.5s infinite' }} />
+            <div key={i} style={{ minWidth: 110, height: 100, background: 'var(--bg-main)', borderRadius: 16, animation: 'pulse 1.5s infinite' }} />
           ))
-        ) : (
-          (badges || []).map(badge => {
+        ) : hasBadges ? (
+          badges.map(badge => {
             const Icon = IconMap[badge.icon] || Award
             return (
               <div key={badge.id} style={{ 
                 minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', 
                 padding: '16px 12px', borderRadius: 16, background: 'var(--bg-main)',
                 border: `1px solid var(--border)`, position: 'relative', overflow: 'hidden',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                animation: 'fadeIn 0.5s ease forwards'
               }}>
                 <div style={{ 
-                  width: 48, height: 48, borderRadius: '50%', background: `${badge.color}15`,
+                  width: 44, height: 44, borderRadius: '50%', background: `${badge.color}15`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', color: badge.color,
                   marginBottom: 10, border: `1.5px solid ${badge.color}30`
                 }}>
-                  <Icon size={24} strokeWidth={2.5} />
+                  <Icon size={22} strokeWidth={2.5} />
                 </div>
-                <p style={{ fontSize: '0.75rem', fontWeight: 800, margin: 0, textAlign: 'center', color: 'var(--text-primary)' }}>{badge.name}</p>
-                <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginTop: 4, textAlign: 'center', lineHeight: 1.2 }}>{badge.desc}</p>
+                <p style={{ fontSize: '0.72rem', fontWeight: 800, margin: 0, textAlign: 'center', color: 'var(--text-primary)' }}>{badge.name}</p>
+                <p style={{ fontSize: '0.52rem', color: 'var(--text-muted)', marginTop: 4, textAlign: 'center', lineHeight: 1.2 }}>{badge.desc}</p>
               </div>
             )
           })
+        ) : (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'var(--bg-main)', borderRadius: 12, border: '1px dashed var(--border)' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Belum ada badge. Kumpulkan <b>Kudostars</b> dari rekan kerja untuk membuka badge pertama Anda! 🌟</p>
+          </div>
         )}
       </div>
     </div>
