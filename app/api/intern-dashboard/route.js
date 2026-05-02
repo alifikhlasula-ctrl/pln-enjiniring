@@ -275,12 +275,32 @@ export async function GET(request) {
     const surveyPenalty = missedMandatoryCount * 5 // Deduct 5 points per missed mandatory survey
     const finalKeaktifanScore = Math.max(0, onTimeRate - surveyPenalty)
 
-    const pendingSurveys = activeSurveys.filter(s => 
-      !respondedSurveyIds.includes(s.id) && s.createdBy !== 'Sistem'
-    ).map(s => ({
-      ...s,
-      isMandatory: !!s.deadline
-    }))
+    // ── Recognition Badges (SQL) ────────────────────
+    const myRecognitions = await prisma.recognition.findMany({
+      where: { toInternId: intern.id }
+    }).catch(() => [])
+
+    const categoryCounts = {}
+    myRecognitions.forEach(r => {
+      categoryCounts[r.category] = (categoryCounts[r.category] || 0) + 1
+    })
+
+    const badges = []
+    if (myRecognitions.length >= 1) {
+      badges.push({ id: 'b1', name: 'Rising Star', icon: 'Zap', color: '#6366f1', desc: 'Mendapat apresiasi pertama dari rekan kerja.' })
+    }
+    if (myRecognitions.length >= 5) {
+      badges.push({ id: 'b2', name: 'Top Contributor', icon: 'Award', color: '#f59e0b', desc: 'Mendapat 5+ apresiasi atas kontribusi yang konsisten.' })
+    }
+    if (categoryCounts['TEAMWORK'] >= 3) {
+      badges.push({ id: 'b3', name: 'Team Player', icon: 'Users', color: '#10b981', desc: 'Terbukti sebagai rekan tim yang sangat membantu.' })
+    }
+    if (categoryCounts['INNOVATION'] >= 2) {
+      badges.push({ id: 'b4', name: 'Problem Solver', icon: 'Brain', color: '#8b5cf6', desc: 'Memberikan solusi kreatif dalam pekerjaan.' })
+    }
+    if (categoryCounts['LEADERSHIP'] >= 2) {
+      badges.push({ id: 'b5', name: 'Future Leader', icon: 'Target', color: '#f43f5e', desc: 'Menunjukkan inisiatif kepemimpinan yang baik.' })
+    }
 
     const response = NextResponse.json({
       intern: {
@@ -308,6 +328,7 @@ export async function GET(request) {
       onboarding: { total: onboardingTotal, done: onboardingDone },
       todayMood: todayMood?.mood || null,
       pendingSurveys,
+      badges,
     })
 
     // Edge Caching: Serve from cache for 30 seconds, keeping database unburdened during traffic spikes

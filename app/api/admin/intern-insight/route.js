@@ -375,6 +375,35 @@ export async function GET(request) {
       return { bidang, ...d, happinessIndex: hi, alert: hi !== null && hi < 40 }
     }).sort((a, b) => (b.happinessIndex || 0) - (a.happinessIndex || 0))
 
+    // ── Sentiment Alerting System ──
+    const lowHappinessBidang = moodHeatmap.filter(h => h.alert)
+    if (lowHappinessBidang.length > 0) {
+      // Create automated HR Task for each low happiness bidang
+      for (const h of lowHappinessBidang) {
+        const taskTitle = `⚠️ Sentiment Alert: ${h.bidang} (Index: ${h.happinessIndex}%)`
+        const todayStrOnly = new Date().toISOString().split('T')[0]
+        
+        // Check if task already exists for today to avoid spam
+        const existingTask = await prisma.hrTask.findFirst({
+          where: {
+            title: { startsWith: `⚠️ Sentiment Alert: ${h.bidang}` },
+            createdAt: { gte: new Date(new Date().setHours(0,0,0,0)) }
+          }
+        }).catch(() => null)
+
+        if (!existingTask) {
+          await prisma.hrTask.create({
+            data: {
+              title: taskTitle,
+              dueDate: todayStrOnly,
+              priority: 'URGENT',
+              completed: false
+            }
+          }).catch(e => console.error('[Alerting] Failed to create task:', e))
+        }
+      }
+    }
+
     // Happiness trend per week (sparkline data)
     const happinessTrend = moodTrend.map(w => {
       const t = w.total || 1

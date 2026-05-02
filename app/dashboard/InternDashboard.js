@@ -7,7 +7,7 @@ import {
   Clock, CheckCircle2, CalendarDays, TrendingUp, Wallet,
   Megaphone, AlertCircle, BookOpen, Star, MapPin, Zap,
   BarChart3, ArrowRight, RefreshCw, Loader2, Target,
-  Plus, Trash2, Edit2, CheckCircle, Pin, Trophy
+  Plus, Trash2, Edit2, CheckCircle, Pin, Trophy, Award, Brain, Users, Heart
 } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from '@/lib/constants'
@@ -137,6 +137,51 @@ function StatusPicker({ userId, onStatusSaved }) {
         }}>
           📋 <span>Izin</span>
         </button>
+      </div>
+    </div>
+  )
+}
+
+/* ── Badges List Section ─────────────────────────── */
+function BadgesSection({ badges, loading }) {
+  if (!loading && (!badges || (badges || []).length === 0)) return null
+
+  const IconMap = { Award, Brain, Users, Zap, Target, Heart }
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'var(--bg-card)' }}>
+      <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1.25rem' }}>
+        <Trophy size={16} strokeWidth={2} style={{ color: '#f59e0b' }} /> Pencapaian & Badge Anda
+      </h3>
+      
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }}>
+        {loading ? (
+          [1, 2, 3].map(i => (
+            <div key={i} style={{ minWidth: 110, height: 120, background: 'var(--bg-main)', borderRadius: 16, animation: 'pulse 1.5s infinite' }} />
+          ))
+        ) : (
+          (badges || []).map(badge => {
+            const Icon = IconMap[badge.icon] || Award
+            return (
+              <div key={badge.id} style={{ 
+                minWidth: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', 
+                padding: '16px 12px', borderRadius: 16, background: 'var(--bg-main)',
+                border: `1px solid var(--border)`, position: 'relative', overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ 
+                  width: 48, height: 48, borderRadius: '50%', background: `${badge.color}15`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: badge.color,
+                  marginBottom: 10, border: `1.5px solid ${badge.color}30`
+                }}>
+                  <Icon size={24} strokeWidth={2.5} />
+                </div>
+                <p style={{ fontSize: '0.75rem', fontWeight: 800, margin: 0, textAlign: 'center', color: 'var(--text-primary)' }}>{badge.name}</p>
+                <p style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginTop: 4, textAlign: 'center', lineHeight: 1.2 }}>{badge.desc}</p>
+              </div>
+            )
+          })
+        )}
       </div>
     </div>
   )
@@ -602,6 +647,9 @@ export default function InternDashboard() {
           ))}
         </div>
       </div>
+
+      {/* ── Badges & Achievements ── */}
+      <BadgesSection badges={D.badges} loading={loading} />
 
       {/* ── Row 1: Stat Cards ── */}
       <div className="stat-grid intern-stat-grid" style={{ marginBottom: 'var(--sp-4)' }}>
