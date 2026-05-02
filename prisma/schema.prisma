@@ -88,6 +88,7 @@ model AttendanceLog {
   editedBy      String?
   faceInUrl     String?
   faceOutUrl    String?
+  isOverride    Boolean   @default(false)
 
   @@unique([internId, date])
 }
@@ -138,6 +139,7 @@ model DailyReport {
   challenges   String?
   nextWeek     String?
   skills       String[]
+  isOverride   Boolean  @default(false)
 }
 
 model Onboarding {

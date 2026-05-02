@@ -183,6 +183,7 @@ export async function PUT(request) {
     if (body.challenges !== undefined) dataObj.challenges = body.challenges
     if (body.nextWeek !== undefined) dataObj.nextWeek = body.nextWeek
     if (body.skills !== undefined) dataObj.skills = Array.isArray(body.skills) ? body.skills : []
+    if (body.isOverride !== undefined) dataObj.isOverride = body.isOverride
 
     const report = await prisma.dailyReport.update({
       where: { id },

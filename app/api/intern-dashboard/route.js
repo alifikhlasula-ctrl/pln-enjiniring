@@ -31,7 +31,7 @@ export async function GET(request) {
     // ── Today attendance status (SQL) ───────────────
     const todayLog = await prisma.attendanceLog.findUnique({
       where: { internId_date: { internId: intern.id, date: todayStr } },
-      select: { checkIn: true, checkOut: true, status: true, checkInLoc: true, faceInUrl: true }
+      select: { checkIn: true, checkOut: true, status: true, checkInLoc: true, faceInUrl: true, editedBy: true, isOverride: true }
     }).catch(() => null)
 
     const todayAttendance = todayLog ? {
@@ -42,7 +42,25 @@ export async function GET(request) {
       status: todayLog.status,
       checkInLoc: todayLog.checkInLoc,
       faceUrl: todayLog.faceInUrl,
+      editedBy: todayLog.editedBy,
+      isOverride: todayLog.isOverride,
     } : { checkedIn: false, checkedOut: false }
+
+    const todayReport = await prisma.dailyReport.findFirst({
+      where: { userId: userId, date: todayStr },
+      select: { createdAt: true, status: true, isOverride: true }
+    }).catch(() => null)
+
+    let todayReportLate = false
+    if (todayReport && todayReport.createdAt && !todayReport.isOverride) {
+      const createdAtWIB = new Date(todayReport.createdAt.getTime() + 7 * 3600000)
+      const createdStr = createdAtWIB.toISOString().split('T')[0]
+      if (createdStr !== todayStr) {
+        todayReportLate = true
+      }
+    }
+
+    const attendanceManual = todayLog?.editedBy && !todayLog?.isOverride;
 
     // ── Attendance stats (SQL - optimized for Egress diet) ────────
     const rawLogs = await prisma.attendanceLog.findMany({
@@ -336,6 +354,9 @@ export async function GET(request) {
       todayMood: todayMood?.mood || null,
       pendingSurveys,
       badges,
+      todayReport,
+      attendanceManual,
+      todayReportLate,
     })
 
     // Edge Caching: Serve from cache for 30 seconds, keeping database unburdened during traffic spikes

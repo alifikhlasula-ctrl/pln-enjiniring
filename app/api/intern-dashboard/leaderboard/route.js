@@ -32,11 +32,11 @@ export async function GET(request) {
       }),
       prisma.attendanceLog.findMany({
         where: { date: { startsWith: monthParam } },
-        select: { internId: true, date: true, status: true }
+        select: { internId: true, date: true, status: true, editedBy: true, isOverride: true }
       }),
       prisma.dailyReport.findMany({
         where: { status: { not: 'DRAFT' }, date: { startsWith: monthParam } },
-        select: { userId: true, date: true }
+        select: { userId: true, date: true, createdAt: true, isOverride: true }
       }),
       prisma.recognition.findMany({
         where: { createdAt: { gte: startOfMonth, lt: endOfMonth } },
@@ -76,15 +76,36 @@ export async function GET(request) {
     const attendanceScores = {}
     for (const log of allAttendance) {
       if (!attendanceScores[log.internId]) attendanceScores[log.internId] = 0
-      if (log.status === 'PRESENT' || log.status === 'LATE') attendanceScores[log.internId] += 1
-      else if (log.status === 'SAKIT' || log.status === 'IZIN') attendanceScores[log.internId] += 0.5
+      
+      let score = 0
+      if (log.status === 'PRESENT' || log.status === 'LATE') score = 1
+      else if (log.status === 'SAKIT' || log.status === 'IZIN') score = 0.5
+      
+      if (log.editedBy && !log.isOverride) {
+        score = score > 0 ? 0.5 : 0
+      }
+      
+      attendanceScores[log.internId] += score
     }
 
-    const reportDays = {}
+    const reportScores = {}
     for (const r of allReports) {
-      if (!reportDays[r.userId]) reportDays[r.userId] = new Set()
+      if (!reportScores[r.userId]) reportScores[r.userId] = new Map()
       const d = r.date ? String(r.date).slice(0, 10) : null
-      if (d) reportDays[r.userId].add(d)
+      if (d) {
+        let score = 1.0
+        if (r.createdAt && !r.isOverride) {
+          const createdAtWIB = new Date(r.createdAt.getTime() + 7 * 3600000)
+          const createdStr = createdAtWIB.toISOString().split('T')[0]
+          if (createdStr !== d) {
+            score = 0.5
+          }
+        }
+        const existingScore = reportScores[r.userId].get(d) || 0
+        if (score > existingScore) {
+          reportScores[r.userId].set(d, score)
+        }
+      }
     }
 
     const starCount = {}
@@ -134,7 +155,13 @@ export async function GET(request) {
     const leaderboard = allInterns.map(intern => {
       const workingDays = getWorkingDays(intern.periodStart, intern.periodEnd)
       const attPoints = attendanceScores[intern.id] || 0
-      const repDays = reportDays[intern.userId]?.size || 0
+      
+      let repPoints = 0
+      const repMap = reportScores[intern.userId]
+      if (repMap) {
+        for (const score of repMap.values()) repPoints += score
+      }
+      
       const stars = starCount[intern.id] || 0
       const surveysCompleted = surveysDone[intern.userId]?.size || 0
 
@@ -146,7 +173,7 @@ export async function GET(request) {
 
       if (workingDays > 0) {
         attendanceScore = Math.min((attPoints / workingDays) * 100, 100)
-        reportScore = Math.min((repDays / workingDays) * 100, 100)
+        reportScore = Math.min((repPoints / workingDays) * 100, 100)
         kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
         surveyScore = totalMandatory > 0 ? (surveysCompleted / totalMandatory) * 100 : 100
 

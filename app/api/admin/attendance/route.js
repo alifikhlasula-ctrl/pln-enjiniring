@@ -158,6 +158,7 @@ export async function GET(request) {
       status:      log.status,
       editedBy:    log.editedBy || null,
       editedAt:    log.editedAt ? log.editedAt.toISOString() : null,
+      isOverride:  log.isOverride || false,
       faceInUrl:   log.faceInUrl  || (log.faceInBase64  ? (log.faceInBase64.startsWith('data:') ? log.faceInBase64 : `data:image/jpeg;base64,${log.faceInBase64}`)  : null),
       faceOutUrl:  log.faceOutUrl || (log.faceOutBase64 ? (log.faceOutBase64.startsWith('data:') ? log.faceOutBase64 : `data:image/jpeg;base64,${log.faceOutBase64}`) : null),
       intern: intern || { name: `Intern (${log.internId.slice(0, 8)})`, bidang: '-', university: '-' }
@@ -251,7 +252,7 @@ function parseDateTime(dateStr, timeStr) {
  */
 export async function PATCH(request) {
   try {
-    const { id, internId, date, checkIn, checkOut, status, editedBy = 'Admin HR', note = '' } = await request.json()
+    const { id, internId, date, checkIn, checkOut, status, editedBy = 'Admin HR', note = '', isOverride } = await request.json()
 
     if (!id && (!internId || !date)) {
       return NextResponse.json({ error: 'id atau (internId + date) wajib diisi' }, { status: 400 })
@@ -279,6 +280,7 @@ export async function PATCH(request) {
       }
       
       if (status !== undefined) updateData.status = status
+      if (isOverride !== undefined) updateData.isOverride = isOverride
       
       updateData.editedBy = editedBy
       updateData.editedAt = now
@@ -296,14 +298,16 @@ export async function PATCH(request) {
           checkIn: dIn, checkOut: dOut, status: computedStatus,
           checkInLoc: `Admin Manual — ${editedBy}`,
           checkOutLoc: dOut ? `Admin Manual — ${editedBy}` : null,
-          editedBy, editedAt: now
+          editedBy, editedAt: now,
+          isOverride: isOverride !== undefined ? isOverride : false
         },
         create: {
           internId, date: targetDate,
           checkIn: dIn, checkOut: dOut, status: computedStatus,
           checkInLoc: `Input Manual oleh Admin — ${editedBy}`,
           checkOutLoc: dOut ? `Input Manual oleh Admin — ${editedBy}` : null,
-          editedBy, editedAt: now
+          editedBy, editedAt: now,
+          isOverride: isOverride !== undefined ? isOverride : false
         }
       })
     }
