@@ -1259,61 +1259,268 @@ export default function InternInsightPage() {
                     ))}
                   </div>
 
-                  {/* ── Capacity Bar Chart ── */}
-                  <Card title="📊 Kapasitas per Bidang" subtitle="Bar menunjukkan intern aktif vs kuota. Garis merah = batas kuota.">
-                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                      {/* Legend */}
-                      <div style={{ display:'flex', gap:16, marginBottom:4 }}>
-                        {[['#22c55e','Aktif (Aman)'],['#f59e0b','Hampir Penuh'],['#ef4444','Over-Capacity'],['rgba(239,68,68,0.7)','Garis Kuota']].map(([c,l]) => (
-                          <div key={l} style={{ display:'flex', alignItems:'center', gap:5, fontSize:'0.65rem', color:'var(--text-muted)', fontWeight:700 }}>
-                            <div style={{ width:12, height: l.includes('Garis') ? 2 : 12, borderRadius: l.includes('Garis') ? 0 : 3, background:c, border: l.includes('Garis') ? `2px dashed ${c}` : 'none' }} />{l}
+                  {/* ── Clustered Column + Line Chart ── */}
+                  {(() => {
+                    const [wfHover, setWfHover] = React.useState(null)
+                    const [wfHoverPos, setWfHoverPos] = React.useState({ x: 0, y: 0 })
+                    const chartDepts = depts.filter(d => d.active > 0 || d.masukCount > 0 || d.quota > 0)
+                    const maxVal = Math.max(
+                      ...chartDepts.map(d => Math.max(d.active, d.masukCount, d.keluarCount, d.quota || 0)),
+                      1
+                    )
+                    const svgH = 320
+                    const svgPadT = 24, svgPadB = 72, svgPadL = 44, svgPadR = 24
+                    const plotH = svgH - svgPadT - svgPadB
+                    const colW = 14, colGap = 4, groupGap = 18
+                    const groupW = colW * 3 + colGap * 2
+                    const totalW = Math.max(chartDepts.length * (groupW + groupGap) + svgPadL + svgPadR, 600)
+                    const yTick = (v) => svgPadT + plotH - (v / maxVal) * plotH
+                    const xGroup = (i) => svgPadL + i * (groupW + groupGap)
+
+                    const COLS = [
+                      { key: 'active',     label: 'Aktif',  color: '#6366f1' },
+                      { key: 'masukCount', label: 'Masuk',  color: '#22c55e' },
+                      { key: 'keluarCount',label: 'Keluar', color: '#f97316' },
+                    ]
+                    const yGridLines = [0, 0.25, 0.5, 0.75, 1].map(f => Math.round(f * maxVal))
+
+                    // Build quota polyline points
+                    const quotaPoints = chartDepts
+                      .map((d, i) => d.quota > 0
+                        ? `${xGroup(i) + groupW / 2},${yTick(d.quota)}`
+                        : null
+                      )
+                      .filter(Boolean)
+                      .join(' ')
+
+                    return (
+                      <Card
+                        title="📊 Kapasitas per Bidang"
+                        subtitle="Clustered Column: Aktif / Akan Masuk / Akan Keluar · Garis Oranye = Batas Kuota · Klik kolom untuk detail"
+                      >
+                        {/* Legend */}
+                        <div style={{ display:'flex', flexWrap:'wrap', gap:14, marginBottom:12, paddingLeft:4 }}>
+                          {COLS.map(c => (
+                            <div key={c.key} style={{ display:'flex', alignItems:'center', gap:5, fontSize:'0.65rem', fontWeight:700, color:'var(--text-muted)' }}>
+                              <div style={{ width:10, height:10, borderRadius:2, background:c.color }} />
+                              {c.label}
+                            </div>
+                          ))}
+                          <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:'0.65rem', fontWeight:700, color:'var(--text-muted)' }}>
+                            <div style={{ width:18, height:2, background:'#ef4444', borderRadius:2, borderTop:'2px dashed #ef4444' }} />
+                            Kuota
                           </div>
-                        ))}
-                      </div>
+                        </div>
 
+                        {/* Scrollable chart */}
+                        <div style={{ overflowX:'auto', overflowY:'visible', paddingBottom:4, position:'relative' }}>
+                          <svg
+                            width={totalW} height={svgH}
+                            style={{ display:'block', fontFamily:'inherit', overflow:'visible' }}
+                            onMouseLeave={() => setWfHover(null)}
+                          >
+                            {/* Y-axis grid lines */}
+                            {yGridLines.map(v => (
+                              <g key={v}>
+                                <line
+                                  x1={svgPadL} y1={yTick(v)}
+                                  x2={totalW - svgPadR} y2={yTick(v)}
+                                  stroke="var(--border)" strokeWidth={1} strokeDasharray="3,3"
+                                />
+                                <text x={svgPadL - 6} y={yTick(v) + 4} textAnchor="end"
+                                  fontSize={10} fill="var(--text-muted)">{v}</text>
+                              </g>
+                            ))}
+
+                            {/* Columns per department */}
+                            {chartDepts.map((dept, i) => {
+                              const gx = xGroup(i)
+                              const isHov = wfHover === dept.bidang
+                              return (
+                                <g key={dept.bidang}
+                                  style={{ cursor:'pointer' }}
+                                  onClick={() => setWfExpanded(wfExpanded === dept.bidang ? null : dept.bidang)}
+                                  onMouseEnter={(e) => {
+                                    setWfHover(dept.bidang)
+                                    const rect = e.currentTarget.closest('svg').getBoundingClientRect()
+                                    setWfHoverPos({ x: gx + groupW / 2, y: yTick(Math.max(dept.active, dept.masukCount, dept.keluarCount, dept.quota || 0)) })
+                                  }}
+                                >
+                                  {/* Hover highlight bg */}
+                                  {isHov && (
+                                    <rect
+                                      x={gx - 6} y={svgPadT}
+                                      width={groupW + 12} height={plotH}
+                                      rx={6} fill="rgba(255,255,255,0.04)"
+                                    />
+                                  )}
+
+                                  {/* 3 Clustered Columns */}
+                                  {COLS.map((col, ci) => {
+                                    const val = dept[col.key] || 0
+                                    const bh = val > 0 ? Math.max((val / maxVal) * plotH, 4) : 0
+                                    const by = yTick(val)
+                                    const bx = gx + ci * (colW + colGap)
+                                    const isOC = col.key === 'active' && dept.overCapacity
+                                    const colColor = isOC ? '#ef4444' : col.color
+                                    return (
+                                      <g key={col.key}>
+                                        {/* Shadow */}
+                                        <rect x={bx+2} y={by+2} width={colW} height={bh} rx={3} fill="rgba(0,0,0,0.3)" />
+                                        {/* Bar */}
+                                        <rect x={bx} y={by} width={colW} height={bh} rx={3}
+                                          fill={colColor}
+                                          opacity={isHov ? 1 : 0.82}
+                                          style={{ transition:'opacity 0.15s, y 0.5s' }}
+                                        />
+                                        {/* Value label on top */}
+                                        {val > 0 && (
+                                          <text x={bx + colW / 2} y={by - 4}
+                                            textAnchor="middle" fontSize={9} fontWeight={700}
+                                            fill={isHov ? colColor : 'var(--text-muted)'}
+                                          >{val}</text>
+                                        )}
+                                        {/* Over-capacity striped overlay */}
+                                        {isOC && (
+                                          <rect x={bx} y={by} width={colW} height={bh} rx={3}
+                                            fill="url(#stripePattern)" opacity={0.4}
+                                          />
+                                        )}
+                                      </g>
+                                    )
+                                  })}
+
+                                  {/* Quota dot on quota line */}
+                                  {dept.quota > 0 && (
+                                    <circle
+                                      cx={gx + groupW / 2} cy={yTick(dept.quota)} r={isHov ? 5 : 3}
+                                      fill="#ef4444" stroke="var(--bg-card)" strokeWidth={1.5}
+                                      style={{ transition:'r 0.15s' }}
+                                    />
+                                  )}
+
+                                  {/* X-axis label */}
+                                  <text
+                                    x={gx + groupW / 2} y={svgPadT + plotH + 14}
+                                    textAnchor="middle" fontSize={9.5} fontWeight={isHov ? 800 : 600}
+                                    fill={isHov ? 'var(--text-primary)' : 'var(--text-muted)'}
+                                    style={{ cursor:'pointer' }}
+                                  >
+                                    {dept.bidang.length > 12 ? dept.bidang.slice(0, 11) + '…' : dept.bidang}
+                                  </text>
+
+                                  {/* Status badge under label */}
+                                  {dept.quota > 0 && (
+                                    <text
+                                      x={gx + groupW / 2} y={svgPadT + plotH + 26}
+                                      textAnchor="middle" fontSize={8} fontWeight={800}
+                                      fill={dept.overCapacity ? '#ef4444' : dept.almostFull ? '#f59e0b' : '#22c55e'}
+                                    >
+                                      {dept.overCapacity ? `▲ ${dept.active - dept.quota} OVER` : dept.almostFull ? `≈ ${dept.slotTersedia} slot` : `✓ ${dept.slotTersedia} slot`}
+                                    </text>
+                                  )}
+                                </g>
+                              )
+                            })}
+
+                            {/* Quota line (polyline connecting quota dots) */}
+                            {quotaPoints && (
+                              <>
+                                <polyline
+                                  points={quotaPoints}
+                                  fill="none" stroke="#ef4444" strokeWidth={2}
+                                  strokeDasharray="5,3" strokeLinecap="round"
+                                  opacity={0.85}
+                                />
+                              </>
+                            )}
+
+                            {/* X axis baseline */}
+                            <line x1={svgPadL} y1={svgPadT + plotH} x2={totalW - svgPadR} y2={svgPadT + plotH}
+                              stroke="var(--border)" strokeWidth={1.5}
+                            />
+
+                            {/* Stripe pattern for over-capacity */}
+                            <defs>
+                              <pattern id="stripePattern" patternUnits="userSpaceOnUse" width={6} height={6} patternTransform="rotate(45)">
+                                <line x1={0} y1={0} x2={0} y2={6} stroke="#fff" strokeWidth={2} />
+                              </pattern>
+                            </defs>
+
+                            {/* Hover Tooltip */}
+                            {wfHover && (() => {
+                              const d = chartDepts.find(x => x.bidang === wfHover)
+                              if (!d) return null
+                              const i = chartDepts.findIndex(x => x.bidang === wfHover)
+                              const tx = xGroup(i) + groupW / 2
+                              const ty = svgPadT + 8
+                              const tw = 160, th = 110
+                              const txAdj = tx + tw + 16 > totalW - svgPadR ? tx - tw - 8 : tx + 8
+                              return (
+                                <g style={{ pointerEvents:'none' }}>
+                                  <rect x={txAdj - 8} y={ty - 4} width={tw + 16} height={th + 8}
+                                    rx={8} fill="var(--bg-card)" stroke="var(--border)" strokeWidth={1}
+                                    filter="drop-shadow(0 4px 12px rgba(0,0,0,0.4))"
+                                  />
+                                  <text x={txAdj} y={ty + 14} fontSize={10} fontWeight={800} fill="var(--text-primary)">
+                                    {d.bidang.length > 20 ? d.bidang.slice(0, 19) + '…' : d.bidang}
+                                  </text>
+                                  {[
+                                    { label:'🔷 Aktif',    val: d.active,       color:'#6366f1' },
+                                    { label:'🟢 Masuk',    val: d.masukCount,   color:'#22c55e' },
+                                    { label:'🟠 Keluar',   val: d.keluarCount,  color:'#f97316' },
+                                    { label:'🔴 Kuota',    val: d.quota > 0 ? d.quota : '—', color:'#ef4444' },
+                                    { label: d.quota > 0 ? (d.overCapacity ? '⚠️ OVER' : '✅ Slot') : '📝 Quota',
+                                      val: d.quota > 0 ? (d.overCapacity ? `+${d.active - d.quota}` : d.slotTersedia) : 'Belum Set',
+                                      color: d.overCapacity ? '#ef4444' : d.quota > 0 ? '#22c55e' : '#f59e0b' },
+                                  ].map((r, ri) => (
+                                    <g key={r.label}>
+                                      <text x={txAdj} y={ty + 30 + ri * 16} fontSize={9} fill="var(--text-muted)">{r.label}</text>
+                                      <text x={txAdj + tw} y={ty + 30 + ri * 16} textAnchor="end" fontSize={9} fontWeight={800} fill={r.color}>{r.val}</text>
+                                    </g>
+                                  ))}
+                                  {/* Arrow pointer */}
+                                  <polygon
+                                    points={`${txAdj - 8},${ty + 20} ${txAdj - 14},${ty + 16} ${txAdj - 14},${ty + 24}`}
+                                    fill="var(--bg-card)" stroke="var(--border)" strokeWidth={1}
+                                    style={{ display: txAdj < tx ? 'block' : 'none' }}
+                                  />
+                                </g>
+                              )
+                            })()}
+                          </svg>
+                        </div>
+
+                        {/* Empty state */}
+                        {chartDepts.length === 0 && (
+                          <p style={{ textAlign:'center', padding:'2rem', color:'var(--text-muted)', fontSize:'0.82rem' }}>
+                            Belum ada data bidang untuk ditampilkan.
+                          </p>
+                        )}
+                      </Card>
+                    )
+                  })()}
+
+                  {/* ── Accordion per bidang (below chart) ── */}
+                  <Card title="🏢 Detail per Bidang" subtitle="Klik nama bidang untuk melihat daftar intern yang akan masuk / keluar">
+                    <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
                       {depts.map(dept => {
-                        const hasQuota = dept.quota > 0
-                        const pct = hasQuota ? Math.min((dept.active / dept.quota) * 100, 120) : 0
-                        const barColor = dept.overCapacity ? '#ef4444' : dept.almostFull ? '#f59e0b' : '#22c55e'
                         const isExp = wfExpanded === dept.bidang
-
+                        const barColor = dept.overCapacity ? '#ef4444' : dept.almostFull ? '#f59e0b' : '#22c55e'
                         return (
                           <div key={dept.bidang}>
                             <div
                               style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'8px 10px', borderRadius:8, background: isExp ? 'var(--bg-main)' : 'transparent', transition:'background 0.15s' }}
                               onClick={() => setWfExpanded(isExp ? null : dept.bidang)}
                             >
-                              {/* Bidang name */}
-                              <span style={{ fontSize:'0.78rem', fontWeight:800, width:160, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                              <span style={{ fontSize:'0.78rem', fontWeight:800, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                 {dept.overCapacity ? '🔴' : dept.almostFull ? '🟡' : dept.quota > 0 ? '🟢' : '⬜'} {dept.bidang}
                               </span>
-
-                              {/* Bar */}
-                              <div style={{ flex:1, height:20, background:'var(--bg-main)', borderRadius:6, overflow:'visible', position:'relative', border:'1px solid var(--border)' }}>
-                                <div style={{
-                                  width:`${Math.min(pct, 100)}%`,
-                                  height:'100%',
-                                  background: barColor,
-                                  borderRadius:6,
-                                  transition:'width 0.6s ease',
-                                  opacity: hasQuota ? 1 : 0.3
-                                }} />
-                                {/* Overflow bar (over-capacity portion) */}
-                                {dept.overCapacity && hasQuota && (
-                                  <div style={{ position:'absolute', right:0, top:0, width:`${Math.min((dept.active - dept.quota) / dept.quota * 100, 20)}%`, height:'100%', background:'#ef444440', borderLeft:'2px solid #ef4444', borderRadius:'0 6px 6px 0' }} />
-                                )}
-                                {/* Quota line */}
-                                {hasQuota && (
-                                  <div style={{ position:'absolute', left:'100%', top:-2, width:2, height:24, background:'#ef4444', borderRadius:2, zIndex:2 }} title={`Kuota: ${dept.quota}`} />
-                                )}
-                              </div>
-
-                              {/* Numbers */}
-                              <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0, minWidth:120, justifyContent:'flex-end' }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
                                 <span style={{ fontSize:'0.75rem', fontWeight:900, color:barColor }}>{dept.active}</span>
                                 <span style={{ fontSize:'0.65rem', color:'var(--text-muted)' }}>/</span>
-                                <span style={{ fontSize:'0.75rem', fontWeight:700, color: hasQuota ? 'var(--text-primary)' : 'var(--text-muted)' }}>{hasQuota ? dept.quota : '—'}</span>
-                                {hasQuota && dept.slotTersedia !== null && (
+                                <span style={{ fontSize:'0.75rem', fontWeight:700, color: dept.quota > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>{dept.quota > 0 ? dept.quota : '—'}</span>
+                                {dept.quota > 0 && dept.slotTersedia !== null && (
                                   <span style={{ fontSize:'0.65rem', fontWeight:800, padding:'2px 8px', borderRadius:99, background: dept.overCapacity ? '#ef444420' : '#22c55e20', color: dept.overCapacity ? '#ef4444' : '#22c55e', marginLeft:4 }}>
                                     {dept.overCapacity ? `+${dept.active - dept.quota} OVER` : `${dept.slotTersedia} slot`}
                                   </span>
