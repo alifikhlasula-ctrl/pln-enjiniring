@@ -1432,7 +1432,7 @@ function LeaderboardWidget({ userId }) {
       )}
 
       <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center', fontStyle: 'italic' }}>
-        Poin dihitung dari Kehadiran (30%), Laporan (25%), Evaluasi (25%), Kudostars (10%), & Survei (10%).
+        Poin dihitung dari Kehadiran (35%), Laporan (30%), Kudostars (25%), & Survei (10%).
       </p>
     </div>
   )

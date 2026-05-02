@@ -786,8 +786,8 @@ export default function InternInsightPage() {
             <Card title="📐 Bobot Penilaian Komposit" subtitle="Komponen yang membentuk skor leaderboard">
               <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                 {Object.entries(lbData.weights||{}).map(([k,v]) => {
-                  const labels = { attendance:'Kehadiran', reports:'Laporan', evaluation:'Evaluasi', kudostars:'Kudostars', surveys:'Survei' }
-                  const colors = { attendance:'#3b82f6', reports:'#22c55e', evaluation:'#8b5cf6', kudostars:'#f59e0b', surveys:'#ec4899' }
+                  const labels = { attendance:'Kehadiran', reports:'Laporan', kudostars:'Kudostars', surveys:'Survei' }
+                  const colors = { attendance:'#3b82f6', reports:'#22c55e', kudostars:'#f59e0b', surveys:'#ec4899' }
                   return (
                     <div key={k} style={{ flex:1, minWidth:120, padding:'10px 14px', borderRadius:10, background:`${colors[k]}12`, border:`1.5px solid ${colors[k]}30`, textAlign:'center' }}>
                       <p style={{ fontSize:'1.1rem', fontWeight:900, color:colors[k] }}>{Math.round(v*100)}%</p>
@@ -826,7 +826,6 @@ export default function InternInsightPage() {
                       <div style={{ display:'flex', gap:4, height:6, borderRadius:4, overflow:'hidden', background:'var(--border)' }}>
                         <div style={{ width:`${item.breakdown.attendance}%`, background:'#3b82f6', transition:'width 0.5s' }} title={`Kehadiran: ${item.breakdown.attendance}`} />
                         <div style={{ width:`${item.breakdown.reports}%`, background:'#22c55e', transition:'width 0.5s' }} title={`Laporan: ${item.breakdown.reports}`} />
-                        <div style={{ width:`${item.breakdown.evaluation}%`, background:'#8b5cf6', transition:'width 0.5s' }} title={`Evaluasi: ${item.breakdown.evaluation}`} />
                         <div style={{ width:`${item.breakdown.kudostars}%`, background:'#f59e0b', transition:'width 0.5s' }} title={`Kudostars: ${item.breakdown.kudostars}`} />
                         <div style={{ width:`${item.breakdown.surveys}%`, background:'#ec4899', transition:'width 0.5s' }} title={`Survei: ${item.breakdown.surveys}`} />
                       </div>
@@ -834,7 +833,6 @@ export default function InternInsightPage() {
                         {[
                           { label:'Kehadiran', val:item.breakdown.attendance, color:'#3b82f6', raw:`${item.raw.attendanceDays}/${item.raw.workingDays} hari` },
                           { label:'Laporan', val:item.breakdown.reports, color:'#22c55e', raw:`${item.raw.reportDays} hari` },
-                          { label:'Evaluasi', val:item.breakdown.evaluation, color:'#8b5cf6', raw:`${item.raw.evalScore}/10` },
                           { label:'Kudostars', val:item.breakdown.kudostars, color:'#f59e0b', raw:`${item.raw.stars} ⭐` },
                           { label:'Survei', val:item.breakdown.surveys, color:'#ec4899', raw:`${item.raw.surveysCompleted}/${item.raw.totalMandatory}` },
                         ].map(b => (
