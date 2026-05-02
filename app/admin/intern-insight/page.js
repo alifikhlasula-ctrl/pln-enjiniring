@@ -501,64 +501,138 @@ export default function InternInsightPage() {
 
             {/* Mood Heatmap by Department */}
             {wb.moodHeatmap?.length > 0 && (
-              <Card title="🗺️ Mood Heatmap per Bidang" subtitle="Happiness Index per departemen — bidang dengan HI < 40% ditandai merah">
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <Card 
+                title="🗺️ Mood Heatmap per Bidang" 
+                subtitle="Happiness Index per departemen berdasarkan Laporan Harian (Daily Reports)"
+              >
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                   {wb.moodHeatmap.map((dept) => {
                     const hi = dept.happinessIndex
-                    const barColor = hi >= 70 ? '#22c55e' : hi >= 50 ? '#f59e0b' : '#ef4444'
+                    const barColor = hi >= 80 ? '#22c55e' : hi >= 60 ? '#84cc16' : hi >= 40 ? '#f59e0b' : '#ef4444'
                     return (
                       <div key={dept.bidang} style={{
-                        padding:'10px 14px', borderRadius:10,
-                        background: dept.alert ? '#fef2f215' : 'var(--bg-main)',
-                        border: dept.alert ? '1.5px solid #ef444440' : '1px solid var(--border)'
+                        padding:'12px', borderRadius:12,
+                        background: dept.alert ? '#ef444408' : 'var(--bg-main)',
+                        border: dept.alert ? '1px solid #ef444430' : '1px solid var(--border)',
+                        transition:'transform 0.2s'
                       }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                          <span style={{ fontWeight:700, fontSize:'0.82rem' }}>
-                            {dept.alert && '🚨 '}{dept.bidang}
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                          <span style={{ fontWeight:800, fontSize:'0.85rem', color: dept.alert ? '#ef4444' : 'var(--text-primary)' }}>
+                            {dept.alert && '⚠️ '}{dept.bidang}
                           </span>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <span style={{ fontSize:'0.65rem', color:'var(--text-muted)' }}>{dept.total} laporan</span>
-                            <span style={{ fontWeight:900, fontSize:'0.9rem', color: barColor }}>{hi}%</span>
+                            <span style={{ fontSize:'0.65rem', color:'var(--text-muted)', background:'var(--bg-card)', padding:'2px 8px', borderRadius:6 }}>{dept.total} laporan</span>
+                            <span style={{ fontWeight:900, fontSize:'1rem', color: barColor }}>{hi}%</span>
                           </div>
                         </div>
-                        <div style={{ display:'flex', gap:2, height:8, borderRadius:4, overflow:'hidden', background:'var(--border)' }}>
-                          <div style={{ width:`${hi}%`, background: barColor, borderRadius:4, transition:'width 0.5s' }} />
+                        
+                        <div style={{ display:'flex', gap:2, height:10, borderRadius:5, overflow:'hidden', background:'var(--bg-card)', border:'1px solid var(--border)' }}>
+                          <div style={{ width:`${hi}%`, background: barColor, borderRadius:5, transition:'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }} />
                         </div>
-                        <div style={{ display:'flex', gap:8, marginTop:4, fontSize:'0.6rem', color:'var(--text-muted)' }}>
-                          <span>😄{dept.very_happy}</span>
-                          <span>🙂{dept.happy}</span>
-                          <span>😐{dept.neutral}</span>
-                          <span>😔{dept.sad}</span>
-                          <span>😢{dept.very_sad}</span>
+
+                        <div style={{ display:'flex', gap:12, marginTop:10, flexWrap:'wrap' }}>
+                          {[
+                            { m:'very_happy', e:'😄', c:'#22c55e' },
+                            { m:'happy', e:'🙂', c:'#84cc16' },
+                            { m:'neutral', e:'😐', c:'#f59e0b' },
+                            { m:'sad', e:'😔', c:'#f97316' },
+                            { m:'very_sad', e:'😢', c:'#ef4444' }
+                          ].map(item => (
+                            <div key={item.m} style={{ display:'flex', alignItems:'center', gap:4, opacity: dept[item.m] > 0 ? 1 : 0.3 }}>
+                              <span style={{ fontSize:'0.9rem' }}>{item.e}</span>
+                              <span style={{ fontSize:'0.7rem', fontWeight:800, color: dept[item.m] > 0 ? item.c : 'var(--text-muted)' }}>{dept[item.m]}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )
                   })}
+
+                  {/* Legend / Info */}
+                  <div style={{ marginTop:8, padding:'10px', background:'var(--bg-card)', borderRadius:8, border:'1px dashed var(--border)' }}>
+                    <p style={{ fontSize:'0.65rem', color:'var(--text-muted)', fontWeight:700, marginBottom:4 }}>💡 Cara Penghitungan Happiness Index (HI):</p>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:'10px' }}>
+                      {[
+                        { l:'Sangat Senang', v:'100%', c:'#22c55e' },
+                        { l:'Senang', v:'75%', c:'#84cc16' },
+                        { l:'Biasa', v:'50%', c:'#f59e0b' },
+                        { l:'Kurang Baik', v:'25%', c:'#f97316' },
+                        { l:'Buruk', v:'0%', c:'#ef4444' }
+                      ].map(i => (
+                        <span key={i.l} style={{ fontSize:'0.6rem', color:'var(--text-muted)' }}>
+                          <b style={{ color:i.c }}>{i.l}</b> = {i.v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </Card>
             )}
 
             {/* Happiness Trend Sparkline */}
             {wb.happinessTrend?.length > 0 && (
-              <Card title="📈 Tren Happiness Index (Mingguan)" subtitle="Pergerakan tingkat kebahagiaan dari waktu ke waktu">
+              <Card 
+                title="📈 Tren Happiness Index (Mingguan)" 
+                subtitle="Rata-rata tingkat kebahagiaan per minggu berdasarkan mood laporan"
+              >
                 {(() => {
                   const trend = wb.happinessTrend
                   const max = 100
                   return (
                     <div>
-                      <div style={{ display:'flex', alignItems:'flex-end', gap:4, height:100, padding:'8px 0' }}>
+                      <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:120, padding:'10px 0 20px', borderBottom:'1px solid var(--border)' }}>
                         {trend.map((w, i) => {
-                          const color = w.index >= 70 ? '#22c55e' : w.index >= 50 ? '#f59e0b' : '#ef4444'
+                          const hasData = w.totalReports > 0
+                          const color = !hasData ? 'var(--border)' : w.index >= 75 ? '#22c55e' : w.index >= 50 ? '#f59e0b' : '#ef4444'
+                          const barHeight = hasData ? Math.max((w.index / max) * 100, 4) : 4
+                          
                           return (
-                            <div key={w.week} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
-                              <span style={{ fontSize:'0.5rem', fontWeight:800, color }}>{w.index}%</span>
-                              <div style={{ width:'100%', height:`${(w.index / max) * 80}%`, minHeight:4, background: color, borderRadius:'3px 3px 0 0', transition:'height 0.4s' }}
-                                title={`${w.week}: ${w.index}%`} />
-                              {i % 2 === 0 && <span style={{ fontSize:'0.45rem', color:'var(--text-muted)', transform:'rotate(-45deg)', whiteSpace:'nowrap' }}>{w.week.slice(-3)}</span>}
+                            <div key={w.week} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:6, position:'relative' }}>
+                              {/* Percentage Label */}
+                              <span style={{ 
+                                fontSize:'0.55rem', 
+                                fontWeight:900, 
+                                color: hasData ? color : 'var(--text-muted)',
+                                opacity: hasData ? 1 : 0.4
+                              }}>
+                                {hasData ? `${w.index}%` : 'N/A'}
+                              </span>
+
+                              {/* Bar */}
+                              <div style={{ 
+                                width:'100%', 
+                                height: barHeight, 
+                                background: color, 
+                                borderRadius:'4px 4px 2px 2px', 
+                                transition:'height 0.6s ease, background 0.3s',
+                                opacity: hasData ? 1 : 0.2,
+                                border: hasData ? 'none' : '1px dashed var(--text-muted)'
+                              }} title={`${w.label}: ${hasData ? w.index + '%' : 'Tidak ada laporan'}`} />
+                              
+                              {/* X-Axis Label (The new readable label) */}
+                              <div style={{ 
+                                position:'absolute', 
+                                bottom:-22, 
+                                whiteSpace:'nowrap', 
+                                transform:'rotate(-30deg)',
+                                transformOrigin:'left center'
+                              }}>
+                                <span style={{ 
+                                  fontSize:'0.5rem', 
+                                  fontWeight:700, 
+                                  color: hasData ? 'var(--text-primary)' : 'var(--text-muted)',
+                                  opacity: hasData ? 1 : 0.5
+                                }}>
+                                  {w.label}
+                                </span>
+                              </div>
                             </div>
                           )
                         })}
                       </div>
+                      <p style={{ fontSize:'0.6rem', color:'var(--text-muted)', marginTop:24, textAlign:'right', fontStyle:'italic' }}>
+                        * Menampilkan 12 minggu terakhir. N/A berarti tidak ada data laporan pada minggu tersebut.
+                      </p>
                     </div>
                   )
                 })()}

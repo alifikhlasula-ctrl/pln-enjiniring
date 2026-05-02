@@ -378,9 +378,18 @@ export async function GET(request) {
     // Happiness trend per week (sparkline data)
     const happinessTrend = moodTrend.map(w => {
       const t = w.total || 1
+      const [year, weekPart] = w.week.split('-W')
+      const weekNum = parseInt(weekPart)
+      
+      // Rough month estimation for the label
+      const d = new Date(year, 0, 1 + (weekNum - 1) * 7)
+      const monthShort = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][d.getMonth()]
+      
       return {
         week: w.week,
-        index: Math.round((w.very_happy * 100 + w.happy * 75 + w.neutral * 50 + w.sad * 25 + w.very_sad * 0) / t)
+        label: `${monthShort} W${weekNum % 4 || 4}`,
+        index: Math.round((w.very_happy * 100 + w.happy * 75 + w.neutral * 50 + w.sad * 25 + w.very_sad * 0) / t),
+        totalReports: w.total
       }
     })
 
