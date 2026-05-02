@@ -51,6 +51,7 @@ export async function GET() {
       const active = []      // Currently active
       const masuk = []       // PENDING — akan masuk
       const keluar = []      // Active, exiting within 60 days
+      const selesai = []     // COMPLETED / Alumni
 
       for (const intern of internsBidang) {
         const status = (intern.status || 'ACTIVE').toUpperCase()
@@ -69,6 +70,8 @@ export async function GET() {
           }
         } else if (effStatus === 'PENDING') {
           masuk.push({ name: intern.name, periodStart: intern.periodStart })
+        } else if (effStatus === 'COMPLETED' || effStatus === 'ALUMNI') {
+          selesai.push({ name: intern.name, periodEnd: intern.periodEnd })
         }
       }
 
@@ -93,8 +96,10 @@ export async function GET() {
         proyeksi,
         masuk,         // Full list of pending interns (with periodStart)
         keluar,        // Interns exiting within 60 days (with periodEnd)
+        selesai,       // Interns who completed their internship
         masukCount: masuk.length,
         keluarCount: keluar.length,
+        selesaiCount: selesai.length,
         overCapacity: quota > 0 && activeCount > quota,
         almostFull: quota > 0 && slotTersedia !== null && slotTersedia <= 1 && slotTersedia >= 0,
       })
