@@ -51,7 +51,7 @@ export async function GET(request) {
         select: {
           id: true, internId: true, date: true, checkIn: true, checkOut: true,
           status: true, checkInLoc: true, checkOutLoc: true,
-          createdAt: true, updatedAt: true, editedAt: true, editedBy: true,
+          createdAt: true, updatedAt: true, editedAt: true, editedBy: true, isOverride: true,
           faceInUrl: true, faceOutUrl: true
           // EXPLICITLY OMITTING faceInBase64 and faceOutBase64 for Data Diet
         }

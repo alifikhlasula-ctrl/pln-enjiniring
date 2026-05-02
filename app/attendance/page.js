@@ -511,6 +511,13 @@ export default function AttendancePage() {
               </div>
             )}
 
+            {todayLog && todayLog.editedBy && !todayLog.isOverride && (
+              <div style={{ padding: '8px 12px', background: 'var(--warning-light)', border: '1px solid var(--warning)50', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                <AlertCircle size={14} color="var(--warning)" />
+                <span style={{ fontSize: '0.7rem', color: 'var(--warning)', fontWeight: 700 }}>Poin hari ini 0.5 (Koreksi Manual)</span>
+              </div>
+            )}
+
             {/* Check In / Check Out Buttons */}
             <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
               {!todayLog?.checkIn ? (
@@ -703,9 +710,16 @@ export default function AttendancePage() {
                         </div>
                       </td>
                       <td>
-                        {log.status === 'LATE'
-                          ? <span className="badge badge-warning">TERLAMBAT</span>
-                          : <span className="badge badge-success">HADIR</span>}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {log.status === 'LATE'
+                            ? <span className="badge badge-warning">TERLAMBAT</span>
+                            : <span className="badge badge-success">HADIR</span>}
+                          {log.editedBy && !log.isOverride && (
+                            <span style={{ fontSize: '0.6rem', color: 'var(--warning)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <AlertCircle size={8} /> 0.5 Poin (Koreksi)
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
