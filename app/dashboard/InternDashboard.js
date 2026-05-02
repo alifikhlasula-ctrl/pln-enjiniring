@@ -7,7 +7,7 @@ import {
   Clock, CheckCircle2, CalendarDays, TrendingUp, Wallet,
   Megaphone, AlertCircle, BookOpen, Star, MapPin, Zap,
   BarChart3, ArrowRight, RefreshCw, Loader2, Target,
-  Plus, Trash2, Edit2, CheckCircle, Pin
+  Plus, Trash2, Edit2, CheckCircle, Pin, Trophy
 } from 'lucide-react'
 import Swal from 'sweetalert2'
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from '@/lib/constants'
