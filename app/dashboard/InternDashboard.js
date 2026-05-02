@@ -518,6 +518,32 @@ export default function InternDashboard() {
           </button>
         </div>
       </div>
+
+      {/* ── Feature Update Announcement ── */}
+      {!localStorage.getItem('hide_gamification_announce') && (
+        <div className="card" style={{ 
+          marginBottom: '1rem', 
+          background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', 
+          border: 'none', color: 'white', position: 'relative', overflow: 'hidden' 
+        }}>
+          <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}>
+            <Trophy size={100} />
+          </div>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+              <Zap size={18} fill="white" /> Update Fitur: Gamifikasi Intern!
+            </h3>
+            <p style={{ fontSize: '0.8rem', marginTop: 6, opacity: 0.9, lineHeight: 1.4 }}>
+              Kumpulkan <b>Kudostars</b> dari rekan kerja dan tingkatkan <b>Skor Komposit</b> Anda untuk memuncaki Leaderboard. 
+              Dapatkan pengakuan atas kontribusi terbaikmu!
+            </p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+              <button onClick={() => { localStorage.setItem('hide_gamification_announce', 't'); window.dispatchEvent(new Event('storage')) }} className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', fontWeight: 700 }}>Tutup</button>
+              <a href="#leaderboard-section" className="btn btn-sm" style={{ background: 'white', color: '#6366f1', border: 'none', fontWeight: 800 }}>Lihat Leaderboard</a>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* ── Mandatory Survey Sticky Banner ── */}
       {D.pendingSurveys?.some(s => s.isMandatory) && (
@@ -927,7 +953,12 @@ export default function InternDashboard() {
         </div>
       </div>
 
-      {/* ── Row 7: ⭐ Kudostars — Peer Recognition ── */}
+      {/* ── Row 7: 🏆 Leaderboard — Top Performers ── */}
+      <div id="leaderboard-section">
+        <LeaderboardWidget userId={user?.id} />
+      </div>
+
+      {/* ── Row 8: ⭐ Kudostars — Peer Recognition ── */}
       <KudostarsWidget userId={user?.id} />
 
       <style jsx>{`
@@ -1277,3 +1308,81 @@ function KudostarsWidget({ userId }) {
     </div>
   )
 }
+
+/* ── Leaderboard Widget — Top Performers Sub-component ── */
+function LeaderboardWidget({ userId }) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!userId) return
+    fetch(`/api/intern-dashboard/leaderboard?userId=${userId}`)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [userId])
+
+  if (loading) return <div className="card" style={{ marginBottom: 'var(--sp-4)', height: 200, background: 'var(--bg-card)', animation: 'pulse 1.4s infinite' }} />
+  if (!data?.top5) return null
+
+  return (
+    <div className="card" style={{ marginBottom: 'var(--sp-4)', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', border: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <h3 style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+          <Trophy size={20} color="#f59e0b" fill="#f59e0b20" /> Leaderboard Bulan Ini
+        </h3>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Berdasarkan Skor Komposit</span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {data.top5.map((item, i) => (
+          <div key={item.internId} style={{ 
+            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', 
+            background: item.userId === userId ? 'var(--primary-light)' : 'white',
+            borderRadius: 12, border: `1px solid ${item.userId === userId ? 'var(--primary)' : 'var(--border)'}`,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ 
+              width: 28, height: 28, borderRadius: '50%', 
+              background: i === 0 ? '#fef3c7' : i === 1 ? '#f1f5f9' : i === 2 ? '#fff7ed' : 'var(--bg-main)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.85rem', fontWeight: 900, color: i === 0 ? '#d97706' : i === 1 ? '#475569' : i === 2 ? '#c2410c' : 'var(--text-muted)'
+            }}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{item.name} {item.userId === userId && '(Anda)'}</p>
+              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0 }}>{item.bidang}</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--primary)', margin: 0 }}>{item.composite}</p>
+              <p style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--text-muted)', margin: 0, letterSpacing: 0.5 }}>SKOR</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {data.userRank && data.userRank.rank > 5 && (
+        <div style={{ 
+          marginTop: 12, padding: '10px 14px', borderRadius: 12, 
+          background: 'var(--primary)', color: 'white',
+          display: 'flex', alignItems: 'center', gap: 12
+        }}>
+          <div style={{ width: 28, textAlign: 'center', fontWeight: 900, fontSize: '0.9rem' }}>#{data.userRank.rank}</div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '0.82rem', fontWeight: 800, margin: 0 }}>Peringkat Anda</p>
+            <p style={{ fontSize: '0.65rem', opacity: 0.8, margin: 0 }}>Terus tingkatkan keaktifanmu!</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: '0.9rem', fontWeight: 900, margin: 0 }}>{data.userRank.composite}</p>
+          </div>
+        </div>
+      )}
+
+      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center', fontStyle: 'italic' }}>
+        Skor dihitung dari Kehadiran (30%), Laporan (25%), Evaluasi (25%), Kudostars (10%), & Survei (10%).
+      </p>
+    </div>
+  )
+}
+
