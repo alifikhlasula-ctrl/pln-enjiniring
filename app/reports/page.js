@@ -206,6 +206,16 @@ function CalendarTimesheet({ reports, periodStart, onDayClick }) {
           else if (isPastLocked) lockedLabel = 'Terkunci'
           else if (isTercatat) lockedLabel = 'Selesai (Terkunci)'
 
+          let isLate = false;
+          if (rep && rep.createdAt && !rep.isOverride) {
+            const reportDateStr = (rep.date || rep.reportDate || '').substring(0, 10);
+            if (reportDateStr) {
+              const createdAtWIB = new Date(new Date(rep.createdAt).getTime() + 7 * 3600000);
+              const createdStr = createdAtWIB.toISOString().split('T')[0];
+              if (createdStr > reportDateStr) isLate = true;
+            }
+          }
+
           return (
             <div 
               key={dtStr} 
@@ -234,6 +244,10 @@ function CalendarTimesheet({ reports, periodStart, onDayClick }) {
                 {rep ? (
                    rep.status === 'DRAFT' ? (
                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: 800 }}>Draft (Edit)</span>
+                   ) : isLate ? (
+                     <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: 999, background: 'var(--warning-light)', color: 'var(--warning)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4 }}>
+                       <AlertCircle size={10} /> Terlambat
+                     </span>
                    ) : (
                      <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 999, background: 'var(--secondary-light)', color: 'var(--secondary)', fontWeight: 800 }}>Tercatat</span>
                    )
