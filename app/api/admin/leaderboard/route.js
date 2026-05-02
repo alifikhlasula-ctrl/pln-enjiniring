@@ -48,11 +48,12 @@ export async function GET() {
     ])
 
     const todayDate = new Date()
+    todayDate.setHours(0, 0, 0, 0)
     const allInterns = allInternsRaw.filter(i => {
       if (!i.periodEnd) return true
       const end = new Date(i.periodEnd)
-      // Exclude if their period ended more than 7 days ago
-      return end.getTime() >= (todayDate.getTime() - 7 * 86400000)
+      // Exclude if their period ends tomorrow (H-1) or earlier
+      return end.getTime() > (todayDate.getTime() + 86400000)
     })
 
     const mandatorySurveyIds = allSurveys.map(s => s.id)
