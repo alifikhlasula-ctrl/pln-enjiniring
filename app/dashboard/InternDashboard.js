@@ -675,6 +675,14 @@ export default function InternDashboard() {
       {/* ── Badges & Achievements ── */}
       <BadgesSection badges={D.badges} loading={loading} />
 
+      {/* ── 🏆 Leaderboard — Top Performers ── */}
+      <div id="leaderboard-section">
+        <LeaderboardWidget userId={user?.id} />
+      </div>
+
+      {/* ── ⭐ Kudostars — Peer Recognition ── */}
+      <KudostarsWidget userId={user?.id} />
+
       {/* ── Row 1: Stat Cards ── */}
       <div className="stat-grid intern-stat-grid" style={{ marginBottom: 'var(--sp-4)' }}>
         {/* Today Status */}
@@ -1032,13 +1040,7 @@ export default function InternDashboard() {
         </div>
       </div>
 
-      {/* ── Row 7: 🏆 Leaderboard — Top Performers ── */}
-      <div id="leaderboard-section">
-        <LeaderboardWidget userId={user?.id} />
-      </div>
 
-      {/* ── Row 8: ⭐ Kudostars — Peer Recognition ── */}
-      <KudostarsWidget userId={user?.id} />
 
       <style jsx>{`
         @keyframes slideUp { from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1} }
