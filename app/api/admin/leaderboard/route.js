@@ -149,17 +149,25 @@ export async function GET(req) {
       const surveysCompleted = surveysDone[intern.userId]?.size || 0
 
       // Normalized scores (0-100)
-      const attendanceScore = workingDays > 0 ? Math.min((attPoints / workingDays) * 100, 100) : 100
-      const reportScore = workingDays > 0 ? Math.min((repDays / workingDays) * 100, 100) : 100
-      const kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
-      const surveyScore = totalMandatory > 0 ? (surveysCompleted / totalMandatory) * 100 : 100
+      let attendanceScore = 0
+      let reportScore = 0
+      let kudoScore = 0
+      let surveyScore = 0
+      let composite = 0
 
-      const composite = (
-        attendanceScore * WEIGHTS.attendance +
-        reportScore * WEIGHTS.reports +
-        kudoScore * WEIGHTS.kudostars +
-        surveyScore * WEIGHTS.surveys
-      )
+      if (workingDays > 0) {
+        attendanceScore = Math.min((attPoints / workingDays) * 100, 100)
+        reportScore = Math.min((repDays / workingDays) * 100, 100)
+        kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
+        surveyScore = totalMandatory > 0 ? (surveysCompleted / totalMandatory) * 100 : 100
+
+        composite = (
+          attendanceScore * WEIGHTS.attendance +
+          reportScore * WEIGHTS.reports +
+          kudoScore * WEIGHTS.kudostars +
+          surveyScore * WEIGHTS.surveys
+        )
+      }
 
       return {
         internId: intern.id,
