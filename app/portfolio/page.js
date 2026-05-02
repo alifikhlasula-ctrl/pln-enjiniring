@@ -46,7 +46,7 @@ function PortfolioContent() {
     window.print()
   }
 
-  const reports = data.reports || []
+   const reports = data.reports || []
   const uniqueTasks = new Set()
   const jobDesks = []
   
@@ -71,6 +71,14 @@ function PortfolioContent() {
       }
     })
   })
+
+  const badges = data.badges || []
+  let profileText = `Hasil evaluasi performa magang menunjukkan tingkat dedikasi yang tinggi sebagai IT Intern. Telah menyelesaikan program magang di PLN Enjiniring dengan capaian Indeks Kedisiplinan ${score}%. Memiliki kemampuan adaptasi cepat dalam lingkungan korporat dan teknis.`
+  
+  if (badges.length > 0) {
+    const badgeNames = badges.map(b => `"${b.name}"`).join(', ')
+    profileText = `Hasil evaluasi performa magang menunjukkan tingkat dedikasi yang tinggi sebagai ${intern.bidang} Intern. Telah menyelesaikan program magang di PLN Enjiniring dengan capaian Indeks Kedisiplinan ${score}%. Memiliki kemampuan adaptasi cepat dalam lingkungan korporat dan teknis. Selain itu, kandidat juga secara aktif diakui oleh rekan kerja atas kontribusinya, dibuktikan dengan perolehan apresiasi internal (${badgeNames}). Hal ini merepresentasikan kemampuan kolaborasi, kepemimpinan, dan inisiatif yang luar biasa di tempat kerja sesungguhnya.`
+  }
 
   return (
     <div style={{ background: '#f1f5f9', minHeight: '100vh', padding: '2.5rem 1rem' }}>
@@ -122,11 +130,32 @@ function PortfolioContent() {
              <section style={{ marginBottom: '3rem' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: 2, marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Professional Profile</h3>
                 <p style={{ fontSize: '1.05rem', color: '#334155', lineHeight: 1.8 }}>
-                   Hasil evaluasi performa magang menunjukkan tingkat dedikasi yang tinggi sebagai <strong>{intern.bidang} Intern</strong>. 
-                   Telah menyelesaikan program magang di <strong>PLN Enjiniring</strong> dengan capaian <strong>Indeks Kedisiplinan {score}%</strong>. 
-                   Memiliki kemampuan adaptasi cepat dalam lingkungan korporat dan teknis.
+                   <span dangerouslySetInnerHTML={{ __html: profileText.replace(new RegExp(intern.bidang, 'g'), `<strong>${intern.bidang}</strong>`).replace(/Indeks Kedisiplinan \d+%/, match => `<strong>${match}</strong>`).replace(/\(".*?"\)/g, match => `<strong>${match}</strong>`) }} />
                 </p>
              </section>
+
+             {/* Internal Recognitions (Kudostars) */}
+             {badges.length > 0 && (
+               <section style={{ marginBottom: '3rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: 2, marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>Peer Recognition & Achievements</h3>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                    <strong>Catatan Perekrut:</strong> PLN Enjiniring menggunakan sistem gamifikasi <em>Kudostars</em> di mana karyawan secara aktif saling memberikan apresiasi atas performa dan kolaborasi di dunia nyata. Kandidat ini telah mendapatkan badge berikut:
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    {badges.map(b => (
+                      <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: `${b.color}15`, color: b.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Award size={20} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{b.name}</p>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{b.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+               </section>
+             )}
 
              {/* Experience */}
              <section style={{ marginBottom: '3rem' }}>
