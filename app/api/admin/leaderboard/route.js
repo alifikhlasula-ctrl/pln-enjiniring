@@ -16,9 +16,8 @@ export async function GET() {
   try {
     const todayStr = new Date().toISOString().split('T')[0]
 
-    // ── Parallel fetch all data sources ──
     const [
-      allInterns, allAttendance, allReports,
+      allInternsRaw, allAttendance, allReports,
       allEvals, allRecognitions, allSurveys, allResponses
     ] = await Promise.all([
       prisma.intern.findMany({
@@ -47,6 +46,14 @@ export async function GET() {
         select: { surveyId: true, respondentId: true }
       })
     ])
+
+    const todayDate = new Date()
+    const allInterns = allInternsRaw.filter(i => {
+      if (!i.periodEnd) return true
+      const end = new Date(i.periodEnd)
+      // Exclude if their period ended more than 7 days ago
+      return end.getTime() >= (todayDate.getTime() - 7 * 86400000)
+    })
 
     const mandatorySurveyIds = allSurveys.map(s => s.id)
     const totalMandatory = mandatorySurveyIds.length
