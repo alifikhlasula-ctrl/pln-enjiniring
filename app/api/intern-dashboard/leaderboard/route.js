@@ -4,10 +4,9 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 const WEIGHTS = {
-  attendance: 0.30,
-  reports: 0.25,
-  evaluation: 0.25,
-  kudostars: 0.10,
+  attendance: 0.35,
+  reports: 0.30,
+  kudostars: 0.25,
   surveys: 0.10
 }
 
@@ -123,7 +122,6 @@ export async function GET(request) {
       const composite = (
         attendanceScore * WEIGHTS.attendance +
         reportScore * WEIGHTS.reports +
-        evalNormalized * WEIGHTS.evaluation +
         kudoScore * WEIGHTS.kudostars +
         surveyScore * WEIGHTS.surveys
       )
