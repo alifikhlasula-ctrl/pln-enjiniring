@@ -296,7 +296,7 @@ export default function InternInsightPage() {
       fetch(`/api/admin/alumni?sort=${alumniSort}&search=${alumniSearch}&bidang=${alumniBidang}`)
         .then(r => r.json()).then(d => { setAlumniData(d); setAlumniLoading(false) }).catch(() => setAlumniLoading(false))
     }
-    if (tab === 'workforce' && !wfData && !wfLoading) {
+    if ((tab === 'workforce' || tab === 'master_data') && !wfData && !wfLoading) {
       setWfLoading(true)
       fetch('/api/admin/workforce')
         .then(r => r.json()).then(d => { setWfData(d); setWfLoading(false) }).catch(() => setWfLoading(false))
