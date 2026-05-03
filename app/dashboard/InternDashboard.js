@@ -191,6 +191,195 @@ function BadgesSection({ badges, loading }) {
   )
 }
 
+/* ── Offboarding Modal Component ─────────────── */
+function OffboardingModal({ offboarding, internId, onComplete }) {
+  const [step, setStep] = useState(1) // 1: survey, 2: clearance, 3: done
+  const [answers, setAnswers] = useState({})
+  const [idCardChecked, setIdCardChecked] = useState(false)
+  const [confirmedUnderstand, setConfirmedUnderstand] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [result, setResult] = useState(null)
+
+  const QUESTIONS = [
+    { id: 'q1', type: 'rating', label: 'Seberapa puas kamu dengan program magang di PLN Enjiniring secara keseluruhan?' },
+    { id: 'q2', type: 'rating', label: 'Seberapa baik mentor/pembimbing lapangan membimbing kamu selama magang?' },
+    { id: 'q3', type: 'rating', label: 'Seberapa relevan tugas yang kamu kerjakan dengan jurusan/bidang studi kamu?' },
+    { id: 'q4', type: 'rating', label: 'Seberapa nyaman lingkungan kerja dan fasilitas yang disediakan?' },
+    { id: 'q5', type: 'rating', label: 'Seberapa besar magang ini berkontribusi pada pengembangan skill kamu?' },
+    { id: 'q6', type: 'text', label: 'Apa hal yang paling kamu sukai dari program magang ini?' },
+    { id: 'q7', type: 'text', label: 'Apa hal yang menurutmu perlu diperbaiki dari program magang?' },
+    { id: 'q8', type: 'select', label: 'Apakah kamu akan merekomendasikan program magang di sini kepada teman/juniormu?', options: ['Ya', 'Tidak', 'Mungkin'] },
+    { id: 'q9', type: 'text', label: 'Bidang/departemen mana yang paling ingin kamu explore jika diberi kesempatan magang lagi?' },
+    { id: 'q10', type: 'text', label: 'Ada pesan/kesan untuk tim HC dan PLN Enjiniring? (Opsional)' },
+  ]
+
+  const ratingLabels = ['', '😞 Sangat Kurang', '😐 Kurang', '😊 Cukup', '😄 Baik', '⭐ Sangat Baik']
+
+  const handleSubmitSurvey = async () => {
+    const required = QUESTIONS.slice(0, 9).filter(q => q.id !== 'q10')
+    const missing = required.filter(q => !answers[q.id])
+    if (missing.length > 0) { alert('Harap isi semua pertanyaan terlebih dahulu.'); return }
+    setStep(2)
+  }
+
+  const handleFinalConfirm = async () => {
+    if (!idCardChecked || !confirmedUnderstand) { alert('Harap centang semua pernyataan.'); return }
+    setSaving(true)
+    try {
+      const res = await fetch('/api/offboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ internId, exitSurveyData: answers, idCardReturned: true, confirm: true })
+      })
+      const data = await res.json()
+      setResult(data)
+      setStep(3)
+    } catch (e) { alert('Gagal menyimpan. Coba lagi.') }
+    finally { setSaving(false) }
+  }
+
+  const overlayStyle = {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+    backdropFilter: 'blur(6px)'
+  }
+  const modalStyle = {
+    background: 'var(--bg-card)', borderRadius: 20, padding: '1.75rem',
+    width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto',
+    border: '1px solid var(--border)', boxShadow: '0 24px 80px rgba(0,0,0,0.25)'
+  }
+
+  return (
+    <div style={overlayStyle}>
+      <div style={modalStyle}>
+        {/* Step 1: Exit Survey */}
+        {step === 1 && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🎓</div>
+              <h2 style={{ fontWeight: 900, fontSize: '1.2rem', margin: '0 0 6px', color: 'var(--text-primary)' }}>Sebentar Lagi Selesai Nih!</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                Masa magangmu akan berakhir dalam <strong style={{ color: 'var(--danger)' }}>{offboarding.daysUntilEnd === 0 ? 'Hari Ini' : `${offboarding.daysUntilEnd} Hari`}</strong>. Yuk isi Exit Survey dulu!
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {QUESTIONS.map((q, i) => (
+                <div key={q.id}>
+                  <p style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', margin: '0 0 8px' }}>
+                    {i + 1}. {q.label} {q.id !== 'q10' && <span style={{ color: 'var(--danger)' }}>*</span>}
+                  </p>
+                  {q.type === 'rating' && (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {[1, 2, 3, 4, 5].map(v => (
+                        <button key={v} onClick={() => setAnswers(a => ({ ...a, [q.id]: v }))}
+                          style={{
+                            padding: '6px 14px', borderRadius: 20, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                            border: `2px solid ${answers[q.id] === v ? 'var(--primary)' : 'var(--border)'}`,
+                            background: answers[q.id] === v ? 'var(--primary)' : 'var(--bg-main)',
+                            color: answers[q.id] === v ? '#fff' : 'var(--text-secondary)'
+                          }}>
+                          {ratingLabels[v]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {q.type === 'text' && (
+                    <textarea rows={2} placeholder="Tulis jawabanmu..."
+                      value={answers[q.id] || ''}
+                      onChange={e => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
+                      style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-primary)', fontSize: '0.85rem', resize: 'vertical', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                    />
+                  )}
+                  {q.type === 'select' && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {q.options.map(opt => (
+                        <button key={opt} onClick={() => setAnswers(a => ({ ...a, [q.id]: opt }))}
+                          style={{
+                            padding: '6px 18px', borderRadius: 20, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                            border: `2px solid ${answers[q.id] === opt ? 'var(--primary)' : 'var(--border)'}`,
+                            background: answers[q.id] === opt ? 'var(--primary)' : 'var(--bg-main)',
+                            color: answers[q.id] === opt ? '#fff' : 'var(--text-secondary)'
+                          }}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button onClick={handleSubmitSurvey}
+              style={{ width: '100%', marginTop: '1.5rem', padding: '0.85rem', borderRadius: 12, background: 'var(--primary)', color: '#fff', fontWeight: 800, fontSize: '0.95rem', border: 'none', cursor: 'pointer' }}>
+              Lanjut ke Final Clearance →
+            </button>
+          </>
+        )}
+
+        {/* Step 2: Final Clearance */}
+        {step === 2 && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>📋</div>
+              <h2 style={{ fontWeight: 900, fontSize: '1.2rem', margin: '0 0 6px', color: 'var(--text-primary)' }}>Final Clearance</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>Centang semua pernyataan di bawah untuk menyelesaikan proses offboarding.</p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                { state: idCardChecked, set: setIdCardChecked, label: 'Saya sudah mengembalikan ID Card kepada tim HC.' },
+                { state: confirmedUnderstand, set: setConfirmedUnderstand, label: 'Saya memahami bahwa akses sistem akan terbatas setelah periode magang berakhir.' }
+              ].map((item, i) => (
+                <label key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', padding: '0.875rem', background: item.state ? 'var(--secondary-light)' : 'var(--bg-main)', borderRadius: 12, border: `1.5px solid ${item.state ? 'var(--secondary)' : 'var(--border)'}`, transition: 'all 0.2s' }}>
+                  <input type="checkbox" checked={item.state} onChange={e => item.set(e.target.checked)} style={{ marginTop: 2, width: 18, height: 18, flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>{item.label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: '1.5rem' }}>
+              <button onClick={() => setStep(1)} style={{ flex: 1, padding: '0.75rem', borderRadius: 12, background: 'var(--bg-main)', color: 'var(--text-primary)', fontWeight: 700, border: '1.5px solid var(--border)', cursor: 'pointer' }}>← Kembali</button>
+              <button onClick={handleFinalConfirm} disabled={saving || !idCardChecked || !confirmedUnderstand}
+                style={{ flex: 2, padding: '0.75rem', borderRadius: 12, background: saving ? 'var(--border)' : 'var(--primary)', color: '#fff', fontWeight: 800, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: (!idCardChecked || !confirmedUnderstand) ? 0.5 : 1 }}>
+                {saving ? 'Menyimpan...' : '✅ Selesaikan Offboarding'}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Step 3: Done */}
+        {step === 3 && (
+          <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: 12 }}>🎉</div>
+            <h2 style={{ fontWeight: 900, fontSize: '1.3rem', margin: '0 0 8px', color: 'var(--text-primary)' }}>Selamat & Terima Kasih!</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 1.5rem', lineHeight: 1.6 }}>
+              Kamu telah menyelesaikan seluruh proses magang dengan baik. Semoga pengalaman ini bermanfaat untuk karirmu ke depan!
+            </p>
+
+            <div style={{ background: 'var(--secondary-light)', borderRadius: 12, padding: '1rem', marginBottom: '1.25rem', border: '1.5px solid var(--secondary)' }}>
+              <p style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--secondary)', margin: '0 0 4px' }}>✅ Saya sudah menerima dan menyelesaikan kewajiban akhir magang</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Tercatat pada: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB</p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a href="/evaluations" style={{ display: 'block', padding: '0.75rem', borderRadius: 12, background: 'var(--primary)', color: '#fff', fontWeight: 700, textDecoration: 'none', fontSize: '0.9rem' }}>
+                📄 Download Surat Selesai Magang
+              </a>
+              <a href="/portfolio" style={{ display: 'block', padding: '0.75rem', borderRadius: 12, background: 'var(--bg-main)', color: 'var(--text-primary)', fontWeight: 700, textDecoration: 'none', fontSize: '0.9rem', border: '1.5px solid var(--border)' }}>
+                🗂️ Lihat Portfolio Final Saya
+              </a>
+              <button onClick={onComplete} style={{ padding: '0.75rem', borderRadius: 12, background: 'transparent', color: 'var(--text-muted)', fontWeight: 600, border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>
+                Tutup
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /* ── Main InternDashboard Component ─────────────── */
 export default function InternDashboard() {
   const { user } = useAuth()
@@ -541,6 +730,34 @@ export default function InternDashboard() {
     setMoodSaving(false)
   }
 
+  // ── Offboarding H-3 Detection ──
+  const [offboarding, setOffboarding] = useState(null)
+  const [showOffboarding, setShowOffboarding] = useState(false)
+  const [lastMonthChamp, setLastMonthChamp] = useState(null)
+
+  useEffect(() => {
+    if (!user?.id || !dash?.intern?.id) return
+    // Check offboarding status
+    fetch(`/api/offboarding?internId=${dash.intern.id}`)
+      .then(r => r.json())
+      .then(d => {
+        setOffboarding(d)
+        if (d.shouldTrigger && (!d.offboarding || d.offboarding.status !== 'DONE')) {
+          setShowOffboarding(true)
+        }
+      }).catch(() => {})
+
+    // Fetch last month's leaderboard champion
+    const now = new Date()
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const prevMonth = prev.toISOString().slice(0, 7)
+    fetch(`/api/intern-dashboard/leaderboard?month=${prevMonth}&userId=${user.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.top5?.[0]) setLastMonthChamp({ ...d.top5[0], month: prevMonth })
+      }).catch(() => {})
+  }, [user?.id, dash?.intern?.id])
+
   const D = dash || {}
   const intern = D.intern || {}
   const stats = D.attendanceStats || {}
@@ -599,6 +816,44 @@ export default function InternDashboard() {
 
   return (
     <div style={{ animation: 'slideUp 0.3s ease' }}>
+
+      {/* ── Offboarding H-3 Modal ── */}
+      {showOffboarding && offboarding && (
+        <OffboardingModal
+          offboarding={offboarding}
+          internId={dash?.intern?.id}
+          onComplete={() => setShowOffboarding(false)}
+        />
+      )}
+
+      {/* ── Juara Bulan Lalu ── */}
+      {lastMonthChamp && (
+        <div style={{
+          background: 'linear-gradient(135deg, #f59e0b18, #fbbf2418)',
+          border: '1.5px solid #f59e0b40', borderRadius: 16,
+          padding: '0.875rem 1.25rem', marginBottom: '1rem',
+          display: 'flex', alignItems: 'center', gap: 12
+        }}>
+          <div style={{ fontSize: '1.8rem', flexShrink: 0 }}>🏆</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontWeight: 800, fontSize: '0.82rem', color: '#92400e', margin: '0 0 2px' }}>
+              Juara Bulan Lalu ({lastMonthChamp.month})
+            </p>
+            <p style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {lastMonthChamp.name}
+              <span style={{ fontWeight: 600, fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: 8 }}>
+                · {lastMonthChamp.bidang} · Skor {lastMonthChamp.composite}
+              </span>
+            </p>
+          </div>
+          {dash?.leaderboard?.userRank?.rank === 1 && (
+            <span style={{ background: '#f59e0b', color: '#fff', fontWeight: 800, fontSize: '0.72rem', padding: '4px 10px', borderRadius: 20, flexShrink: 0 }}>
+              Itu Kamu! 🎉
+            </span>
+          )}
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>

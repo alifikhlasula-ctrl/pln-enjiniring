@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, FileText, Award, LogOut,
   Clock, History, Menu, X, User as UserIcon, Sun, Moon,
   ChevronRight, Bell, BarChart3, CalendarDays, MessageSquare, FileSpreadsheet, Banknote,
-  Megaphone, BookOpen, Lock, BarChart2, Activity
+  Megaphone, BookOpen, Lock, BarChart2, Activity, UserSearch
 } from 'lucide-react'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { messaging, getToken } from '@/lib/firebase'
@@ -238,6 +238,7 @@ function LayoutContent({ children }) {
         { name: 'Pengumuman',    href: '/admin/announcements', icon: Megaphone },
         { name: 'Kalender Admin', href: '/admin/events',      icon: CalendarDays },
         { name: 'Intern Insight', href: '/admin/intern-insight', icon: BarChart3 },
+        { name: 'Talent Scout',  href: '/talent-scout',    icon: UserSearch },
         { name: 'Survei',       href: '/surveys',         icon: MessageSquare },
         { name: 'Panduan',      href: '/help',            icon: BookOpen },
         { name: 'Audit Log',    href: '/logs',            icon: History },

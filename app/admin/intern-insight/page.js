@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Users, Heart, Award, Briefcase, TrendingUp, Clock, FileText, DollarSign, RefreshCw, ChevronDown, Star, Calendar, Trophy, GraduationCap, Search, Database, Trash2 } from 'lucide-react'
+import { BarChart3, Users, Heart, Award, Briefcase, TrendingUp, Clock, FileText, DollarSign, RefreshCw, ChevronDown, Star, Calendar, Trophy, GraduationCap, Search, Database, Trash2, Download } from 'lucide-react'
 import SankeyDashboard from './SankeyDashboard'
 
 const TABS = [
@@ -363,6 +363,21 @@ export default function InternInsightPage() {
               </button>
             )}
           </div>
+
+          {/* Export HC Report */}
+          <button
+            onClick={() => {
+              const month = filter.year && filter.month
+                ? `${filter.year}-${filter.month.padStart(2,'0')}`
+                : new Date().toISOString().slice(0, 7)
+              window.open(`/api/admin/export/executive-report?month=${month}`, '_blank')
+            }}
+            style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:10, background:'linear-gradient(135deg, #22c55e, #16a34a)', color:'#fff', border:'none', fontWeight:800, fontSize:'0.82rem', cursor:'pointer', boxShadow:'0 4px 12px rgba(34,197,94,0.3)', transition:'all 0.2s', whiteSpace:'nowrap' }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <Download size={15} /> Export HC Report (.xlsx)
+          </button>
         </div>
 
         {/* Tabs */}
