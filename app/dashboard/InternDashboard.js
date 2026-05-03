@@ -345,28 +345,58 @@ export default function InternDashboard() {
 
     const checkPopups = async () => {
       // 1. Welcome Summary Pop-up (Run once forever per device/browser)
-      const welcomeKey = 'welcome_update_popup_v1';
+      const welcomeKey = 'welcome_update_popup_v2_genz';
       if (!localStorage.getItem(welcomeKey)) {
         await Swal.fire({
-          title: '🚀 Rangkuman Update Sistem!',
+          title: '🚀 Update: Dashboard Makin Glow Up & Bisa Buat Flexing Skill! ✨',
           html: `
-            <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);">
-              <ul style="padding-left: 1.5rem; margin-bottom: 0;">
-                <li style="margin-bottom: 8px;"><strong>⏱ Lupa Absen?</strong> Kini tersedia fitur <b>Pengajuan Perbaikan Absensi</b>.</li>
-                <li style="margin-bottom: 8px;"><strong>📄 PDF Profesional:</strong> Laporan Harian & Evaluasi di-generate otomatis dengan format standar PLN Enjiniring.</li>
-                <li style="margin-bottom: 8px;"><strong>⚡ Laporan Cepat:</strong> Tidak perlu ketik ulang nama Pembimbing & Bidang.</li>
-                <li style="margin-bottom: 8px;"><strong>🎓 Portal Sertifikat:</strong> Unduh sertifikat kelulusan langsung di menu Evaluasi.</li>
-                <li style="margin-bottom: 8px;"><strong>📂 Portofolio CV:</strong> Rangkuman pengalaman magang yang bisa dijadikan CV otomatis.</li>
-                <li><strong>🟢 Status Kehadiran:</strong> Lapor Hadir/Izin/Sakit langsung di halaman depan Dashboard.</li>
-              </ul>
+            <div style="text-align: left; font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary); max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+              <p>Halo Teman-teman Magang! 👋</p>
+              <p>Biar pengalaman magang kamu nggak flat gitu-gitu aja, kita baru aja update Dashboard biar makin seru dan nambah value buat karir kamu. Cekidot fitur barunya:</p>
+              
+              <div style="margin-bottom: 12px;">
+                <strong>1. 🏆 Leaderboard Era (Mainkan Skill-mu!)</strong><br/>
+                Sekarang ada Leaderboard buat liat siapa yang paling aktif. 5 besar setiap bulan bakal di-spill di dashboard utama. <i>No pressure, but let’s go!</i>
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <strong>2. ⭐ Kudostars & Badges (Appreciation is Key)</strong><br/>
+                Ketemu rekan tim yang helpful banget atau creative parah? Kamu bisa saling memberikan bintang (Kudostars) kepada rekan tim yang paling membantu! Kumpulin juga Badges keren biar profil kamu makin kece seperti "Team Player", "Creative Thinker", dan lainnya.
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <strong>3. 💼 Portfolio & CV Digital Terintegrasi</strong><br/>
+                Ini yang paling penting! Semua Badges, ranking Leaderboard, dan bintang yang kamu dapetin bakal <b>otomatis masuk ke Digital Portfolio/CV kamu di sistem</b>. Pas nanti apply kerja, kamu udah punya bukti kalau kamu high performer! 📈
+              </div>
+
+              <div style="margin-bottom: 12px;">
+                <strong>4. 📊 Transparansi Poin Penilaian</strong><br/>
+                Poin kamu dihitung secara fair dari:<br/>
+                • Absensi (35%) — Consistency is key.<br/>
+                • Laporan Harian (30%) — Sharing is caring.<br/>
+                • Kudostars (25%) — Being a team player.<br/>
+                • Isi Survei (10%) — Your voice matters.
+              </div>
+
+              <div style="margin-bottom: 12px; background: var(--danger-light); padding: 8px; border-radius: 8px; border: 1px solid var(--danger);">
+                <strong style="color: var(--danger);">5. ⚠️ Peraturan Disiplin (PENTING!)</strong><br/>
+                Tetap Disiplin ya! Perhatiin aturan mainnya biar poin nggak kepotong:<br/>
+                • <b>Hadir Tepat Waktu:</b> Tetap dapet 1.0 Point (Mantap!)<br/>
+                • <b>Sakit/Izin:</b> Tetap dapet 0.5 Point (GWS ya!)<br/>
+                • <b>Lupa Absen / Minta Edit Manual:</b> Cuma dapet 0.5 Point (Duh, jangan lupa tap!)<br/>
+                • <b>Laporan Telat (Isi Besoknya):</b> Cuma dapet 0.5 Point (Stay on track!)<br/>
+                • <b style="color:var(--danger)">Lupa Absen / Alpa Tanpa Kabar:</b> Zonk! (0 Point). Rugi parah!
+              </div>
+
+              <p>Dashboard ini dibikin biar setiap effort kamu terapresiasi. Yuk, manfaatkan fitur Portfolio-nya untuk membangun personal branding kamu sejak dini! Semangat magang dan jadilah yang terbaik!</p>
+              <p>Cheers,<br/><b>HC Team.</b></p>
             </div>
           `,
-          icon: 'success',
-          confirmButtonText: 'Luar Biasa, Saya Mengerti!',
+          confirmButtonText: 'Let\'s Go! 🔥',
           confirmButtonColor: 'var(--primary)',
           background: 'var(--bg-card)',
           color: 'var(--text-primary)',
-          width: '500px'
+          width: '550px'
         });
         localStorage.setItem(welcomeKey, 'true');
         return; // Pause here so announcements don't stack immediately
