@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 const CATEGORIES = ['TEAMWORK', 'HELPFUL', 'CREATIVE', 'LEADERSHIP', 'INITIATIVE']
-const MONTHLY_LIMIT = 5
+const MONTHLY_LIMIT = 2
 
 export async function GET(request) {
   try {
