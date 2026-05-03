@@ -31,9 +31,9 @@ export async function GET() {
       prisma.departmentQuota.findMany()
     ])
 
-    // Build quota map: name → quota
+    // Build quota map: name → { quota, direktorat, id }
     const quotaMap = {}
-    for (const q of quotaRecords) quotaMap[q.name] = q.quota
+    for (const q of quotaRecords) quotaMap[q.name] = { quota: q.quota, direktorat: q.direktorat, id: q.id }
 
     // ── Collect all unique bidang from interns + quota records ──
     const bidangSet = new Set([
@@ -80,7 +80,11 @@ export async function GET() {
       const keluarThisMonth = keluar.filter(k => k.periodEnd && k.periodEnd.startsWith(currentMonth))
       const proyeksi = active.length - keluarThisMonth.length + masukThisMonth.length
 
-      const quota = quotaMap[bidang] ?? 0
+      const qData = quotaMap[bidang] || { quota: 0, direktorat: null, id: null }
+      const quota = qData.quota
+      const direktorat = qData.direktorat || 'Uncategorized'
+      const masterId = qData.id
+
       const activeCount = active.length
       const slotTersedia = quota > 0 ? quota - activeCount : null // null if quota not set
 
@@ -89,7 +93,9 @@ export async function GET() {
       keluar.sort((a, b) => (a.periodEnd || '').localeCompare(b.periodEnd || ''))
 
       departments.push({
+        masterId,
         bidang,
+        direktorat,
         quota,
         active: activeCount,
         slotTersedia,
@@ -139,12 +145,12 @@ export async function GET() {
 }
 
 // ── PUT /api/admin/workforce ──────────────────────────────────────────
-// Body: { name: string, quota: number }
+// Body: { name: string, quota: number, direktorat?: string }
 // Upserts the quota for a specific department.
 export async function PUT(request) {
   try {
     const body = await request.json()
-    const { name, quota } = body
+    const { name, quota, direktorat } = body
 
     if (!name || quota === undefined || quota < 0) {
       return NextResponse.json({ error: 'Invalid name or quota' }, { status: 400 })
@@ -152,13 +158,35 @@ export async function PUT(request) {
 
     const record = await prisma.departmentQuota.upsert({
       where: { name },
-      update: { quota: parseInt(quota) },
-      create: { name, quota: parseInt(quota) }
+      update: { quota: parseInt(quota), direktorat: direktorat || null },
+      create: { name, quota: parseInt(quota), direktorat: direktorat || null }
     })
 
     return NextResponse.json({ success: true, record })
   } catch (err) {
     console.error('[PUT /api/admin/workforce]', err)
     return NextResponse.json({ error: 'Failed to update quota' }, { status: 500 })
+  }
+}
+
+// ── DELETE /api/admin/workforce ────────────────────────────────────────
+// Body: { name: string }
+export async function DELETE(request) {
+  try {
+    const body = await request.json()
+    const { name } = body
+
+    if (!name) {
+      return NextResponse.json({ error: 'Invalid name' }, { status: 400 })
+    }
+
+    await prisma.departmentQuota.delete({
+      where: { name }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('[DELETE /api/admin/workforce]', err)
+    return NextResponse.json({ error: 'Failed to delete department master data' }, { status: 500 })
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Users, Heart, Award, Briefcase, TrendingUp, Clock, FileText, DollarSign, RefreshCw, ChevronDown, Star, Calendar, Trophy, GraduationCap, Search } from 'lucide-react'
+import { BarChart3, Users, Heart, Award, Briefcase, TrendingUp, Clock, FileText, DollarSign, RefreshCw, ChevronDown, Star, Calendar, Trophy, GraduationCap, Search, Database, Trash2 } from 'lucide-react'
 import SankeyDashboard from './SankeyDashboard'
 
 const TABS = [
@@ -12,6 +12,7 @@ const TABS = [
   { id: 'kudostars', label: 'Kudostars', icon: Star },
   { id: 'alumni', label: 'Alumni Pool', icon: GraduationCap },
   { id: 'workforce', label: 'Workforce Planning', icon: Briefcase },
+  { id: 'master_data', label: 'Master Data Bidang', icon: Database },
 ]
 const MOOD_EMOJI = { very_happy:'😄', happy:'🙂', neutral:'😐', sad:'😔', very_sad:'😢' }
 const MOOD_LABEL = { very_happy:'Sangat Senang', happy:'Senang', neutral:'Biasa', sad:'Kurang Baik', very_sad:'Buruk' }
@@ -262,6 +263,11 @@ export default function InternInsightPage() {
   const [wfEditVal, setWfEditVal] = useState('')            // quota input value
   const [wfSaving, setWfSaving] = useState(false)
   const [wfHover, setWfHover] = useState(null)
+
+  // Master Data states
+  const [mdForm, setMdForm] = useState({ name: '', direktorat: '' })
+  const [mdLoading, setMdLoading] = useState(false)
+  const [mdEditId, setMdEditId] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -1207,6 +1213,114 @@ export default function InternInsightPage() {
           ) : <div style={{ textAlign:'center', padding:'4rem', color:'var(--text-muted)' }}>Gagal memuat data alumni.</div>
         )}
 
+        {/* ═══ TAB: MASTER DATA BIDANG ═══ */}
+        {tab === 'master_data' && (
+          wfLoading && !wfData
+            ? <div style={{ display:'flex', justifyContent:'center', padding:'4rem' }}><RefreshCw size={28} style={{ animation:'spin 1s linear infinite', color:'var(--primary)' }} /></div>
+            : wfData ? (() => {
+              const { departments: depts } = wfData
+
+              const saveMasterData = async (e) => {
+                e?.preventDefault()
+                if (!mdForm.name.trim()) return
+                setMdLoading(true)
+                try {
+                  const existing = depts.find(d => d.bidang.toLowerCase() === mdForm.name.toLowerCase())
+                  await fetch('/api/admin/workforce', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      name: mdForm.name.trim(), 
+                      quota: existing ? existing.quota : 0, 
+                      direktorat: mdForm.direktorat.trim() || null 
+                    })
+                  })
+                  const res = await fetch('/api/admin/workforce')
+                  setWfData(await res.json())
+                  setMdForm({ name: '', direktorat: '' })
+                  setMdEditId(null)
+                } catch(err) { console.error(err) }
+                setMdLoading(false)
+              }
+
+              const deleteMasterData = async (name) => {
+                if (!confirm(`Hapus bidang "${name}" dari Master Data?\nIni akan menghilangkan bidang ini dari tabel kuota.`)) return
+                setMdLoading(true)
+                try {
+                  await fetch('/api/admin/workforce', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                  })
+                  const res = await fetch('/api/admin/workforce')
+                  setWfData(await res.json())
+                } catch(err) { console.error(err) }
+                setMdLoading(false)
+              }
+
+              // Group depts by direktorat
+              const byDir = {}
+              depts.forEach(d => {
+                const dir = d.direktorat || 'Lainnya'
+                if (!byDir[dir]) byDir[dir] = []
+                byDir[dir].push(d)
+              })
+              const dirs = Object.keys(byDir).sort((a,b) => a === 'Lainnya' ? 1 : b === 'Lainnya' ? -1 : a.localeCompare(b))
+
+              return (
+                <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
+                  <Card title="🗄️ Master Data Bidang" subtitle="Kelola seluruh departemen/bidang yang ada di struktur organisasi perusahaan, meskipun belum memiliki kuota atau intern.">
+                    
+                    {/* Add/Edit Form */}
+                    <form onSubmit={saveMasterData} style={{ display:'flex', gap:10, alignItems:'center', background:'var(--bg-main)', padding:'12px', borderRadius:8, marginBottom:20, border:'1px solid var(--border)' }}>
+                      <div style={{ flex:1 }}>
+                        <label style={{ display:'block', fontSize:'0.65rem', fontWeight:800, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Nama Bidang</label>
+                        <input required type="text" value={mdForm.name} onChange={e => setMdForm(f => ({...f, name: e.target.value}))} disabled={mdEditId !== null} placeholder="Contoh: Enjiniring Elektrikal" style={{ width:'100%', padding:'8px 12px', borderRadius:6, border:'1px solid var(--border)', background:'var(--bg-card)', color:'var(--text-primary)', fontSize:'0.8rem', fontWeight:600 }} />
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <label style={{ display:'block', fontSize:'0.65rem', fontWeight:800, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Direktorat / Grup</label>
+                        <input type="text" value={mdForm.direktorat} onChange={e => setMdForm(f => ({...f, direktorat: e.target.value}))} placeholder="Opsional (misal: Direktorat Enjiniring)" style={{ width:'100%', padding:'8px 12px', borderRadius:6, border:'1px solid var(--border)', background:'var(--bg-card)', color:'var(--text-primary)', fontSize:'0.8rem', fontWeight:600 }} />
+                      </div>
+                      <div style={{ alignSelf:'flex-end' }}>
+                        {mdEditId ? (
+                          <div style={{ display:'flex', gap:6 }}>
+                            <button type="submit" disabled={mdLoading} style={{ padding:'8px 16px', borderRadius:6, border:'none', background:'var(--primary)', color:'#fff', fontSize:'0.8rem', fontWeight:800, cursor:'pointer' }}>Simpan Perubahan</button>
+                            <button type="button" onClick={() => { setMdEditId(null); setMdForm({ name:'', direktorat:'' }) }} style={{ padding:'8px 16px', borderRadius:6, border:'1px solid var(--border)', background:'transparent', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:800, cursor:'pointer' }}>Batal</button>
+                          </div>
+                        ) : (
+                          <button type="submit" disabled={mdLoading} style={{ padding:'8px 16px', borderRadius:6, border:'none', background:'var(--primary)', color:'#fff', fontSize:'0.8rem', fontWeight:800, cursor:'pointer' }}>+ Tambah Bidang</button>
+                        )}
+                      </div>
+                    </form>
+
+                    {/* Grouped Table */}
+                    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                      {dirs.map(dir => (
+                        <div key={dir}>
+                          <div style={{ fontSize:'0.8rem', fontWeight:900, color:'var(--primary)', borderBottom:'2px solid var(--border)', paddingBottom:6, marginBottom:8, textTransform:'uppercase' }}>🏢 {dir}</div>
+                          <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                            {byDir[dir].map((d, i) => (
+                              <div key={d.bidang} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 12px', borderRadius:6, background: i%2===0?'var(--bg-main)':'transparent' }}>
+                                <div>
+                                  <div style={{ fontSize:'0.8rem', fontWeight:700 }}>{d.bidang}</div>
+                                  <div style={{ fontSize:'0.65rem', color:'var(--text-muted)' }}>ID: {d.masterId || 'Auto-generated dari Intern'}</div>
+                                </div>
+                                <div style={{ display:'flex', gap:6 }}>
+                                  <button onClick={() => { setMdEditId(d.bidang); setMdForm({ name: d.bidang, direktorat: d.direktorat || '' }) }} style={{ background:'transparent', border:'none', color:'var(--primary)', cursor:'pointer', padding:'4px' }} title="Edit">✏️</button>
+                                  {d.masterId && <button onClick={() => deleteMasterData(d.bidang)} style={{ background:'transparent', border:'none', color:'#ef4444', cursor:'pointer', padding:'4px' }} title="Hapus"><Trash2 size={16}/></button>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )
+            })() : <div style={{ textAlign:'center', padding:'4rem', color:'var(--text-muted)' }}>Gagal memuat data master.</div>
+        )}
+
         {/* ═══ TAB: WORKFORCE PLANNING ═══ */}
         {tab === 'workforce' && (
           wfLoading && !wfData
@@ -1381,74 +1495,92 @@ export default function InternInsightPage() {
                         <span style={{ textAlign:'right' }}>Action</span>
                       </div>
 
-                      {depts.map((dept, idx) => (
-                        <div key={dept.bidang} style={{
-                          display:'grid', gridTemplateColumns:'1fr 80px 80px 120px 120px', gap:8, alignItems:'center',
-                          padding:'9px 12px', borderRadius:8, fontSize:'0.78rem',
-                          background: idx % 2 === 0 ? 'var(--bg-main)' : 'transparent',
-                          border: dept.overCapacity ? '1px solid #ef444330' : '1px solid transparent',
-                          transition:'background 0.15s'
-                        }}>
-                          {/* Bidang name */}
-                          <span style={{ fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                            {dept.bidang}
-                          </span>
+                      {(() => {
+                        // Group depts by direktorat for the quota table
+                        const byDir = {}
+                        depts.forEach(d => {
+                          const dir = d.direktorat || 'Lainnya'
+                          if (!byDir[dir]) byDir[dir] = []
+                          byDir[dir].push(d)
+                        })
+                        const dirs = Object.keys(byDir).sort((a,b) => a === 'Lainnya' ? 1 : b === 'Lainnya' ? -1 : a.localeCompare(b))
 
-                          {/* Quota — editable inline */}
-                          <div style={{ textAlign:'center' }}>
-                            {wfEditing === dept.bidang ? (
-                              <input
-                                type="number" min="0" value={wfEditVal}
-                                onChange={e => setWfEditVal(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter') saveQuota(dept.bidang); if (e.key === 'Escape') { setWfEditing(null); setWfEditVal('') } }}
-                                autoFocus
-                                style={{ width:56, padding:'3px 6px', borderRadius:6, border:'2px solid var(--primary)', background:'var(--bg-card)', color:'var(--text-primary)', fontSize:'0.78rem', fontWeight:800, textAlign:'center' }}
-                              />
-                            ) : (
-                              <span style={{ fontWeight:900, color: dept.quota > 0 ? 'var(--primary)' : 'var(--text-muted)' }}>
-                                {dept.quota > 0 ? dept.quota : '—'}
-                              </span>
-                            )}
+                        return dirs.map(dir => (
+                          <div key={dir} style={{ marginBottom:16 }}>
+                            <div style={{ padding:'4px 12px', fontSize:'0.7rem', fontWeight:800, background:'rgba(255,255,255,0.03)', color:'var(--primary)', borderLeft:'3px solid var(--primary)', marginBottom:4 }}>
+                              {dir.toUpperCase()}
+                            </div>
+                            {byDir[dir].map((dept, idx) => (
+                              <div key={dept.bidang} style={{
+                                display:'grid', gridTemplateColumns:'1fr 80px 80px 120px 120px', gap:8, alignItems:'center',
+                                padding:'9px 12px', borderRadius:8, fontSize:'0.78rem',
+                                background: idx % 2 === 0 ? 'var(--bg-main)' : 'transparent',
+                                border: dept.overCapacity ? '1px solid #ef444330' : '1px solid transparent',
+                                transition:'background 0.15s'
+                              }}>
+                                {/* Bidang name */}
+                                <span style={{ fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                  {dept.bidang}
+                                </span>
+
+                                {/* Quota — editable inline */}
+                                <div style={{ textAlign:'center' }}>
+                                  {wfEditing === dept.bidang ? (
+                                    <input
+                                      type="number" min="0" value={wfEditVal}
+                                      onChange={e => setWfEditVal(e.target.value)}
+                                      onKeyDown={e => { if (e.key === 'Enter') saveQuota(dept.bidang); if (e.key === 'Escape') { setWfEditing(null); setWfEditVal('') } }}
+                                      autoFocus
+                                      style={{ width:56, padding:'3px 6px', borderRadius:6, border:'2px solid var(--primary)', background:'var(--bg-card)', color:'var(--text-primary)', fontSize:'0.78rem', fontWeight:800, textAlign:'center' }}
+                                    />
+                                  ) : (
+                                    <span style={{ fontWeight:900, color: dept.quota > 0 ? 'var(--primary)' : 'var(--text-muted)' }}>
+                                      {dept.quota > 0 ? dept.quota : '—'}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Active */}
+                                <span style={{ textAlign:'center', fontWeight:800, color: dept.overCapacity ? '#ef4444' : 'var(--text-primary)' }}>{dept.active}</span>
+
+                                {/* Slot / Status */}
+                                <div style={{ textAlign:'center' }}>
+                                  {dept.quota === 0
+                                    ? <span style={{ fontSize:'0.65rem', color:'#f59e0b', fontWeight:700, background:'#f59e0b15', padding:'2px 8px', borderRadius:99 }}>Belum Set</span>
+                                    : dept.overCapacity
+                                    ? <span style={{ fontSize:'0.65rem', color:'#ef4444', fontWeight:800, background:'#ef444415', padding:'2px 8px', borderRadius:99 }}>+{dept.active - dept.quota} Over</span>
+                                    : dept.almostFull
+                                    ? <span style={{ fontSize:'0.65rem', color:'#f59e0b', fontWeight:800, background:'#f59e0b15', padding:'2px 8px', borderRadius:99 }}>{dept.slotTersedia} Slot</span>
+                                    : <span style={{ fontSize:'0.65rem', color:'#22c55e', fontWeight:800, background:'#22c55e15', padding:'2px 8px', borderRadius:99 }}>{dept.slotTersedia} Slot ✅</span>
+                                  }
+                                </div>
+
+                                {/* Action */}
+                                <div style={{ display:'flex', gap:5, justifyContent:'flex-end' }}>
+                                  {wfEditing === dept.bidang ? (
+                                    <>
+                                      <button
+                                        onClick={() => saveQuota(dept.bidang)}
+                                        disabled={wfSaving}
+                                        style={{ padding:'4px 10px', borderRadius:6, border:'none', background:'var(--primary)', color:'#fff', fontSize:'0.65rem', fontWeight:800, cursor:'pointer', opacity: wfSaving ? 0.6 : 1 }}
+                                      >Simpan</button>
+                                      <button
+                                        onClick={() => { setWfEditing(null); setWfEditVal('') }}
+                                        style={{ padding:'4px 10px', borderRadius:6, border:'1px solid var(--border)', background:'transparent', color:'var(--text-muted)', fontSize:'0.65rem', fontWeight:700, cursor:'pointer' }}
+                                      >Batal</button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={() => { setWfEditing(dept.bidang); setWfEditVal(String(dept.quota || '')) }}
+                                      style={{ padding:'4px 12px', borderRadius:6, border:'1px solid var(--primary)', background:'transparent', color:'var(--primary)', fontSize:'0.65rem', fontWeight:800, cursor:'pointer', transition:'all 0.15s' }}
+                                    >✏️ Edit</button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-
-                          {/* Active */}
-                          <span style={{ textAlign:'center', fontWeight:800, color: dept.overCapacity ? '#ef4444' : 'var(--text-primary)' }}>{dept.active}</span>
-
-                          {/* Slot / Status */}
-                          <div style={{ textAlign:'center' }}>
-                            {dept.quota === 0
-                              ? <span style={{ fontSize:'0.65rem', color:'#f59e0b', fontWeight:700, background:'#f59e0b15', padding:'2px 8px', borderRadius:99 }}>Belum Set</span>
-                              : dept.overCapacity
-                              ? <span style={{ fontSize:'0.65rem', color:'#ef4444', fontWeight:800, background:'#ef444415', padding:'2px 8px', borderRadius:99 }}>+{dept.active - dept.quota} Over</span>
-                              : dept.almostFull
-                              ? <span style={{ fontSize:'0.65rem', color:'#f59e0b', fontWeight:800, background:'#f59e0b15', padding:'2px 8px', borderRadius:99 }}>{dept.slotTersedia} Slot</span>
-                              : <span style={{ fontSize:'0.65rem', color:'#22c55e', fontWeight:800, background:'#22c55e15', padding:'2px 8px', borderRadius:99 }}>{dept.slotTersedia} Slot ✅</span>
-                            }
-                          </div>
-
-                          {/* Action */}
-                          <div style={{ display:'flex', gap:5, justifyContent:'flex-end' }}>
-                            {wfEditing === dept.bidang ? (
-                              <>
-                                <button
-                                  onClick={() => saveQuota(dept.bidang)}
-                                  disabled={wfSaving}
-                                  style={{ padding:'4px 10px', borderRadius:6, border:'none', background:'var(--primary)', color:'#fff', fontSize:'0.65rem', fontWeight:800, cursor:'pointer', opacity: wfSaving ? 0.6 : 1 }}
-                                >Simpan</button>
-                                <button
-                                  onClick={() => { setWfEditing(null); setWfEditVal('') }}
-                                  style={{ padding:'4px 10px', borderRadius:6, border:'1px solid var(--border)', background:'transparent', color:'var(--text-muted)', fontSize:'0.65rem', fontWeight:700, cursor:'pointer' }}
-                                >Batal</button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => { setWfEditing(dept.bidang); setWfEditVal(String(dept.quota || '')) }}
-                                style={{ padding:'4px 12px', borderRadius:6, border:'1px solid var(--primary)', background:'transparent', color:'var(--primary)', fontSize:'0.65rem', fontWeight:800, cursor:'pointer', transition:'all 0.15s' }}
-                              >✏️ Edit</button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      })()}
                     </div>
                   </Card>
 
