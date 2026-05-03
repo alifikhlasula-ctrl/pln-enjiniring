@@ -112,42 +112,83 @@ async function computeLeaderboardForMonth(monthParam) {
     const stars = starCount[intern.id] || 0
     const surveysCompleted = surveysDone[intern.userId]?.size || 0
 
+    let attendanceScore = 0
+    let reportScore = 0
+    let kudoScore = 0
+    let surveyScore = 0
     let composite = 0
+
     if (workingDays > 0) {
-      const attendanceScore = Math.min((attPoints / workingDays) * 100, 100)
-      const reportScore = Math.min((repPoints / workingDays) * 100, 100)
-      const kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
-      const surveyScore = mandatorySurveyIds.length > 0 ? (surveysCompleted / mandatorySurveyIds.length) * 100 : 100
+      attendanceScore = Math.min((attPoints / workingDays) * 100, 100)
+      reportScore = Math.min((repPoints / workingDays) * 100, 100)
+      kudoScore = maxStars > 0 ? (stars / maxStars) * 100 : 0
+      surveyScore = mandatorySurveyIds.length > 0 ? (surveysCompleted / mandatorySurveyIds.length) * 100 : 100
       composite = attendanceScore * WEIGHTS.attendance + reportScore * WEIGHTS.reports + kudoScore * WEIGHTS.kudostars + surveyScore * WEIGHTS.surveys
     }
-    return { internId: intern.id, userId: intern.userId, name: intern.name, bidang: intern.bidang, composite: +composite.toFixed(1) }
+
+    return { 
+      internId: intern.id, 
+      userId: intern.userId, 
+      name: intern.name, 
+      bidang: intern.bidang, 
+      composite: +composite.toFixed(1),
+      breakdown: {
+        attendance: +attendanceScore.toFixed(1),
+        reports: +reportScore.toFixed(1),
+        kudostars: +kudoScore.toFixed(1),
+        surveys: +surveyScore.toFixed(1)
+      },
+      raw: {
+        attendanceDays: attPoints,
+        workingDays,
+        reportDays: repPoints,
+        stars,
+        surveysCompleted,
+        totalMandatory: mandatorySurveyIds.length
+      }
+    }
   }).sort((a, b) => b.composite - a.composite)
 
-  return leaderboard.map((item, i) => ({ ...item, rank: i + 1 }))
+  const rankedLeaderboard = leaderboard.map((item, i) => ({ ...item, rank: i + 1 }))
+  
+  const totalStarsGiven = Object.values(starCount).reduce((a, b) => a + b, 0)
+  const avgComposite = +(rankedLeaderboard.reduce((s, a) => s + a.composite, 0) / (rankedLeaderboard.length || 1)).toFixed(1)
+  
+  const topBidang = rankedLeaderboard.slice(0, 10).reduce((acc, curr) => {
+    acc[curr.bidang] = (acc[curr.bidang] || 0) + 1
+    return acc
+  }, {})
+
+  return {
+    leaderboard: rankedLeaderboard,
+    stats: {
+      totalActive: allInterns.length,
+      avgComposite,
+      totalStarsGiven,
+      topBidang
+    },
+    weights: WEIGHTS
+  }
 }
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month') || new Date().toISOString().slice(0, 7)
-    const userId = searchParams.get('userId')
 
     // Check if snapshot exists in JsonStore
     const snapshotKey = `leaderboard_${monthParam}`
-    let ranked
+    let dataPayload
 
     const stored = await prisma.jsonStore.findUnique({ where: { key: snapshotKey } }).catch(() => null)
     if (stored?.data) {
-      ranked = stored.data
+      dataPayload = stored.data
     } else {
       // Compute on-the-fly (for current month or missing snapshots)
-      ranked = await computeLeaderboardForMonth(monthParam)
+      dataPayload = await computeLeaderboardForMonth(monthParam)
     }
 
-    const top5 = ranked.slice(0, 5)
-    const userRank = userId ? ranked.find(l => l.userId === userId) : null
-
-    return NextResponse.json({ top5, userRank, totalActive: ranked.length, month: monthParam, fromSnapshot: !!stored })
+    return NextResponse.json({ ...dataPayload, month: monthParam, fromSnapshot: !!stored })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

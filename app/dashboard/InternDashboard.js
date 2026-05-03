@@ -748,14 +748,24 @@ export default function InternDashboard() {
       }).catch(() => {})
 
     // Fetch last month's leaderboard champion
+    // As per policy, "Juara Bulan Lalu" starts evaluating in May 2026,
+    // so it first appears on the dashboard in June 2026.
     const now = new Date()
-    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const prevMonth = prev.toISOString().slice(0, 7)
-    fetch(`/api/intern-dashboard/leaderboard?month=${prevMonth}&userId=${user.id}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.top5?.[0]) setLastMonthChamp({ ...d.top5[0], month: prevMonth })
-      }).catch(() => {})
+    let y = now.getFullYear()
+    let m = now.getMonth() // 0-indexed (e.g. May is 4)
+    if (m === 0) { y -= 1; m = 12 }
+    const prevMonthStr = `${y}-${String(m).padStart(2, '0')}`
+    
+    if (prevMonthStr >= '2026-05') {
+      fetch(`/api/intern-dashboard/leaderboard?month=${prevMonthStr}&userId=${user.id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.top5?.[0]) {
+            const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+            setLastMonthChamp({ ...d.top5[0], month: `${MONTH_NAMES[m-1]} ${y}` })
+          }
+        }).catch(() => {})
+    }
   }, [user?.id, dash?.intern?.id])
 
   const D = dash || {}
