@@ -1735,13 +1735,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Row 2: Chart + Attendance Monitor ── */}
-      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1.6fr) minmax(0,1fr)',gap:'var(--sp-4)',marginBottom:'var(--sp-4)'}}>
+      <div className="dashboard-grid grid-cols-1-6">
         <AttendanceChart data={dash?.weeklyAttendance} loading={loading}/>
         <AttendanceMonitor data={dash?.recentAttendance} loading={loading}/>
       </div>
 
       {/* ── Row 3: Evaluation + Survey + HR Tasks ── */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'var(--sp-4)',marginBottom:'var(--sp-4)'}}>
+      <div className="dashboard-grid grid-cols-3">
         <EvaluationWidget data={{avgScore:s.avgEvalScore, pending:s.pendingEvals}} loading={loading}/>
         <SurveyWidget data={{active:s.activeSurveys, responses:s.totalResponses}} loading={loading}/>
         <HRTasksWidget/>
@@ -1751,7 +1751,7 @@ export default function AdminDashboard() {
       <BirthdayWidget/>
 
       {/* ── Row 4: Program Distributions (Jenjang & Bidang) ── */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2, 1fr)',gap:'var(--sp-4)',marginBottom:'var(--sp-4)'}}>
+      <div className="dashboard-grid grid-cols-2">
         <div className="card">
           <h3 style={{fontWeight:700,fontSize:'0.95rem',display:'flex',alignItems:'center',gap:6,marginBottom:'1rem'}}>
             <GraduationCap size={16} strokeWidth={2} style={{color:'var(--primary)'}}/>
@@ -1769,7 +1769,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Row 5: Demographic Analytics (Historical) ── */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:'var(--sp-4)',marginBottom:'var(--sp-4)'}}>
+      <div className="dashboard-grid grid-cols-3">
         <GenderWidget data={dash?.byGender} loading={loading}/>
         <ListChart 
           title="Top Jurusan" 
@@ -1788,13 +1788,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Row 6: Quick Actions & Feed ── */}
-      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1.2fr) minmax(0,1.8fr)',gap:'var(--sp-4)',marginBottom:'var(--sp-4)'}}>
+      <div className="dashboard-grid grid-cols-1-2">
         <QuickActions/>
         <ActivityFeed data={dash?.activityFeed} loading={loading}/>
       </div>
 
       {/* ── Row 7: Announcements + Events + Expiring ── */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3, minmax(0,1fr))',gap:'var(--sp-4)',marginBottom:'var(--sp-4)'}}>
+      <div className="dashboard-grid grid-cols-3">
         <AnnouncementsWidget/>
         <EventsWidget/>
         <ExpiringWidget data={dash?.expiringInterns} loading={loading}/>

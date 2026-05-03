@@ -1036,7 +1036,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 2: Absen Hari Ini + Streak Mingguan ── */}
-      <div className="intern-row-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.5fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="dashboard-grid grid-cols-1-2" style={{ marginBottom: 'var(--sp-4)' }}>
         {/* Today Card — REVAMPED with Hadir/Sakit/Izin */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
@@ -1116,7 +1116,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 3: Progress Magang + Allowance Detail ── */}
-      <div className="intern-row-3" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="dashboard-grid grid-cols-1-2" style={{ marginBottom: 'var(--sp-4)' }}>
         {/* Countdown bar */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
@@ -1177,7 +1177,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 4: Skill Tracker (Full Width) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="dashboard-grid grid-cols-1" style={{ marginBottom: 'var(--sp-4)' }}>
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1190,7 +1190,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 5: Pengumuman + Jadwal Event ── */}
-      <div className="intern-row-5" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="dashboard-grid grid-cols-1-2" style={{ marginBottom: 'var(--sp-4)' }}>
         {/* Announcements feed */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
@@ -1275,7 +1275,7 @@ export default function InternDashboard() {
       </div>
 
       {/* ── Row 6: Quick Actions + Onboarding ── */}
-      <div className="intern-row-6" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      <div className="dashboard-grid grid-cols-1-2">
         {/* Quick Actions */}
         <div className="card">
           <h3 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem' }}>
